@@ -1,0 +1,35 @@
+# --------------------------------------------------------------------------
+# Was NICHT ins Repository gehoert.
+#
+# Wichtig: die Zeilen mit den Datenordnern schuetzen deine Zugangsdaten.
+# In Daten/config.json stehen E-Mail und - verschluesselt - das Passwort.
+# --------------------------------------------------------------------------
+
+# Laufzeitdaten der App (Zugangsdaten, heruntergeladene Pakete, Aufnahmen!)
+Daten/
+Sicherungen Daten/
+
+# Fertige Pakete gehoeren in ein GitHub-Release, nicht ins Repository:
+# sie sind je 8 MB gross und lassen sich jederzeit neu erzeugen.
+Fertige Pakete/
+
+# Build-Ergebnisse. Die EXE ist 51 MB - die kommt ebenfalls ins Release.
+build/
+dist/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Werkzeuge (ffmpeg allein ist 139 MB gross)
+ffmpeg.exe
+ffprobe.exe
+
+# Editor und Werkzeuge
+.claude/
+.vscode/
+.idea/
+*.swp

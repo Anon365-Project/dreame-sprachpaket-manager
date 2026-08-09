@@ -1,0 +1,24 @@
+# Zeilenenden einheitlich halten.
+#
+# Ohne diese Datei warnt Git unter Windows bei jeder Textdatei
+# ("LF will be replaced by CRLF"). Harmlos, aber laut - und wer das
+# Projekt unter Linux oder macOS auscheckt, bekaeme sonst irgendwann
+# Dateien, die sich scheinbar komplett geaendert haben.
+#
+# Regel: im Repository immer LF, im Arbeitsverzeichnis passend zum
+# Betriebssystem.
+
+* text=auto eol=lf
+
+# PowerShell erwartet unter Windows CRLF.
+*.ps1 text eol=crlf
+
+# Binaerdateien nie anfassen.
+*.exe binary
+*.ogg binary
+*.wav binary
+*.mp3 binary
+*.tar.gz binary
+*.zip binary
+*.png binary
+*.ico binary

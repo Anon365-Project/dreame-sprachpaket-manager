@@ -1,0 +1,4319 @@
+{
+ "_comment": "Ansagenkatalog des X50 Ultra Complete. Vereinigung der offiziellen deutschen Pakete von r2532h (558 Ansagen) und r2532v (613 Ansagen). Die deutschen Bezeichnungen sind von Hand vergeben; fuer die Nummern ab 631 stammen sie aus einer Transkription der Originalaufnahmen. Massgeblich bleibt immer die Hoerprobe.",
+ "source_model": "dreame.vacuum.r2532h + dreame.vacuum.r2532v",
+ "count": 616,
+ "sounds": [
+  {
+   "id": 0,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 1,
+   "de": "Warte auf Netzwerkkonfiguration",
+   "en": "Waiting for the network configuration.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 2,
+   "de": "WLAN-Verbindung fehlgeschlagen",
+   "en": "Unable to connect to the Wi-Fi network, please check Wi-Fi password and try again later.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 3,
+   "de": "Keine Serververbindung",
+   "en": "Unable to connect to the server, please check your local network and try again later.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 4,
+   "de": "Netzwerkmodus verlassen",
+   "en": "Robot has exited Network Configuration Mode.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 5,
+   "de": "Netzwerk erfolgreich verbunden",
+   "en": "Network connected successfully.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 6,
+   "de": "Netzwerkverbindung fehlgeschlagen",
+   "en": "Network connection failed. Please try again later.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 7,
+   "de": "Reinigung gestartet",
+   "en": "Start cleaning.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 8,
+   "de": "Punktreinigung gestartet",
+   "en": "Start spot cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 9,
+   "de": "Geplante Reinigung gestartet",
+   "en": "Start scheduled cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 10,
+   "de": "Reinigung wird fortgesetzt",
+   "en": "Start resuming cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 11,
+   "de": "",
+   "en": "Puzzed",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 12,
+   "de": "Reinigung abgeschlossen",
+   "en": "Cleaning task completed.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 13,
+   "de": "Fahre zur Station zum Laden",
+   "en": "Returning to the dock to charge.",
+   "group": "Akku & Laden",
+   "common": true
+  },
+  {
+   "id": 14,
+   "de": "Akku schwach - fahre zum Laden, setze danach fort",
+   "en": "Low battery, returning to the dock to charge. Robot will resume working after charging.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 17,
+   "de": "Bitte Roboter zurück zur Basisstation setzen",
+   "en": "Please move the robot back to the base station.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 18,
+   "de": "Lädt",
+   "en": "Charging",
+   "group": "Akku & Laden",
+   "common": true
+  },
+  {
+   "id": 19,
+   "de": "Roboter vor dem Ausschalten von der Station nehmen",
+   "en": "Please remove the robot from the base station before turning it off.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 20,
+   "de": "Akku schwach",
+   "en": "Low battery",
+   "group": "Akku & Laden",
+   "common": true
+  },
+  {
+   "id": 21,
+   "de": "Akku schwach - Roboter schaltet ab",
+   "en": "Low battery, robot will turn off.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 24,
+   "de": "Wassertank prüfen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 25,
+   "de": "Akku zu schwach für geplante Reinigung",
+   "en": "Low battery, unable to carry out the scheduled cleanup.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 26,
+   "de": "Setze auf Werkseinstellungen zurück",
+   "en": "Restoring to factory settings.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 27,
+   "de": "Update läuft (ca. 5 Minuten)",
+   "en": "Updating, taking about 5 minutes, do not turn off nor start a cleaning task.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 28,
+   "de": "Update erfolgreich",
+   "en": "updated successfully.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 29,
+   "de": "Update fehlgeschlagen",
+   "en": "Update failed. Please try again later.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 30,
+   "de": "Positionierung läuft",
+   "en": "Positioning, please wait.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 31,
+   "de": "Positionierung fehlgeschlagen - Karte ungültig",
+   "en": "Positioning failed. Map is invalid. Robot will start a new cleanup.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 34,
+   "de": "Teil nicht eingesetzt",
+   "en": "Just been not installed. Please install it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 35,
+   "de": "Fehler Hauptbürste - bitte reinigen",
+   "en": "Main brush error, please check and clean it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 36,
+   "de": "Fehler Seitenbürste - bitte reinigen",
+   "en": "Side brush error, please check and clean it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 37,
+   "de": "Fehler rechtes Rad",
+   "en": "Right wheel error. Please check and clean it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 38,
+   "de": "Fehler linkes Rad",
+   "en": "Left wheel error, please check and clean it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 39,
+   "de": "Räder ohne Bodenkontakt - Absturzsensoren reinigen",
+   "en": "Wheels are not in contact with the ground. Please wipe the cliff sensors, reposition the robot, and start it again.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 40,
+   "de": "Roboter steckt fest - Hindernisse entfernen",
+   "en": "The robot is trapped. Please clear the obstacles around it.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 41,
+   "de": "Räder ohne Bodenkontakt - Roboter umsetzen",
+   "en": "Wheels are not in contact with the ground. Please reposition the robot and start it again.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 42,
+   "de": "Filter prüfen und reinigen",
+   "en": "Please check and clean filter.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 43,
+   "de": "Fehler Stoßstange",
+   "en": "Bumper error. Please gently tap to see if it rebounds.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 44,
+   "de": "Allgemeiner Fehler - Handbuch prüfen",
+   "en": "Error, please check the user manual or contact customer service.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 45,
+   "de": "Ich bin hier",
+   "en": "I am here.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 46,
+   "de": "Roboter und Telefon verbunden",
+   "en": "Robot and phone connected. Please return to app to wait for the result.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 47,
+   "de": "Ladevorgang gestartet",
+   "en": "Start charging.",
+   "group": "Akku & Laden",
+   "common": true
+  },
+  {
+   "id": 48,
+   "de": "Akku schwach - fahre zur Station",
+   "en": "Low battery, returning to the dock.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 50,
+   "de": "Ladefehler - Ladekontakte reinigen",
+   "en": "Charging error, please clean charging contacts.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 52,
+   "de": "Roboter schräg - auf ebenen Boden stellen",
+   "en": "Robot tilted, please put it on a level ground to restart.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 54,
+   "de": "Positionierung erfolgreich - Reinigung fortgesetzt",
+   "en": "Positioning succeeded, resuming cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 55,
+   "de": "Positionierung erfolgreich - fahre weiter zur Station",
+   "en": "Positioning succeeded, resuming returning to the dock.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 56,
+   "de": "Raumreinigung gestartet",
+   "en": "Start selected room cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 57,
+   "de": "Zonenreinigung gestartet",
+   "en": "Start zone cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 58,
+   "de": "Reinigungsauftrag wird fortgesetzt",
+   "en": "Proceed with cleaning task.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 59,
+   "de": "Kartierung fertig - Wassertank entnehmen",
+   "en": "Mapping completed. Please remove water tank timely.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 61,
+   "de": "Wischen gestartet",
+   "en": "Start mopping.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 62,
+   "de": "Fernsteuerung gestartet",
+   "en": "Start remote control cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 64,
+   "de": "Positionierung fehlgeschlagen - fahre zur Station",
+   "en": "Positioning failed, map is invalid. Robot will return to dock.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 65,
+   "de": "Rückfahrt zur Station fortgesetzt",
+   "en": "Resume returning to the dock.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 66,
+   "de": "Filter verschlissen - ersetzen",
+   "en": "Filter worn out, please replace it timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 67,
+   "de": "Seitenbürste verschlissen - ersetzen",
+   "en": "Side brush worn out. Please replace it timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 68,
+   "de": "Hauptbürste verschlissen - ersetzen",
+   "en": "Main brush worn out. Please replace it timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 71,
+   "de": "Laser-Abstandssensor blockiert",
+   "en": "Please check whether the laser distance sensor has any jammed item.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 72,
+   "de": "Abdeckung des Lasersensors blockiert",
+   "en": "Please check whether LaserDistance sensor cover is jammed.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 73,
+   "de": "Fehler Kantensensor",
+   "en": "Edge Sensor Error. Please check and clean it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 75,
+   "de": "Filter feucht oder verstopft",
+   "en": "Filter may not be dry or may be blocked.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 77,
+   "de": "Bitte auf Hartboden starten",
+   "en": "Please start robot in non-carpet area.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 78,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 81,
+   "de": "Fehler Teppichsensor",
+   "en": "Carpet sensor error. Please restart the robot or contact customer service.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 82,
+   "de": "Kartierung gestartet",
+   "en": "Start mapping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 83,
+   "de": "Kartierung wird fortgesetzt",
+   "en": "Proceed with mapping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 84,
+   "de": "Kartierung abgeschlossen",
+   "en": "Mapping completed.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 85,
+   "de": "Positionierung erfolgreich - Kartierung läuft weiter",
+   "en": "Positioning succeeded, proceeding with mapping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 86,
+   "de": "Positionierung fehlgeschlagen - Kartierung neu gestartet",
+   "en": "Positioning failed, restarting mapping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 87,
+   "de": "Akku schwach - fahre zur Station",
+   "en": "Low battery, returning to the dock.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 91,
+   "de": "Frischwassertank nicht eingesetzt",
+   "en": "Clean water tank not installed, please install it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 93,
+   "de": "Wenig Frischwasser - bitte auffüllen",
+   "en": "Low water level in the clean water tank, please add water.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 97,
+   "de": "Staubbeutel einsetzen",
+   "en": "Please install the dust collection bag.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 101,
+   "de": "Klappe der Absaugstation offen oder Staubbeutel fehlt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 102,
+   "de": "Staubbeutel voll oder Luftkanal verstopft",
+   "en": "Dust collection bag full or air duct blocked. Please replace the bag or clean the air duct timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 104,
+   "de": "Waschbrett nicht eingesetzt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 105,
+   "de": "Reinigung gestartet",
+   "en": "Start cleaning.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 106,
+   "de": "Wischpad-Reinigung gestartet",
+   "en": "Start cleaning mop pads.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 107,
+   "de": "Wischpads werden getrocknet",
+   "en": "Start dehydrating mop pads.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 108,
+   "de": "Fehler Wasserstand Waschbrett",
+   "en": "An error in water level of washboard. Please clean it timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 109,
+   "de": "Fehler Schmutzwassertank",
+   "en": "Used water tank error, please ensure it installed and empty.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 110,
+   "de": "Automatische Absaugung gestartet",
+   "en": "Start auto empty.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 111,
+   "de": "Wischpads fehlen - bitte anbringen",
+   "en": "Mod pads off, please install them before resuming working.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 112,
+   "de": "Roboter zuerst in die Station stellen",
+   "en": "Please place the robot in the base station first.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 113,
+   "de": "Fertig - Schmutzwassertank leeren",
+   "en": "Task completed, please empty the used water tank timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 114,
+   "de": "Wischpads angebracht",
+   "en": "Mop pads installed.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 115,
+   "de": "Wischpads entfernt",
+   "en": "Mott pads removed.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 116,
+   "de": "Kindersicherung aktiv",
+   "en": "Child Lock on, buttons locked.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 117,
+   "de": "Kindersicherung aus",
+   "en": "Shout-lock off. Buttons unlocked.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 118,
+   "de": "Tasten gesperrt",
+   "en": "Buttons locked, press and hold the dock button to unlock.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 126,
+   "de": "Reinigung gestartet",
+   "en": "Start cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 127,
+   "de": "Punktreinigung gestartet",
+   "en": "Start spot cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 128,
+   "de": "Punktwischen gestartet",
+   "en": "Start spot mopping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 129,
+   "de": "Geplante Reinigung gestartet",
+   "en": "Start scheduled cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 130,
+   "de": "Geplante Kartierung gestartet",
+   "en": "Start scheduled mapping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 133,
+   "de": "Raumreinigung gestartet",
+   "en": "Start selected room cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 134,
+   "de": "Raumwischen gestartet",
+   "en": "Start selected room mopping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 135,
+   "de": "Zonenreinigung gestartet",
+   "en": "Start zone cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 136,
+   "de": "Zonenwischen gestartet",
+   "en": "Start zoned mopping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 137,
+   "de": "Reinigung fortgesetzt",
+   "en": "resume cleaning",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 138,
+   "de": "Wischen fortgesetzt",
+   "en": "resume mopping",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 139,
+   "de": "Kehre zurück",
+   "en": "Returning",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 140,
+   "de": "Neue Umgebung erkannt - fahre zur Station",
+   "en": "New Environment Detected, returning to the base station.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 142,
+   "de": "Wischpad verschlissen - ersetzen",
+   "en": "Mod pad worn out, please replace it timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 143,
+   "de": "Reinigung abgeschlossen",
+   "en": "Cleaning completed.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 144,
+   "de": "Wischen abgeschlossen",
+   "en": "Mopping completed.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 145,
+   "de": "",
+   "en": "Positioning successful, resume cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 146,
+   "de": "",
+   "en": "Positioning successful, resume mapping.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 148,
+   "de": "Fahre zur Station zur Selbstreinigung",
+   "en": "Return to the base for self-cleaning.",
+   "group": "Basisstation",
+   "common": true
+  },
+  {
+   "id": 149,
+   "de": "Bereich nicht erreichbar - Hindernisse entfernen",
+   "en": "Unable to reach the specified area, please try to clear obstacles in the path.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 150,
+   "de": "",
+   "en": "Unable to reach the specified area, please try to delete no-go zones in the path.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 151,
+   "de": "Weg blockiert - Hindernisse entfernen",
+   "en": "The path is blocked. Please try to clear obstacles around your robot.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 152,
+   "de": "",
+   "en": "The path is blocked. Please try to delete no-go zones or move your robot out of this area.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 153,
+   "de": "Roboter in Sperrzone - bitte herausnehmen",
+   "en": "Your robot is detected in the No Go Zone. Please move your robot out of this area.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 156,
+   "de": "Wischpad nicht eingesetzt",
+   "en": "The MupPad is not installed.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 162,
+   "de": "Kamera an",
+   "en": "Camera is on.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 163,
+   "de": "Kameraüberwachung",
+   "en": "Camera monitoring.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 164,
+   "de": "Auftrag beendet",
+   "en": "Task ends.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 166,
+   "de": "Fremdkörper am Wischpad entfernen",
+   "en": "Please clean the foreign objects tangled in the mop pad.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 169,
+   "de": "Wischpad-Trocknung abgeschlossen",
+   "en": "Mod pad drying complete.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 170,
+   "de": "Tastensperre - an der Station entsperren",
+   "en": "",
+   "group": "Bedienung",
+   "common": false
+  },
+  {
+   "id": 171,
+   "de": "Intelligente Hindernisvermeidung an",
+   "en": "Intelligent obstacle avoidance function on.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 172,
+   "de": "Intelligente Hindernisvermeidung aus",
+   "en": "Intelligent obstacle avoidance function off.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 173,
+   "de": "Silberionen-Modul ersetzen",
+   "en": "Please replace the silver ion sterilizer.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 177,
+   "de": "Verlasse die Basisstation",
+   "en": "Leaving the base station.",
+   "group": "Basisstation",
+   "common": true
+  },
+  {
+   "id": 179,
+   "de": "Wischpad gereinigt - Frischwasser auffüllen",
+   "en": "Moppad cleaned. The water in the clean water tank is insufficient. Please fill the clean water tank and empty the used water tank.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 181,
+   "de": "Wenig Wasser - Tank auffüllen",
+   "en": "In sufficient water, please fill the clean water tank.",
+   "group": "Basisstation",
+   "common": true
+  },
+  {
+   "id": 186,
+   "de": "Frischwassertank prüfen",
+   "en": "Please check the clean water tank.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 187,
+   "de": "Dauert etwa 5-10 Minuten",
+   "en": "It will take about 5-10 minutes.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 188,
+   "de": "Automatisches Andocken aktiv",
+   "en": "Automatic docking engaged.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 190,
+   "de": "OK, starte Reinigung",
+   "en": "Okay, start cleaning.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 191,
+   "de": "OK, starte Saugen und Wischen",
+   "en": "Okay, start vacuuming and mopping.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 192,
+   "de": "OK, starte Wischen",
+   "en": "Okay, start mopping.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 193,
+   "de": "OK, starte Saugen",
+   "en": "Ok, start vacuuming.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 194,
+   "de": "",
+   "en": "have been cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 195,
+   "de": "",
+   "en": "Okay, start to clean the room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 196,
+   "de": "",
+   "en": "Okay, start to vacuum the floor. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 197,
+   "de": "",
+   "en": "Okay, start to mop the floor. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 198,
+   "de": "",
+   "en": "Okay, start to vacuum and mop the floor. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 199,
+   "de": "",
+   "en": "Unable to recognize this room. Please open the app to check the room name.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 200,
+   "de": "",
+   "en": "Bye- Spain",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 201,
+   "de": "",
+   "en": "Okay, continue working.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 202,
+   "de": "",
+   "en": "Okay, task is ended. Start returning to charge.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 203,
+   "de": "",
+   "en": "Okay, heading back to charge.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 204,
+   "de": "",
+   "en": "Okay, start mapping. Please make sure all doors are open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 205,
+   "de": "",
+   "en": "Okay, exit the base station.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 206,
+   "de": "",
+   "en": "Okay, I'll try to find you.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 207,
+   "de": "",
+   "en": "Sorry, I can't find you. Please stand within my sight.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 208,
+   "de": "",
+   "en": "Found you, coming to clean now.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 209,
+   "de": "",
+   "en": "Okay, returning to the dock to clean the mop pad.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 210,
+   "de": "",
+   "en": "Start mob pads washing.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 211,
+   "de": "",
+   "en": "Sorry, self emptying can only be done when I'm inside the dock.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 212,
+   "de": "",
+   "en": "Okay, start auto emptying.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 213,
+   "de": "",
+   "en": "Sorry, drying can only be done when I'm inside the dock.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 214,
+   "de": "",
+   "en": "Drawing in progress.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 215,
+   "de": "",
+   "en": "Okay, start drying.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 216,
+   "de": "",
+   "en": "Sorry, need to install the mop pad first.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 217,
+   "de": "",
+   "en": "Maximum suction power reached.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 218,
+   "de": "",
+   "en": "minimum suction power reached.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 219,
+   "de": "",
+   "en": "Maximum humidity reached.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 220,
+   "de": "",
+   "en": "minimum humidity reached.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 221,
+   "de": "OK",
+   "en": "Okay.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 222,
+   "de": "",
+   "en": "The suction mode is quiet.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 223,
+   "de": "",
+   "en": "The suction mode is standard.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 224,
+   "de": "",
+   "en": "The suction mode is strong.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 225,
+   "de": "",
+   "en": "The suction mode is turbo.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 226,
+   "de": "",
+   "en": "The mop pad is slightly dry.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 227,
+   "de": "",
+   "en": "The Moppad is moist.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 228,
+   "de": "",
+   "en": "The mop pad is wet.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 229,
+   "de": "",
+   "en": "Today is...",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 230,
+   "de": "",
+   "en": "Today is February 21, 2022.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 231,
+   "de": "",
+   "en": "Today is Monday.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 232,
+   "de": "",
+   "en": "Today is Tuesday.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 233,
+   "de": "",
+   "en": "Today is Wednesday.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 234,
+   "de": "",
+   "en": "today is Thursday.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 235,
+   "de": "",
+   "en": "today as Friday",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 236,
+   "de": "",
+   "en": "Today is Saturday.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 237,
+   "de": "",
+   "en": "Today is Sunday.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 238,
+   "de": "",
+   "en": "Okay, the task is passed.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 244,
+   "de": "",
+   "en": "Deturgent bottle installed.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 245,
+   "de": "",
+   "en": "The number of maps has reached the limit. Please delete a map and try again.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 246,
+   "de": "Ich bin hier",
+   "en": "I'm here.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 247,
+   "de": "Das habe ich nicht verstanden",
+   "en": "Sorry, I can't understand.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 248,
+   "de": "",
+   "en": "Moppad not installed, please install it and try again.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 249,
+   "de": "",
+   "en": "I'm working, please end the current task and retry.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 250,
+   "de": "",
+   "en": "Currently in Mopping Mode now, please switch to vacuuming mode or vacuuming in Mopping Mode first.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 251,
+   "de": "",
+   "en": "Currently in vacuuming mode now, please switch to Mopping mode or vacuuming and Mopping mode first.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 252,
+   "de": "",
+   "en": "finished, exited the customized cleaning mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 253,
+   "de": "Maximale Lautstärke erreicht",
+   "en": "Maximum volume reached.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 254,
+   "de": "Minimale Lautstärke erreicht",
+   "en": "minimum volume reached.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 255,
+   "de": "",
+   "en": "Sorry, this task can only be performed when intelligent obstacle avoidance is enabled.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 257,
+   "de": "",
+   "en": "Camera monitoring exited.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 258,
+   "de": "",
+   "en": "Self-positioned cruising started.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 259,
+   "de": "",
+   "en": "Self-positioned, proceeding to the designated location.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 260,
+   "de": "",
+   "en": "Self-positioned, cruising resumed.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 261,
+   "de": "",
+   "en": "Self-positioned, resume proceeding to the designated location.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 262,
+   "de": "",
+   "en": "Self positioning failed.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 266,
+   "de": "Reinigungsmittel ersetzen",
+   "en": "Please replace the detergent.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 267,
+   "de": "Sensoren reinigen",
+   "en": "Please clean the sensors.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 269,
+   "de": "",
+   "en": "Please try again after the current task is complete.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 274,
+   "de": "",
+   "en": "better.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 275,
+   "de": "",
+   "en": "Sorry, this command is not supported. You can open the app for more voice commands.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 276,
+   "de": "",
+   "en": "Sorry, robot isn't performing this task.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 277,
+   "de": "",
+   "en": "Okay, I'm coming to clean up there.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 278,
+   "de": "",
+   "en": "Okay, drying task ended.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 279,
+   "de": "",
+   "en": "Robot is vacuuming, please end the task and try again.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 280,
+   "de": "",
+   "en": "Start custom cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 281,
+   "de": "",
+   "en": "The robot is auto emptying. Please try again later.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 282,
+   "de": "",
+   "en": "The robot is cleaning the mop pad. Please try again later.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 283,
+   "de": "",
+   "en": "The robot is not in the base station. Please try again later.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 284,
+   "de": "",
+   "en": "Okay, I'll end the task and come to clean.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 285,
+   "de": "",
+   "en": "Please stay put for a moment while I locate you.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 286,
+   "de": "",
+   "en": "Sorry, please create a map and try again.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 287,
+   "de": "",
+   "en": "Okay, have switched to quiet mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 288,
+   "de": "",
+   "en": "Okay, have switched to standard mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 289,
+   "de": "",
+   "en": "Okay, have switched to strong mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 290,
+   "de": "",
+   "en": "Okay, have switched to Turbo mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 291,
+   "de": "",
+   "en": "Okay, have switched to slightly dry mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 292,
+   "de": "",
+   "en": "Okay, have switched to wet mode.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 293,
+   "de": "",
+   "en": "Calling enabled.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 294,
+   "de": "",
+   "en": "Calling disabled.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 296,
+   "de": "",
+   "en": "Use water tank error, please check whether the used water tank is full.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 297,
+   "de": "",
+   "en": "Deturgent bottle installed, if the detergent has never been used, please reset in the app.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 298,
+   "de": "",
+   "en": "Start cleaning washboard base.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 299,
+   "de": "",
+   "en": "Deturgent bottle and the auto adding module installed.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 300,
+   "de": "",
+   "en": "Your robot doesn't support this accessory.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 301,
+   "de": "Ich lade gerade",
+   "en": "I'm charging.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 302,
+   "de": "Ich arbeite gerade",
+   "en": "I'm working.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 303,
+   "de": "",
+   "en": "I'm in a days.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 304,
+   "de": "Netzwerk verbunden",
+   "en": "Network connected.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 305,
+   "de": "",
+   "en": "Okay, start cleaning washboard base. Please clean it inside with a brush or cloth. After 3 minutes, sewage in the washboard base will be drained.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 306,
+   "de": "",
+   "en": "Sorry, I can't understand. Please configure the network and retry.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 307,
+   "de": "",
+   "en": "I'm charging.",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 308,
+   "de": "",
+   "en": "Sorry, I didn't catch that. Please wake me up again and retry.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 309,
+   "de": "",
+   "en": "Found you, I'm coming.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 310,
+   "de": "",
+   "en": "Okay, I'm leaving this area right away.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 311,
+   "de": "Wischpads entfernt",
+   "en": "Mop pads removed.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 312,
+   "de": "",
+   "en": "Usage information of this accessory is unavailable. Please replace it as you need.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 313,
+   "de": "",
+   "en": "Sorry, network is poor. Please move me to an area with a better signal.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 314,
+   "de": "",
+   "en": "Not supported, you can ask me to turn around.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 315,
+   "de": "",
+   "en": "Moppad is not in the dock. Please retry after putting it in the dock.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 316,
+   "de": "",
+   "en": "There is Moppad in the base station already.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 317,
+   "de": "",
+   "en": "Not supported, the robot is performing the customized cleaning task. Please go to the app to edit.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 318,
+   "de": "Wischpad gereinigt",
+   "en": "Muffpad has been cleaned.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 319,
+   "de": "",
+   "en": "failed to remove mop pads. Please remove the manually.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 320,
+   "de": "",
+   "en": "failed to install mop pads. Please install them manually.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 321,
+   "de": "",
+   "en": "Start intensive mopping for stains.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 322,
+   "de": "",
+   "en": "Sorry, I can't understand. You can open the app for all available voice commands.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 323,
+   "de": "",
+   "en": "Sorry, I can't understand. You can say, hi, dream, what can you do to learn all my functions?",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 324,
+   "de": "",
+   "en": "I'm washing them up, Cadd. Please wake me up after washing is done.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 328,
+   "de": "",
+   "en": "Sorry, please give this command only when I'm cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 329,
+   "de": "Selbsttest gestartet",
+   "en": "Start self-testing, please don't move me away from the base station.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 330,
+   "de": "",
+   "en": "Please retry after self test completed.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 331,
+   "de": "Kein Fehler gefunden",
+   "en": "No error found, please rest assured to use the device.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 332,
+   "de": "Fehler gefunden - App prüfen",
+   "en": "One error found, please go to the app to see more details.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 338,
+   "de": "",
+   "en": "Video call connected.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 339,
+   "de": "Anruf abgelehnt",
+   "en": "Cardi",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 340,
+   "de": "",
+   "en": "No response.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 341,
+   "de": "",
+   "en": "Found you. Now start following. You can say, exit to end the following.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 342,
+   "de": "",
+   "en": "Where are you? Please stand about 1.5 meters in front of me.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 343,
+   "de": "",
+   "en": "I lost you. You are walking too fast. Please stand about 1.5 meters in front of me, waiting for me to find you again.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 344,
+   "de": "",
+   "en": "Ok, start mopping after vacuuming.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 349,
+   "de": "",
+   "en": "Ensure that the base station is powered on. Place the robot on it to start activation.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 350,
+   "de": "",
+   "en": "Start base station activation.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 351,
+   "de": "",
+   "en": "Vase Station activated.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 352,
+   "de": "",
+   "en": "Base Station activation failed. Open the app to check the solution.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 353,
+   "de": "Schmutzwasserbehälter eingesetzt",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 354,
+   "de": "Schmutzwasserbehälter entfernt",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 355,
+   "de": "Wenig Wasser - Frischwassertank auffüllen",
+   "en": "Low water level, please fill the clean water tank.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 356,
+   "de": "",
+   "en": "Fault still exists. The scheduled task has been cancelled.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 358,
+   "de": "Schmutzwasserbehälter bitte einsetzen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 360,
+   "de": "Wassertank wird entleert",
+   "en": "Robot water tank draining",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 361,
+   "de": "Entleerung abgeschlossen",
+   "en": "Robot water tank drainage completed.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 362,
+   "de": "",
+   "en": "Moppad out of place. Robot will perform the vacuuming task instead.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 363,
+   "de": "",
+   "en": "Vacuuming task completed, robot will start mopping.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 364,
+   "de": "",
+   "en": "Start setting the video activation code.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 365,
+   "de": "",
+   "en": "Live video function has been disabled.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 366,
+   "de": "",
+   "en": "Staying detected, start cleaning.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 367,
+   "de": "",
+   "en": "Okay, start stain cleaning.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 368,
+   "de": "",
+   "en": "Staying detected, I'll clean it after washing them up.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 369,
+   "de": "",
+   "en": "Okay, start spot cleaning.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 371,
+   "de": "",
+   "en": "Please remove the washboard.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 372,
+   "de": "",
+   "en": "Clean water starts outflowing.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 373,
+   "de": "",
+   "en": "Clean water outflowing process ended. Please wait for 10 seconds, and then clean the base station after the darts are soaked.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 374,
+   "de": "",
+   "en": "Please use a brush or cloth to clean the bottom of the base station within 20 seconds. Then the sewage will be pumped out automatically.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 375,
+   "de": "",
+   "en": "Please push the derts to the pumping court. The pumping process will last for 30 seconds.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 376,
+   "de": "",
+   "en": "Pumping process ended, please clean the washboard separately and install it back.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 377,
+   "de": "",
+   "en": "Unable to configure the network. Please contact customer service.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 378,
+   "de": "",
+   "en": "Run password, fail to connect to the network. Please reconfigure.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 379,
+   "de": "",
+   "en": "No wireless network found, please connect to the 2.4 GHz Wi-Fi band. Try again after placing the robot close to the router.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 380,
+   "de": "",
+   "en": "Failed to obtain the IP address. Please check the router settings.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 381,
+   "de": "",
+   "en": "Fail to connect to the EMQ server. Please contact customer service.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 382,
+   "de": "",
+   "en": "Fail to connect to the network. Please check whether the network works normally.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 383,
+   "de": "",
+   "en": "Unable to configure the network. Please contact customer service.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 384,
+   "de": "",
+   "en": "No water in the clean water tank of the automatic water supply and drainage device.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 385,
+   "de": "",
+   "en": "Start connecting to the network.",
+   "group": "Netzwerk",
+   "common": false
+  },
+  {
+   "id": 386,
+   "de": "Schmutzwasserbehälter voll - fahre zum Entleeren",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 387,
+   "de": "Entleerung abgeschlossen, Aufgabe geht weiter",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 388,
+   "de": "",
+   "en": "Hit an area, please move the robot to the available area and retry.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 389,
+   "de": "",
+   "en": "LDS failed to descend. Please check if it is stuck.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 390,
+   "de": "",
+   "en": "LDS failed to lift. Please check if it is stuck.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 391,
+   "de": "",
+   "en": "Please place me in an open area before starting the task.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 392,
+   "de": "",
+   "en": "Adjusting cleaning parameters is not supported in clean genius mode.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 393,
+   "de": "Schmutzwasserbehälter verschmutzt",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 394,
+   "de": "Wassersensor defekt",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 396,
+   "de": "",
+   "en": "Start emptying the water supply and drainage module, which is expected to take 3 minutes.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 397,
+   "de": "",
+   "en": "drainage of upper and lower water completed.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 398,
+   "de": "",
+   "en": "Mapping complete, check the map and app and return me to dock.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 399,
+   "de": "",
+   "en": "Test complete, please move me back to dock.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 400,
+   "de": "",
+   "en": "Self-cleaning completed, now move the host to the corresponding floor and flip the start button to continue working.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 401,
+   "de": "",
+   "en": "Please move me to dock and start the self-cleaning task.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 421,
+   "de": "Sprache erfolgreich gewechselt",
+   "en": "Switch the language successfully.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 424,
+   "de": "",
+   "en": "Positioning failed, please move me to an open area and restart the task.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 426,
+   "de": "Ich bin abgerutscht und stecke fest",
+   "en": "I've slipped and gotten stuck. I'll keep trying to free myself.",
+   "group": "Reinigung",
+   "common": true
+  },
+  {
+   "id": 433,
+   "de": "Zusatzreinigung gestartet",
+   "en": "Start extra cleaning.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 434,
+   "de": "Zusatzreinigung fertig",
+   "en": "Extra cleaning completed. Original cleaning task continues.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 435,
+   "de": "",
+   "en": "Leaving the current area.",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 436,
+   "de": "",
+   "en": "Aqui nrluwnvak",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 437,
+   "de": "Problem gelöst - Start drücken",
+   "en": "Problem solved, tap Start button to resume cleaning.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 438,
+   "de": "Stoßstange klemmt",
+   "en": "Bumper stuck. Please gently tap the bumper to ensure it rebounds normally.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 439,
+   "de": "Lasersensor-Abdeckung klemmt",
+   "en": "LDS cover stuck, please gently tap its flexible area to ensure rebound normally.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 440,
+   "de": "Rad in der Luft - Roboter umsetzen",
+   "en": "Robots wheel suspended, please move it to an open area and restart the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 441,
+   "de": "Hauptbürste verheddert",
+   "en": "main brush entangled, please remove and clean it before reinstalling.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 442,
+   "de": "Seitenbürste verheddert",
+   "en": "Side brush entangled, please remove and clean it before reinstalling.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 443,
+   "de": "Räder verheddert",
+   "en": "main wheels entangled, please clean them.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 444,
+   "de": "Roboter auf freie Fläche stellen",
+   "en": "Please place the robot in an open area before starting the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 445,
+   "de": "Wischpad verloren",
+   "en": "Mop has fallen off, please find it around robot and reinstall it.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 446,
+   "de": "Wischpad-Halter verheddert",
+   "en": "Mop holder entangled, please remove and clean it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 447,
+   "de": "Station ohne Strom",
+   "en": "Doc is not powered on, please check and put robot back to charge.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 448,
+   "de": "Schmutzwassertank nicht eingesetzt",
+   "en": "Used water tank is not installed, please install it before starting the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 449,
+   "de": "Start auf Teppich nicht möglich",
+   "en": "Unable to start tasks on carpets, please move robot to hard floor and restart the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 450,
+   "de": "Start in Sperrzone nicht möglich",
+   "en": "Unable to start tasks in No Go Zone, please move robot to other areas and restart the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 451,
+   "de": "",
+   "en": "Unable to start tasks in hidden area, please move robot to other areas and restart the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 452,
+   "de": "Fehler Teppichsensor",
+   "en": "Carpet sensor error, please turn over robot, wipe the white round hole on the bottom and restart robot.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 453,
+   "de": "Fehler Kantensensor",
+   "en": "Edge sensor error, please wipe robots right side and restart the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 454,
+   "de": "Zu wenig Frischwasser",
+   "en": "insufficient water in the clean water tank, please fill it with clean water timely.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 455,
+   "de": "Frischwassertank falsch eingesetzt",
+   "en": "Clean water tank is not in the right place. Please reinstall it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 456,
+   "de": "Schmutzwassertank voll oder fehlt",
+   "en": "Use water tank full or not installed, please check.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 457,
+   "de": "",
+   "en": "Use water tank full or not installed, please check.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 458,
+   "de": "Staubbeutel falsch eingesetzt",
+   "en": "Dustbag is not in the right place, please check and install it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 459,
+   "de": "Wischpad-Halter falsch eingesetzt",
+   "en": "Mob holder is not in the right place, please check and install it.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 460,
+   "de": "Geruchsfilter verschlissen",
+   "en": "Used water tank the odorizer is worn out, please replace it timely.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 463,
+   "de": "",
+   "en": "Welcome to use Dream Robot. Please open robots cover and scan QR code to download Dream Home app to view more operations.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 464,
+   "de": "",
+   "en": "To complete subsequent tasks smoothly, place robot back into dock before starting tasks. When hearing, start charging, it means the installation is in place.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 465,
+   "de": "",
+   "en": "Place robot back into dock before starting tasks. When hearing, start charging, it means the installation is in place.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 466,
+   "de": "",
+   "en": "Please open room doors to be cleaned and clean up objects on the ground.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 467,
+   "de": "",
+   "en": "Please place robot back into dock, then restart mapping.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 468,
+   "de": "",
+   "en": "Please confirm map details in the app.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 478,
+   "de": "",
+   "en": "After completing mop washing, robot will resume cleaning task.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 479,
+   "de": "",
+   "en": "Already, restart your task.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 480,
+   "de": "",
+   "en": "Add enough water in the clean water tank for subsequent tasks.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 481,
+   "de": "",
+   "en": "Start emptying the vacuum cleaner.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 482,
+   "de": "",
+   "en": "Vacuum cleaner is being emptied. Robot emptying will be done later.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 483,
+   "de": "",
+   "en": "Vacuum cleaner is being emptied. Mop washing will be done later.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 484,
+   "de": "",
+   "en": "Vacuum cleaner is being emptied. Robot vacuuming will be done later.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 485,
+   "de": "",
+   "en": "Robot is being emptied, vacuum cleaner will be emptied later.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 486,
+   "de": "",
+   "en": "Mop washing is in process. Vacuum cleaner will be emptied later.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 487,
+   "de": "",
+   "en": "Please ensure I am in the dock.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 488,
+   "de": "",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 489,
+   "de": "",
+   "en": "Currently in clean genius mode, please tell me to end the task and try again.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 490,
+   "de": "",
+   "en": "Okay, enter Customize Cleaning Mode, start mopping.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 491,
+   "de": "",
+   "en": "Okay, enter Customize Cleaning Mode, start vacuuming.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 492,
+   "de": "",
+   "en": "Okay, start to clean the living room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 493,
+   "de": "",
+   "en": "Okay, start to clean the bedroom. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 494,
+   "de": "",
+   "en": "Okay, start to clean the master room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 495,
+   "de": "",
+   "en": "Okay, start to clean the guest room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 496,
+   "de": "",
+   "en": "Okay, start to clean the study. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 497,
+   "de": "",
+   "en": "Okay, start to clean the kitchen. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 498,
+   "de": "",
+   "en": "Okay, start to clean the dining room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 499,
+   "de": "",
+   "en": "Okay, start to clean the bathroom. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 500,
+   "de": "",
+   "en": "Okay, start to clean the balcony. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 501,
+   "de": "",
+   "en": "Okay, start to clean the hallway. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 502,
+   "de": "",
+   "en": "Okay, start to clean the utility room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 503,
+   "de": "",
+   "en": "Okay, start to clean the closet. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 504,
+   "de": "",
+   "en": "Okay, start to clean the drawing room. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 505,
+   "de": "",
+   "en": "Okay, start to clean the office. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 506,
+   "de": "",
+   "en": "Okay, start to clean the gym. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 507,
+   "de": "",
+   "en": "Okay, start to clean the recreation area. Make sure the door is open.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 508,
+   "de": "Lautstärke erhöht",
+   "en": "Ok, I've turned up the volume.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 509,
+   "de": "Lautstärke verringert",
+   "en": "Okay, I've turned down the volume.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 510,
+   "de": "Arbeit beendet",
+   "en": "Okay, I've ended the work.",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 511,
+   "de": "",
+   "en": "Sorry, I am not performing a task now.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 512,
+   "de": "",
+   "en": "Map doesn't include pet furniture yet. Please add it in the app.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 513,
+   "de": "",
+   "en": "Okay, heading to clean around the pet furniture.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 515,
+   "de": "Entschuldigung, könnten Sie die Füße heben?",
+   "en": "Excuse me, could you please lift your feet so I can clean this area?",
+   "group": "Sprachassistent",
+   "common": true
+  },
+  {
+   "id": 516,
+   "de": "",
+   "en": "Start finding pets.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 517,
+   "de": "",
+   "en": "Find your pets successfully, start returning to charge.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 518,
+   "de": "",
+   "en": "No pets found, start returning to charge.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 522,
+   "de": "",
+   "en": "What issue would you like to report?",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 523,
+   "de": "",
+   "en": "Could you please describe the issue in more detail?",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 524,
+   "de": "",
+   "en": "Please take me to the area where the issue occurred.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 525,
+   "de": "",
+   "en": "Please wait, I'm analyzing.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 526,
+   "de": "",
+   "en": "Battery level is 100%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 527,
+   "de": "",
+   "en": "Battery level is 99%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 528,
+   "de": "",
+   "en": "Battery level is 98%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 529,
+   "de": "",
+   "en": "Battery level is 97%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 530,
+   "de": "",
+   "en": "Battery level is 96%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 531,
+   "de": "",
+   "en": "Battery level is 95%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 532,
+   "de": "",
+   "en": "Battery level is 94%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 533,
+   "de": "",
+   "en": "Battery level is 93%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 534,
+   "de": "",
+   "en": "Battery level is 92%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 535,
+   "de": "",
+   "en": "Battery level is 91%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 536,
+   "de": "",
+   "en": "Battery level is 90%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 537,
+   "de": "",
+   "en": "Battery level is 89%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 538,
+   "de": "",
+   "en": "Battery level is 88%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 539,
+   "de": "",
+   "en": "Battery level is 87%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 540,
+   "de": "",
+   "en": "Battery level is 86%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 541,
+   "de": "",
+   "en": "Battery level is 85%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 542,
+   "de": "",
+   "en": "Battery level is 84%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 543,
+   "de": "",
+   "en": "Battery level is 83%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 544,
+   "de": "",
+   "en": "Battery level is 82%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 545,
+   "de": "",
+   "en": "Battery level is 81%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 546,
+   "de": "",
+   "en": "Battery level is 80%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 547,
+   "de": "",
+   "en": "Battery level is 79%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 548,
+   "de": "",
+   "en": "Battery level is 78%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 549,
+   "de": "",
+   "en": "Battery level is 77%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 550,
+   "de": "",
+   "en": "Battery level is 76%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 551,
+   "de": "",
+   "en": "Battery level is 75%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 552,
+   "de": "",
+   "en": "Battery level is 74%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 553,
+   "de": "",
+   "en": "Battery level is 73%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 554,
+   "de": "",
+   "en": "Battery level is 72%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 555,
+   "de": "",
+   "en": "Battery level is 71%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 556,
+   "de": "",
+   "en": "Battery level is 70%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 557,
+   "de": "",
+   "en": "Battery level is 69%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 558,
+   "de": "",
+   "en": "Battery level is 68%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 559,
+   "de": "",
+   "en": "Battery level is 67%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 560,
+   "de": "",
+   "en": "Battery level is 66%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 561,
+   "de": "",
+   "en": "Battery level is 65%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 562,
+   "de": "",
+   "en": "Battery level is 64%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 563,
+   "de": "",
+   "en": "Battery level is 63%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 564,
+   "de": "",
+   "en": "Battery level is 62%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 565,
+   "de": "",
+   "en": "Battery level is 61%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 566,
+   "de": "",
+   "en": "Battery level is 60%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 567,
+   "de": "",
+   "en": "Battery level is 59%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 568,
+   "de": "",
+   "en": "Battery level is 58%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 569,
+   "de": "",
+   "en": "Battery level is 57%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 570,
+   "de": "",
+   "en": "Battery level is 56%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 571,
+   "de": "",
+   "en": "Battery level is 55%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 572,
+   "de": "",
+   "en": "Battery level is 54%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 573,
+   "de": "",
+   "en": "Battery level is 53%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 574,
+   "de": "",
+   "en": "Battery level is 52%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 575,
+   "de": "",
+   "en": "Battery level is 51%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 576,
+   "de": "",
+   "en": "Battery level is 50%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 577,
+   "de": "",
+   "en": "Battery level is 49%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 578,
+   "de": "",
+   "en": "Battery level is 48%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 579,
+   "de": "",
+   "en": "Battery level is 47%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 580,
+   "de": "",
+   "en": "Battery level is 46%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 581,
+   "de": "",
+   "en": "Battery level is 45%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 582,
+   "de": "",
+   "en": "Battery level is 44%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 583,
+   "de": "",
+   "en": "Battery level is 43%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 584,
+   "de": "",
+   "en": "Battery level is 42%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 585,
+   "de": "",
+   "en": "Battery level is 41%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 586,
+   "de": "",
+   "en": "Battery level is 40%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 587,
+   "de": "",
+   "en": "Battery level is 39%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 588,
+   "de": "",
+   "en": "Battery level is 38%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 589,
+   "de": "",
+   "en": "Battery level is 37%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 590,
+   "de": "",
+   "en": "Battery level is 36%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 591,
+   "de": "",
+   "en": "Battery level is 35%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 592,
+   "de": "",
+   "en": "Battery level is 34%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 593,
+   "de": "",
+   "en": "Battery level is 33%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 594,
+   "de": "",
+   "en": "Battery level is 32%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 595,
+   "de": "",
+   "en": "Battery level is 31%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 596,
+   "de": "",
+   "en": "Battery level is 30%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 597,
+   "de": "",
+   "en": "Battery level is 29%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 598,
+   "de": "",
+   "en": "Battery level is 28%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 599,
+   "de": "",
+   "en": "Battery level is 27%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 600,
+   "de": "",
+   "en": "Battery level is 26%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 601,
+   "de": "",
+   "en": "Battery level is 25%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 602,
+   "de": "",
+   "en": "Battery level is 24%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 603,
+   "de": "",
+   "en": "Battery level is 23%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 604,
+   "de": "",
+   "en": "Battery level is 22%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 605,
+   "de": "",
+   "en": "Battery level is 21%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 606,
+   "de": "",
+   "en": "Battery level is 20%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 607,
+   "de": "",
+   "en": "Battery level is 19%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 608,
+   "de": "",
+   "en": "Battery level is 18%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 609,
+   "de": "",
+   "en": "Battery level is 17%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 610,
+   "de": "",
+   "en": "Battery level is 16%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 611,
+   "de": "",
+   "en": "Battery level is 15%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 612,
+   "de": "",
+   "en": "Battery level is 14%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 613,
+   "de": "",
+   "en": "Battery level is 13%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 614,
+   "de": "",
+   "en": "Battery level is 12%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 615,
+   "de": "",
+   "en": "Battery level is 11%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 616,
+   "de": "",
+   "en": "Battery level is 10%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 617,
+   "de": "",
+   "en": "Battery level is 9%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 618,
+   "de": "",
+   "en": "Battery level is 8%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 619,
+   "de": "",
+   "en": "Battery level is 7%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 620,
+   "de": "",
+   "en": "Battery level is 6%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 621,
+   "de": "",
+   "en": "Battery level is 5%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 622,
+   "de": "",
+   "en": "Battery level is 4%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 623,
+   "de": "",
+   "en": "Battery level is 3%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 624,
+   "de": "",
+   "en": "Battery level is 2%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 625,
+   "de": "",
+   "en": "Battery level is 1%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 626,
+   "de": "",
+   "en": "Battery level is 0%.",
+   "group": "Akkustand",
+   "common": false
+  },
+  {
+   "id": 630,
+   "de": "",
+   "en": "Welcome to use MOVA, robot. Please open robots cover and scan QR code to download app to view more operations.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 631,
+   "de": "Begrüßung Ersteinrichtung - QR-Code scannen",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 632,
+   "de": "Sprachwechsel dauert ca. 30 Sekunden",
+   "en": "Built and voice assistant language switching takes approximately 30 seconds.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 633,
+   "de": "Sprachwechsel fehlgeschlagen",
+   "en": "Language switch failed, please go to the Settings page to reset.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 634,
+   "de": "Haarentwirrung beginnt",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 636,
+   "de": "Wischpad verschmutzt - zur Station fahren",
+   "en": "The mop is dirty, please move robot to the dock for automatic mop washing.",
+   "group": "Fehler & Wartung",
+   "common": true
+  },
+  {
+   "id": 638,
+   "de": "",
+   "en": "resuming auto empty.",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 639,
+   "de": "Waschbrett-Filter einsetzen",
+   "en": "Please install the washboard filter.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 641,
+   "de": "",
+   "en": "Already, say to robot, hey MOVA, start cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 642,
+   "de": "",
+   "en": "Saita robot, HEMOVA, increase suction",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 643,
+   "de": "",
+   "en": "Saita robot, Hey MOVA, increase water level",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 644,
+   "de": "",
+   "en": "say to robot hey MOVA start vacuuming and mopping later to switch modes",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 645,
+   "de": "",
+   "en": "say to robot hey mova start mopping later to switch modes",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 646,
+   "de": "",
+   "en": "say to robot, hey MOVA, come here and clean, later to activate spot cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 647,
+   "de": "",
+   "en": "say to robot hey MOVA. Start mopping after vacuuming later to switch modes.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 648,
+   "de": "",
+   "en": "say to robot, hey MOVA. Start cleaning, later to activate global cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 658,
+   "de": "Kalkschutz abgelaufen - ersetzen",
+   "en": "Scale inhibitor has expired, please replace it in time.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 659,
+   "de": "",
+   "en": "Sorry, I didn't understand. You can say hey, MOVA, what skills do you have to learn about all my abilities?",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 660,
+   "de": "Nicht verstanden - frag mich nach meinen Fähigkeiten",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 661,
+   "de": "",
+   "en": "Start cleaning washboard base, it will take about 45 to 60 seconds.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 662,
+   "de": "",
+   "en": "Start making electrolyzed water to clean them up.",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 663,
+   "de": "",
+   "en": "Abnormal water level detected in the washboard. Please clean the washboard filter and washboard filter groove, then restart the task.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 664,
+   "de": "Hinweis Sprachbefehl: Reinigung starten",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 665,
+   "de": "Hinweis Sprachbefehl: Reinigung starten, wenn alles bereit",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 666,
+   "de": "Hinweis Sprachbefehl: Saugleistung erhöhen",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 667,
+   "de": "Hinweis Sprachbefehl: Wasserstand erhöhen",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 668,
+   "de": "Hinweis Sprachbefehl: Saugen starten, später Modus wechseln",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 669,
+   "de": "Hinweis Sprachbefehl: Wischen starten, später Modus wechseln",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 670,
+   "de": "Hinweis Sprachbefehl: Komm her und reinige",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 671,
+   "de": "Hinweis Sprachbefehl: Saugen starten",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 672,
+   "de": "Hinweis Sprachbefehl: Reinigung starten, später alles reinigen",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 673,
+   "de": "",
+   "en": "Clearance legs may be entangled. Please clean them before starting the tasks.",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 674,
+   "de": "Mopp könnte feststecken oder verheddert sein",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 675,
+   "de": "",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 677,
+   "de": "",
+   "en": "Unable to reach the specified area, please remove the no-go zones or impassable thresholds on the path.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 678,
+   "de": "",
+   "en": "Cleaning path is blocked, please remove the no-go zones or impassable thresholds in the map, or move robot out of the area.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 679,
+   "de": "",
+   "en": "Robot is blocked in a no-go zone or impassable threshold area. Please move it out of the area.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 680,
+   "de": "",
+   "en": "Robot will map the area before cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 681,
+   "de": "",
+   "en": "Okay, I'll continue cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 682,
+   "de": "Mopp dreht sich nicht mehr",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 683,
+   "de": "Mopp nicht angebracht",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 684,
+   "de": "",
+   "en": "Hey!",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 685,
+   "de": "",
+   "en": "Buh! Buh!",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 686,
+   "de": "",
+   "en": "",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 687,
+   "de": "",
+   "en": "SP THE NATION",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 688,
+   "de": "",
+   "en": "Turns out this whole area, Reese's ocean, rampant",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 689,
+   "de": "Trocknen von Staubbehälter und Beutel beginnt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 690,
+   "de": "Trocknen von Staubbehälter und Beutel angehalten",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 691,
+   "de": "Mopp wird gewaschen - später erneut versuchen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 692,
+   "de": "Rückkehr zum Laden - Zusatzreinigung nicht möglich",
+   "en": "",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 694,
+   "de": "",
+   "en": "say to robot, hey MOVA, start cleaning.",
+   "group": "Sprachassistent",
+   "common": false
+  },
+  {
+   "id": 696,
+   "de": "Klappenfehler",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 697,
+   "de": "Gesperrt - Kindersicherung deaktivieren",
+   "en": "",
+   "group": "Bedienung",
+   "common": false
+  },
+  {
+   "id": 698,
+   "de": "Kartierung fertig, Station nicht gefunden - reinige selbst",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 699,
+   "de": "Sensorfehler - Kamerasensor prüfen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 701,
+   "de": "Platte ist heiß - nicht berühren",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 702,
+   "de": "Reinigung mit temporärer Karte nicht möglich",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 703,
+   "de": "Staub- und Mopptrocknung beginnt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 704,
+   "de": "Mopptrocknung pausiert",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 706,
+   "de": "Fehlfunktion des Kreisels",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 707,
+   "de": "Fehlfunktion des Fahrgestells",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 708,
+   "de": "Weg zur Ladestation blockiert",
+   "en": "",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 711,
+   "de": "Desinfektion beginnt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 712,
+   "de": "Waschbrett ist heiß - nicht berühren",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 714,
+   "de": "(unbekannt - bitte Hörprobe nutzen)",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 715,
+   "de": "Mopp fehlt in der Basisstation",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 716,
+   "de": "Mopp fehlt - Aufgabe läuft im Standardmodus",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 717,
+   "de": "Mopp nicht richtig platziert",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 718,
+   "de": "Im Energiesparmodus nicht änderbar",
+   "en": "",
+   "group": "Bedienung",
+   "common": false
+  },
+  {
+   "id": 719,
+   "de": "Fehler beim Moppwechsel",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 721,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 722,
+   "de": "Mopp wird in heißem Wasser aufgewärmt - dauert länger",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 723,
+   "de": "Hinweis Kartierung: Licht an, Türen frei",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 724,
+   "de": "Mopp in der Station falsch positioniert",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 725,
+   "de": "Fehler der Moppabdeckung",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 726,
+   "de": "Fehler des Rollmopps",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 728,
+   "de": "Bodenpflege beginnt",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 729,
+   "de": "Mopp wird gewechselt - später erneut versuchen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 730,
+   "de": "(unbekannt - bitte Hörprobe nutzen)",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 731,
+   "de": "Schmutzwassertank voll - zur Station zurückbringen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 751,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 752,
+   "de": "Bodenpflege wird fortgesetzt",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 754,
+   "de": "Positionierung erfolgreich - Bodenpflege geht weiter",
+   "en": "",
+   "group": "Reinigung",
+   "common": false
+  },
+  {
+   "id": 755,
+   "de": "Lasersensor gestört - auf Schmutz prüfen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 757,
+   "de": "Schmutzwassertank voll - bitte leeren",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 758,
+   "de": "Wasserstand niedrig - an der Station nachfüllen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 765,
+   "de": "Mopp wird ersetzt - später erneut versuchen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 771,
+   "de": "Rollmopp bleibt stehen oder ist blockiert",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 775,
+   "de": "Bei laufendem Mopp die Klappe geschlossen halten",
+   "en": "",
+   "group": "Bedienung",
+   "common": false
+  },
+  {
+   "id": 776,
+   "de": "(unbekannt - bitte Hörprobe nutzen)",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 777,
+   "de": "Zeitlimit abgelaufen - Hindernisse unter dem Gerät prüfen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 778,
+   "de": "Achtung, auf die Finger achten",
+   "en": "",
+   "group": "Bedienung",
+   "common": false
+  },
+  {
+   "id": 779,
+   "de": "Zeitlimit für das Entfernen des Mopps abgelaufen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 780,
+   "de": "Aufnehmen oder Ablegen des Mopps fehlgeschlagen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 782,
+   "de": "Fehler beim Auflockern der Rolle - bitte reinigen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 784,
+   "de": "Nach Schritt eins verlasse ich die Station automatisch",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 785,
+   "de": "Waschbrett-Basis von Hand reinigen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 786,
+   "de": "Reinigung der Waschbrett-Basis abgeschlossen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 787,
+   "de": "Kehre zur Station zurück, um den Mopp zu reinigen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 795,
+   "de": "Reinigung der Waschbrett-Basis startet (ca. 2 Minuten)",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 797,
+   "de": "Mögliche Gerätestörung - Kundendienst kontaktieren",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 798,
+   "de": "Selbstreinigung der Station läuft - Roboter nicht bewegen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 799,
+   "de": "Zeitlimit abgelaufen - Haustiere oder Hindernisse prüfen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 803,
+   "de": "(unbekannt - bitte Hörprobe nutzen)",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 805,
+   "de": "Aufsaugen grober Schmutzpartikel startet",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 812,
+   "de": "Bitte zum Laden in die Station stellen",
+   "en": "",
+   "group": "Akku & Laden",
+   "common": false
+  },
+  {
+   "id": 813,
+   "de": "Kräftige Absaugung der Verunreinigungen beginnt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 814,
+   "de": "Selbstreinigung und kräftige Absaugung starten",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 823,
+   "de": "Wasserstand im Waschbrett nicht normal - reinigen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 824,
+   "de": "Rollmopp bleibt stehen oder ist blockiert",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 825,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 828,
+   "de": "Filter abgelaufen - bald reinigen",
+   "en": "",
+   "group": "Fehler & Wartung",
+   "common": false
+  },
+  {
+   "id": 849,
+   "de": "Trocknen von Staubbehälter und Beutel beginnt",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 850,
+   "de": "Trocknen von Staubbehälter und Beutel angehalten",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 856,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 857,
+   "de": "Waschbrett bitte einsetzen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  },
+  {
+   "id": 858,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 859,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 863,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 864,
+   "de": "",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 910,
+   "de": "Begrüßung im Ausstellungsbereich",
+   "en": "",
+   "group": "Sonstiges",
+   "common": false
+  },
+  {
+   "id": 915,
+   "de": "Wasserstand im Waschbrett nicht normal - Filter reinigen",
+   "en": "",
+   "group": "Basisstation",
+   "common": false
+  }
+ ]
+}
