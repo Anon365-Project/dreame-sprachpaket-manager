@@ -723,21 +723,48 @@ def main() -> int:
         credentials.delete(ziel)
         check("Löschen entfernt den Eintrag", credentials.load(ziel) is None)
 
-        credentials.delete(credentials.TARGET_ELEVENLABS)
-        cfg2 = _Config()
-        cfg2.set_elevenlabs_key("sk_selbsttest_1234567890")
-        check("Schlüssel landet im Anmeldespeicher",
-              credentials.load(credentials.TARGET_ELEVENLABS)
-              == "sk_selbsttest_1234567890")
-        check("und nicht in der config.json",
-              cfg2.as_dict().get("elevenlabs_key_enc") == "",
-              repr(cfg2.as_dict().get("elevenlabs_key_enc")))
-        check("eine neue Sitzung findet ihn wieder",
-              _Config().elevenlabs_key == "sk_selbsttest_1234567890")
-        cfg2.forget_elevenlabs_key()
-        check("Vergessen räumt überall auf",
-              _Config().elevenlabs_key == ""
-              and credentials.load(credentials.TARGET_ELEVENLABS) is None)
+        # ACHTUNG: Der Selbsttest hat hier einmal die *echten* Eintraege
+        # benutzt - und damit bei jedem EXE-Bau den gespeicherten
+        # ElevenLabs-Schluessel des Nutzers geloescht. Deshalb laeuft der
+        # Test jetzt ausschliesslich auf eigenen Zielnamen, und am Ende
+        # wird geprueft, dass die echten unangetastet geblieben sind.
+        echt_dreame = credentials.exists(credentials.TARGET_DREAME)
+        echt_eleven = credentials.exists(credentials.TARGET_ELEVENLABS)
+
+        alt_dreame = credentials.TARGET_DREAME
+        alt_eleven = credentials.TARGET_ELEVENLABS
+        credentials.TARGET_DREAME = "DreameSprachpaket:Selbsttest-Dreamehome"
+        credentials.TARGET_ELEVENLABS = "DreameSprachpaket:Selbsttest-ElevenLabs"
+        try:
+            credentials.delete(credentials.TARGET_ELEVENLABS)
+            cfg2 = _Config()
+            cfg2.set_elevenlabs_key("sk_selbsttest_1234567890")
+            check("Schlüssel landet im Anmeldespeicher",
+                  credentials.load(credentials.TARGET_ELEVENLABS)
+                  == "sk_selbsttest_1234567890")
+            check("und nicht in der config.json",
+                  cfg2.as_dict().get("elevenlabs_key_enc") == "",
+                  repr(cfg2.as_dict().get("elevenlabs_key_enc")))
+            check("eine neue Sitzung findet ihn wieder",
+                  _Config().elevenlabs_key == "sk_selbsttest_1234567890")
+            cfg2.forget_elevenlabs_key()
+            check("Vergessen räumt überall auf",
+                  _Config().elevenlabs_key == ""
+                  and credentials.load(credentials.TARGET_ELEVENLABS) is None)
+        finally:
+            credentials.delete(credentials.TARGET_ELEVENLABS)
+            credentials.delete(credentials.TARGET_DREAME)
+            credentials.TARGET_DREAME = alt_dreame
+            credentials.TARGET_ELEVENLABS = alt_eleven
+
+        check("der echte Dreamehome-Eintrag ist unangetastet",
+              credentials.exists(credentials.TARGET_DREAME) == echt_dreame,
+              f"vorher {echt_dreame}, nachher "
+              f"{credentials.exists(credentials.TARGET_DREAME)}")
+        check("der echte ElevenLabs-Schlüssel ist unangetastet",
+              credentials.exists(credentials.TARGET_ELEVENLABS) == echt_eleven,
+              f"vorher {echt_eleven}, nachher "
+              f"{credentials.exists(credentials.TARGET_ELEVENLABS)}")
     else:
         print("  (übersprungen: nur unter Windows verfügbar)")
 
@@ -843,6 +870,48 @@ def main() -> int:
     check("die App selbst benutzt nur bekannte Namen", not treffer,
           "; ".join(f"{p.name}: {[n for _, n in f]}"
                     for p, f in list(treffer.items())[:3]))
+
+    # Anlass: dialect.generate(out_name=...) - den Parameter gab es nicht.
+    # Der Name ist gültig, deshalb schlug die Prüfung oben nicht an; der
+    # Fehler kam erst beim Erzeugen eines Pakets ans Licht.
+    probe.write_text(
+        "def machwas(a, b=1):\n"
+        "    return a + b\n", encoding="utf-8")
+    (work / "aufrufer.py").write_text(
+        "import namensprobe\n"
+        "namensprobe.machwas(1, b=2)\n"
+        "namensprobe.machwas(1, c=3)\n", encoding="utf-8")
+    schluessel = namecheck.pruefe_aufrufe(work)
+    gefunden = [n for f in schluessel.values() for _, n in f]
+    check("unbekanntes Schlüsselwort wird gefunden",
+          any("'c'" in n for n in gefunden), str(gefunden))
+    check("bekanntes Schlüsselwort meldet nichts",
+          not any("'b'" in n for n in gefunden), str(gefunden))
+    (work / "aufrufer.py").unlink(missing_ok=True)
+
+    # Auch direkt importierte Funktionen: run_async(on_done=...) gab es
+    # nicht, der Parameter heisst on_finally. Beim Import eines fertigen
+    # Pakets waere die App abgestuerzt.
+    (work / "aufrufer.py").write_text(
+        "from namensprobe import machwas\n"
+        "machwas(1, c=3)\n", encoding="utf-8")
+    direkt = [n for f in namecheck.pruefe_aufrufe(work).values() for _, n in f]
+    check("auch direkt importierte Funktionen werden geprüft",
+          any("machwas()" in n and "'c'" in n for n in direkt), str(direkt))
+    (work / "aufrufer.py").unlink(missing_ok=True)
+
+    check("die App ruft nur mit bekannten Schlüsselwörtern auf",
+          not namecheck.pruefe_aufrufe(projekt / "dreamevoice"),
+          "; ".join(f"{p.name}: {[n for _, n in f]}" for p, f in
+                    list(namecheck.pruefe_aufrufe(projekt / "dreamevoice")
+                         .items())[:3]))
+
+    import inspect  # noqa: E402
+    unterschrift = inspect.signature(dialect.generate).parameters
+    for erwartet in ("out_name", "mapping", "engine", "api_key", "voice_id",
+                     "voice_settings", "rate", "pitch", "cancelled"):
+        check(f"dialect.generate nimmt '{erwartet}' entgegen",
+              erwartet in unterschrift)
 
     # ---------------------------------------------------------------
     section("19. Dialekttexte als Datei aus- und einlesen")
@@ -1026,6 +1095,38 @@ def main() -> int:
               custom.load(eigen_dir / "gibtsnicht.json") is None)
     finally:
         custom.data_dir = _alt_data
+
+    # ---------------------------------------------------------------
+    section("22. Abbrechen während des Sprechens")
+    from dreamevoice.ui.state import Task  # noqa: E402
+
+    auftrag = Task()
+    check("ein frischer Auftrag ist nicht abgebrochen", not auftrag.cancelled)
+    auftrag.cancel()
+    check("nach cancel() ist er es", auftrag.cancelled)
+
+    # Der Kern: synthesize muss vor jeder Ansage nachsehen und das
+    # bereits Gesprochene zurückgeben - sonst wäre das Kontingent weg,
+    # ohne dass etwas ankommt.
+    from dreamevoice import elevenlabs as _el  # noqa: E402
+    quelle = inspect.getsource(_el.synthesize)
+    check("synthesize prüft in der Schleife auf Abbruch",
+          "if cancelled():" in quelle)
+    check("und bricht ab, statt eine Ausnahme zu werfen",
+          "break" in quelle.split("if cancelled():")[1][:80],
+          quelle.split("if cancelled():")[1][:60].strip())
+
+    # Reihenfolge in dialect.generate: erst den Vermerk schreiben, dann
+    # den Abbruch prüfen. Andersherum wäre bezahltes Kontingent verloren.
+    quelle_gen = inspect.getsource(dialect.generate)
+    pos_manifest = quelle_gen.find("write_manifest")
+    pos_abbruch = quelle_gen.find("Vom Benutzer abgebrochen")
+    check("Gesprochenes wird vermerkt, bevor der Abbruch greift",
+          0 < pos_manifest < pos_abbruch,
+          f"Vermerk bei {pos_manifest}, Abbruch bei {pos_abbruch}")
+
+    unterschrift = inspect.signature(_el.synthesize).parameters
+    check("synthesize nimmt 'cancelled' entgegen", "cancelled" in unterschrift)
 
     # ---------------------------------------------------------------
     print()

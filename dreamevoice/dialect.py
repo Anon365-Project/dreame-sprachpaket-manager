@@ -1,4 +1,4 @@
-﻿"""Dialektpakete, die die App selbst erzeugt.
+"""Dialektpakete, die die App selbst erzeugt.
 
 Fertige bayerische Sprachpakete für Saugroboter gibt es nirgends zum
 Herunterladen - weder für Dreame noch für Roborock, Xiaomi oder Valetudo.
@@ -294,12 +294,17 @@ def generate(dialect: DialectPack,
              voice_settings: Optional[Dict[str, float]] = None,
              use_voice_settings: bool = True,
              mapping: Optional[Dict[int, int]] = None,
+             out_name: str = "",
              rate: Optional[int] = None,
              pitch: Optional[int] = None,
              log: LogFn = _noop_log,
              progress: Optional[ProgressFn] = None,
              cancelled: Optional[Callable[[], bool]] = None) -> BuildResult:
     """Spricht die Texte, wandelt sie um und baut daraus ein Sprachpaket.
+
+    `out_name` ist der Dateiname des fertigen Pakets. Er enthält
+    üblicherweise auch die Stimme, damit eine zweite Fassung desselben
+    Dialekts die erste nicht überschreibt.
 
     `engine` entscheidet, wer spricht: die Windows-Sprachausgabe (offline,
     aber hochdeutsche Aussprache) oder ElevenLabs (echter bayerischer
@@ -428,7 +433,7 @@ def generate(dialect: DialectPack,
     result = build_pack(
         base_pack=Path(base_pack),
         assignments=assignments,
-        out_name=f"dialekt_{dialect.key}.tar.gz",
+        out_name=out_name or f"dialekt_{dialect.key}.tar.gz",
         ffmpeg=ffmpeg,
         work_dir=work_dir / "paket",
         mapping=mapping,

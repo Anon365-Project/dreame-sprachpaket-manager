@@ -227,6 +227,13 @@ class StoreTab(ttk.Frame):
         self.btn_generate.pack(side="left", padx=(8, 0))
         self._dialect_buttons.append(self.btn_generate)
 
+        # Absichtlich NICHT in _dialect_buttons: dieser Knopf muss genau
+        # dann bedienbar sein, wenn alle anderen gesperrt sind.
+        self.btn_abbrechen = ttk.Button(actions, text="Abbrechen",
+                                        command=self._on_cancel_work,
+                                        state="disabled")
+        self.btn_abbrechen.pack(side="left", padx=(8, 0))
+
         # --- Textdateien --------------------------------------------------
         dateien = ttk.Frame(card.content, style="Card.TFrame")
         dateien.pack(fill="x", pady=(8, 0))
@@ -585,7 +592,7 @@ class StoreTab(ttk.Frame):
                 self._on_import_error(exc)
                 return
 
-        zuordnung = gefunden.assignments
+        zuordnung = gefunden.assigned
         if not zuordnung:
             show_warning(
                 self, self.theme, "Nichts gefunden",
@@ -661,7 +668,7 @@ class StoreTab(ttk.Frame):
             show_error(self, self.theme, "Paket nicht gebaut", message, hint)
 
         run_async(self, work_fn, on_success=ok, on_error=fail,
-                  on_done=lambda: self._busy(False))
+                  on_finally=lambda: self._busy(False))
 
     def _on_import_error(self, exc: Exception) -> None:
         message, hint = error_text(exc)
@@ -1907,7 +1914,8 @@ class StoreTab(ttk.Frame):
 
         self.log.clear()
         self.log.append(f"Erzeuge Dialektpaket: {pack.name}", "step")
-        self._busy(True)
+        # Das Sprechen hört auf den Abbruch - hier darf der Knopf mitspielen.
+        self._busy(True, abbrechbar=True)
         self.badge.set("Spreche die Ansagen ...", "muted")
 
         modell, klang, eigene = self._eleven_klang()
@@ -1969,6 +1977,24 @@ class StoreTab(ttk.Frame):
                 parent=self)
 
         def fail(exc: Exception) -> None:
+            # Ein selbst ausgelöster Abbruch ist kein Fehler und darf sich
+            # auch nicht so anfühlen.
+            if getattr(self, "_task", None) is not None and self._task.cancelled:
+                gesprochen = dialect.spoken_count(work)
+                self.badge.set("Abgebrochen", "warn")
+                self.log.append("Vorgang abgebrochen.", "warn")
+                show_info(
+                    self, self.theme, "Abgebrochen",
+                    f"Es wurde kein Paket gebaut.",
+                    f"{gesprochen} von {pack.count} Ansagen sind gesprochen "
+                    f"und bleiben gespeichert."
+                    + (" Das dafür verbrauchte ElevenLabs-Kontingent ist weg, "
+                       "aber beim nächsten Anlauf macht die App genau hier "
+                       "weiter und fordert nur noch das Fehlende an."
+                       if engine == dialect.ENGINE_ELEVENLABS else
+                       " Beim nächsten Anlauf macht die App genau hier weiter."))
+                return
+
             message, hint = error_text(exc)
             self.badge.set("Fehlgeschlagen", "error")
             self.log.append(message, "error")
@@ -1977,17 +2003,45 @@ class StoreTab(ttk.Frame):
             show_error(self, self.theme, "Fehler",
                        message + (f"\n\n{hint}" if hint else ""))
 
-        run_async(self, work_fn, on_success=ok, on_error=fail,
-                  on_finally=lambda: self._busy(False))
+        self._task = run_async(self, work_fn, on_success=ok, on_error=fail,
+                               on_finally=lambda: self._busy(False))
 
     # ------------------------------------------------------------------
-    def _busy(self, active: bool) -> None:
+    def _on_cancel_work(self) -> None:
+        """Bricht einen laufenden Vorgang ab.
+
+        Beim Sprechen über ElevenLabs zählt jede Ansage Kontingent. Wer
+        sich verklickt hat, soll nicht zusehen müssen, wie sein Guthaben
+        verbraucht wird. Bereits gesprochene Ansagen bleiben gespeichert -
+        ihr Kontingent ist ohnehin weg, und beim nächsten Anlauf macht die
+        App genau dort weiter.
+        """
+        task = getattr(self, "_task", None)
+        if task is None or task.cancelled:
+            return
+        task.cancel()
+        self.btn_abbrechen.configure(state="disabled")
+        self.badge.set("Wird abgebrochen ...", "warn")
+        self.log.append("Abbruch angefordert - die laufende Ansage wird noch "
+                        "zu Ende gesprochen.", "warn")
+
+    def _busy(self, active: bool, abbrechbar: bool = False) -> None:
+        """Sperrt die Bedienung während der Arbeit.
+
+        `abbrechbar` schaltet den Abbrechen-Knopf frei. Er bleibt gesperrt,
+        wenn der laufende Vorgang gar nicht auf einen Abbruch hört - ein
+        Knopf, der nichts tut, ist schlimmer als keiner.
+        """
         state = "disabled" if active else "normal"
         for child in self.list_frame.winfo_children():
             if isinstance(child, PackCard):
                 child.btn_use.configure(state=state)
         for button in self._dialect_buttons:
             button.configure(state=state)
+        self.btn_abbrechen.configure(
+            state="normal" if (active and abbrechbar) else "disabled")
+        if not active:
+            self._task = None
         if active:
             self.progress.pack(side="right")
             self.progress.configure(value=0)

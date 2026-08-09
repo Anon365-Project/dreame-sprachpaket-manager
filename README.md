@@ -44,17 +44,31 @@ Klick stellt die Originalstimme wieder her.
 ## Herunterladen
 
 Die fertige Anwendung liegt unter **[Releases](../../releases/latest)**:
-
-| Datei | Was ist das |
-|---|---|
-| `DreameSprachpaket.exe` | die App — herunterladen, doppelklicken, fertig |
-| `dialekt_*.tar.gz` | die sieben fertigen Dialektpakete |
-| `Hoerproben.zip` | drei Sätze je Dialekt zum Reinhören |
+`DreameSprachpaket.exe` — herunterladen, doppelklicken, fertig. Keine
+Installation, ffmpeg ist eingebaut.
 
 Windows meldet beim ersten Start vermutlich „Computer geschützt" — die EXE ist
 nicht signiert (das kostet Geld). Über *Weitere Informationen → Trotzdem
 ausführen* startet sie. Wer das nicht mag, baut sie sich aus dem Quellcode
 selbst; wie das geht, steht unter [Entwicklung](#entwicklung).
+
+### Warum hier keine fertigen Sprachpakete liegen
+
+Die sieben Dialekte sind als **Texte** in der App enthalten — die Audiodateien
+erzeugt sie auf deinem Rechner. Fertig gesprochene Pakete zum Herunterladen
+gibt es hier bewusst nicht:
+
+* Ein Paket passt immer zu **einem Modell**. Die App schneidet es beim
+  Erzeugen auf deinen Roboter zu — ein hochgeladenes Paket könnte das nicht.
+* Sprachausgaben haben **eigene Nutzungsbedingungen**. Bei ElevenLabs etwa
+  erlaubt der kostenlose Tarif keine kommerzielle Weitergabe und verlangt
+  Namensnennung — das verträgt sich nicht mit der MIT-Lizenz dieses Projekts,
+  die jedem alles erlaubt. Also wird hier gar kein fremdes Audio verteilt.
+* Mit deiner eigenen Stimme klingt es ohnehin besser.
+
+Der Weg dahin dauert wenige Minuten: Tab 4 öffnen, Dialekt wählen,
+*Kostprobe anhören*, *Paket erzeugen*. Mit der Windows-Sprachausgabe läuft das
+offline und kostenlos.
 
 ---
 
@@ -201,8 +215,8 @@ Dreame-Cloud. Nur der Download des Pakets läuft direkt vom PC zum Roboter.
 
 ```
 main.py                      Startpunkt
-selftest.py                  Selbsttest der Kernlogik (238 Prüfungen)
-namecheck.py                 Sucht benutzte, aber nirgends definierte Namen
+selftest.py                  Selbsttest der Kernlogik (257 Prüfungen)
+namecheck.py                 Sucht unbekannte Namen und Schlüsselwörter
 build_exe.ps1                Baut die portable EXE
 DreameSprachpaket.spec       PyInstaller-Bauplan
 
@@ -489,8 +503,9 @@ gekürzt. Wer es genauer will, hört sich die Originalansage in Tab 2 an und
 | Wienerisch | `WIEN` | „Na servas, dann fang ma an. I saug jetzt." |
 | Kölsch | `KOELN` | „Alaaf, dann jeht et los. Ich fange aan ze sauge." |
 
-Fertig gebaute Pakete liegen im Ordner `Fertige Pakete`, Hörproben daneben in
-`Fertige Pakete/Hoerproben`.
+Die Pakete entstehen auf deinem Rechner und landen im Ordner
+`Daten/Meine Pakete` — siehe [Warum hier keine fertigen Sprachpakete
+liegen](#warum-hier-keine-fertigen-sprachpakete-liegen).
 
 ### Vorher anhören und Texte anpassen
 
@@ -592,6 +607,13 @@ eintragen. Die App holt sie dann direkt — sie muss in keiner Liste stehen.
 | Der gemeinsame Kern (239 Ansagen) | 7.200–7.900 | reicht |
 | Ein vollständiges Dialektpaket (593 Ansagen) | 22.900–25.000 | reicht nicht — drei Monate oder Starter-Tarif |
 
+**Abbrechen jederzeit.** Neben *Paket erzeugen* sitzt ein Abbrechen-Knopf.
+Wer sich verklickt hat, muss nicht zusehen, wie sein Guthaben verbraucht wird:
+die laufende Ansage wird noch zu Ende gesprochen, dann ist Schluss. Alles
+bereits Gesprochene bleibt gespeichert - beim nächsten Anlauf macht die App
+genau dort weiter. Der Knopf ist bewusst nur aktiv, wenn der laufende Vorgang
+wirklich auf einen Abbruch hört.
+
 Wird das Kontingent mitten in der Erzeugung leer, bricht die App **nicht** ab:
 Das bereits Gesprochene bleibt gespeichert, das Paket wird mit dem fertigen
 Teil gebaut, der Rest bleibt auf der deutschen Originalstimme. Beim nächsten
@@ -628,7 +650,7 @@ Heimnetz keinen miio-Dienst mehr an (siehe oben).
 
 ```bash
 pip install requests
-python selftest.py        # 238 Prüfungen, alle offline
+python selftest.py        # 257 Prüfungen, alle offline
 python namecheck.py       # Namen, die es gar nicht gibt
 python main.py
 ```
@@ -716,10 +738,9 @@ Projektseite und Trinkgeld-Link stehen an **einer** Stelle im Code, in
 [`dreamevoice/__init__.py`](dreamevoice/__init__.py):
 
 ```python
-PROJEKT_URL = ""                                    # noch einzutragen
+PROJEKT_URL = "https://github.com/Anon365-Project/dreame-sprachpaket-manager"
 SPENDEN_URL = "https://paypal.me/anon365project"
 ```
 
 Solange ein Eintrag leer ist, blendet die App den zugehörigen Knopf im
-*Über*-Fenster einfach aus — es entstehen keine toten Links. `PROJEKT_URL`
-trägst du ein, sobald die GitHub-Adresse feststeht.
+*Über*-Fenster einfach aus — es entstehen keine toten Links.

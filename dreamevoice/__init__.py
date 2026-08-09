@@ -20,7 +20,7 @@ AUTOR = "Maximilian Mangold"
 LIZENZ = "MIT"
 
 #: Adresse des Projekts auf GitHub, z. B. "https://github.com/name/projekt"
-PROJEKT_URL = ""
+PROJEKT_URL = "https://github.com/Anon365-Project/dreame-sprachpaket-manager"
 
 #: Freiwilliges Trinkgeld, z. B. "https://www.paypal.com/paypalme/deinname"
 SPENDEN_URL = "https://paypal.me/anon365project"

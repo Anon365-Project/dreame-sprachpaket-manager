@@ -48,25 +48,50 @@ if (-not $?) {
 # --- Bauen ---
 Write-Host ""
 
-# Eine noch laufende App haelt Dateien im dist-Ordner fest.
+# Eine laufende App wird NICHT einfach abgeschossen. Sie koennte gerade
+# Ansagen sprechen - bei ElevenLabs kostet jede davon Kontingent.
 $laufend = Get-Process DreameSprachpaket -ErrorAction SilentlyContinue
 if ($laufend) {
-    Write-Host "Die App laeuft noch - sie wird jetzt beendet." -ForegroundColor Yellow
-    $laufend | Stop-Process -Force
-    Start-Sleep -Seconds 2
+    Write-Host "FEHLER: Die App laeuft noch." -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Sie wird absichtlich nicht beendet: laeuft gerade eine Erzeugung"
+    Write-Host "ueber ElevenLabs, waere das dafuer verbrauchte Kontingent verloren."
+    Write-Host "Bitte die App selbst schliessen und danach erneut bauen."
+    exit 1
 }
 
 Write-Host "Baue EXE (dauert ein bis zwei Minuten) ..."
-foreach ($ordner in @("build", "dist")) {
-    if (Test-Path $ordner) {
-        try {
-            Remove-Item -Recurse -Force $ordner -ErrorAction Stop
-        } catch {
-            Write-Host "FEHLER: '$ordner' laesst sich nicht loeschen." -ForegroundColor Red
-            Write-Host "Schliesse die App und alle Explorer-Fenster darin, dann erneut versuchen."
-            exit 1
-        }
+
+# build/ enthaelt nur Zwischenergebnisse und darf komplett weg.
+if (Test-Path "build") {
+    try {
+        Remove-Item -Recurse -Force "build" -ErrorAction Stop
+    } catch {
+        Write-Host "FEHLER: 'build' laesst sich nicht loeschen." -ForegroundColor Red
+        Write-Host "Schliesse alle Explorer-Fenster darin, dann erneut versuchen."
+        exit 1
     }
+}
+
+# dist/ dagegen NICHT loeschen! Die portable EXE legt ihren Datenordner
+# neben sich ab, also unter dist\Daten - dort stehen Zugangsdaten, fertige
+# Pakete und die bereits gesprochenen Ansagen. Entfernt wird nur die alte
+# EXE selbst; PyInstaller schreibt die neue an dieselbe Stelle.
+$altExe = Join-Path $PSScriptRoot "dist\DreameSprachpaket.exe"
+if (Test-Path $altExe) {
+    try {
+        Remove-Item -Force $altExe -ErrorAction Stop
+    } catch {
+        Write-Host "FEHLER: Die alte EXE laesst sich nicht ersetzen." -ForegroundColor Red
+        Write-Host "Laeuft sie noch? Bitte schliessen und erneut versuchen."
+        exit 1
+    }
+}
+
+$datenOrdner = Join-Path $PSScriptRoot "dist\Daten"
+if (Test-Path $datenOrdner) {
+    $anzahl = (Get-ChildItem $datenOrdner -Recurse -File -ErrorAction SilentlyContinue).Count
+    Write-Host "  (dist\Daten bleibt erhalten: $anzahl Dateien)" -ForegroundColor DarkGray
 }
 
 python -m PyInstaller DreameSprachpaket.spec --noconfirm --clean
