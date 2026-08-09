@@ -43,32 +43,51 @@ Klick stellt die Originalstimme wieder her.
 
 ## Herunterladen
 
-Die fertige Anwendung liegt unter **[Releases](../../releases/latest)**:
-`DreameSprachpaket.exe` — herunterladen, doppelklicken, fertig. Keine
-Installation, ffmpeg ist eingebaut.
+Alles liegt unter **[Releases](../../releases/latest)**:
+
+| Datei | Was ist das |
+|---|---|
+| `DreameSprachpaket.exe` | die App — herunterladen, doppelklicken, fertig |
+| `Bayerisch-Aufnahmen.zip` | 593 fertig gesprochene Ansagen, echter Dialekt |
+| `Wienerisch-Aufnahmen.zip` | dasselbe auf Wienerisch |
+| `Berlinerisch-Aufnahmen.zip` | dasselbe auf Berlinerisch |
 
 Windows meldet beim ersten Start vermutlich „Computer geschützt" — die EXE ist
 nicht signiert (das kostet Geld). Über *Weitere Informationen → Trotzdem
 ausführen* startet sie. Wer das nicht mag, baut sie sich aus dem Quellcode
 selbst; wie das geht, steht unter [Entwicklung](#entwicklung).
 
-### Warum hier keine fertigen Sprachpakete liegen
+### Warum Aufnahmen und keine fertigen Pakete
 
-Die sieben Dialekte sind als **Texte** in der App enthalten — die Audiodateien
-erzeugt sie auf deinem Rechner. Fertig gesprochene Pakete zum Herunterladen
-gibt es hier bewusst nicht:
+Ein fertiges Sprachpaket enthält immer die **Steuerdateien genau eines
+Modells** — `dmr_audio.json`, `voice_mapping.json` und weitere, die sich von
+Roboter zu Roboter unterscheiden. Ein Paket für den X50 auf einem L10s zu
+installieren, würde also fremde Steuerdaten aufspielen.
 
-* Ein Paket passt immer zu **einem Modell**. Die App schneidet es beim
-  Erzeugen auf deinen Roboter zu — ein hochgeladenes Paket könnte das nicht.
-* Sprachausgaben haben **eigene Nutzungsbedingungen**. Bei ElevenLabs etwa
-  erlaubt der kostenlose Tarif keine kommerzielle Weitergabe und verlangt
-  Namensnennung — das verträgt sich nicht mit der MIT-Lizenz dieses Projekts,
-  die jedem alles erlaubt. Also wird hier gar kein fremdes Audio verteilt.
-* Mit deiner eigenen Stimme klingt es ohnehin besser.
+Die Aufnahmen dagegen passen auf **jedes** Modell. Die App baut daraus das
+Paket, das zu deinem Roboter gehört, und nimmt die Steuerdateien aus dessen
+Originalpaket. Nachgemessen mit den 593 bayerischen Aufnahmen:
 
-Der Weg dahin dauert wenige Minuten: Tab 4 öffnen, Dialekt wählen,
-*Kostprobe anhören*, *Paket erzeugen*. Mit der Windows-Sprachausgabe läuft das
-offline und kostenlos.
+| Zielmodell | Ansagen im Gerät | davon zugeordnet |
+|---|---|---|
+| `dreame.vacuum.r2532v` | 613 | 593 |
+| `dreame.vacuum.r2532h` | 558 | 539 |
+| `dreame.vacuum.r2253a` | 401 | 398 |
+| `mova.vacuum.r5977e` | 617 | 566 |
+| `dreame.vacuum.r63018` | 503 | 490 |
+
+**So spielst du sie auf:** ZIP entpacken → Tab 4 → *Fertiges Paket einlesen* →
+*Ordner mit mp3- oder wav-Dateien* → den entpackten Ordner wählen. Die App
+wandelt um, gleicht die Lautstärke an die Originalansagen an und baut das
+Paket für dein Modell.
+
+Die Aufnahmen entstanden mit **ElevenLabs** und sprechen echten Dialekt — auch
+in der Aussprache, nicht nur in der Wortwahl. Sie stehen unter eigenen
+Bedingungen, siehe [LICENSE-AUDIO.md](LICENSE-AUDIO.md).
+
+Wer lieber selbst erzeugt: Tab 4, Dialekt wählen, *Kostprobe anhören*, *Paket
+erzeugen*. Mit der Windows-Sprachausgabe offline und kostenlos — dann steckt
+der Dialekt allerdings nur in der Wortwahl.
 
 ---
 
@@ -503,9 +522,10 @@ gekürzt. Wer es genauer will, hört sich die Originalansage in Tab 2 an und
 | Wienerisch | `WIEN` | „Na servas, dann fang ma an. I saug jetzt." |
 | Kölsch | `KOELN` | „Alaaf, dann jeht et los. Ich fange aan ze sauge." |
 
-Die Pakete entstehen auf deinem Rechner und landen im Ordner
-`Daten/Meine Pakete` — siehe [Warum hier keine fertigen Sprachpakete
-liegen](#warum-hier-keine-fertigen-sprachpakete-liegen).
+Selbst erzeugte Pakete landen im Ordner `Daten/Meine Pakete`. Für Bayerisch,
+Wienerisch und Berlinerisch gibt es fertig gesprochene Aufnahmen zum
+Herunterladen — siehe [Warum Aufnahmen und keine fertigen
+Pakete](#warum-aufnahmen-und-keine-fertigen-pakete).
 
 ### Vorher anhören und Texte anpassen
 
@@ -669,10 +689,17 @@ ohne sie entsteht eine 12-MB-EXE, die ffmpeg bei Bedarf nachlädt.
 
 ## Lizenz
 
-**MIT-Lizenz** — siehe [LICENSE](LICENSE). Du darfst die App benutzen,
-verändern, weitergeben und auch in eigene Projekte übernehmen, kommerziell
-wie privat. Einzige Bedingung: der Copyright-Hinweis und der Lizenztext
-bleiben erhalten.
+**Quellcode: MIT-Lizenz** — siehe [LICENSE](LICENSE). Du darfst die App
+benutzen, verändern, weitergeben und auch in eigene Projekte übernehmen,
+kommerziell wie privat. Einzige Bedingung: der Copyright-Hinweis und der
+Lizenztext bleiben erhalten. Das gilt auch für die **Dialekttexte** — die sind
+Teil des Quellcodes.
+
+**Audiodateien: eigene Bedingungen** — siehe
+[LICENSE-AUDIO.md](LICENSE-AUDIO.md). Die Aufnahmen in den Releases wurden mit
+ElevenLabs erzeugt; eine so weitgehende Lizenz wie MIT lässt sich dafür nicht
+erteilen. Privat nutzen und unverändert weitergeben: ja. Als Trainingsmaterial
+für Sprachmodelle oder als eigenständiges Produkt verkaufen: nein.
 
 ---
 

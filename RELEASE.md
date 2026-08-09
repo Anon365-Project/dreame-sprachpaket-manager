@@ -4,7 +4,12 @@ Diese Datei gehört nicht zum Programm. Sie ist eine Vorlage: den Text ab der
 nächsten Überschrift kopieren und beim Anlegen eines Releases auf GitHub in
 das Beschreibungsfeld einfügen.
 
-Anzuhängende Datei: **`dist/DreameSprachpaket.exe`** — sonst nichts.
+Anzuhängende Dateien:
+
+* `dist/DreameSprachpaket.exe`
+* `Fertige Pakete/Bayerisch-Aufnahmen.zip`
+* `Fertige Pakete/Wienerisch-Aufnahmen.zip`
+* `Fertige Pakete/Berlinerisch-Aufnahmen.zip`
 
 ---
 
@@ -39,16 +44,22 @@ das nicht mag, baut sie sich aus dem Quellcode selbst.
 * **Lautstärke** wird auf das Niveau der Originalansagen gebracht
 * **Originalstimme wiederherstellen** mit einem Klick
 
-### Warum hier keine fertigen Sprachpakete liegen
+### Die fertigen Aufnahmen
 
-Die Dialekte stecken als **Texte** in der App — gesprochen wird auf deinem
-Rechner. Das hat zwei Gründe: Ein fertiges Paket würde immer nur zu einem
-Modell passen, und Sprachausgaben haben eigene Nutzungsbedingungen, die sich
-mit der MIT-Lizenz dieses Projekts nicht vertragen. Also wird hier gar kein
-fremdes Audio verteilt.
+Für **Bayerisch, Wienerisch und Berlinerisch** liegen je 593 fertig
+gesprochene Ansagen bereit — mit ElevenLabs erzeugt, also echter Dialekt auch
+in der Aussprache.
 
-Der Weg dahin dauert wenige Minuten: Tab 4, Dialekt wählen, *Kostprobe
-anhören*, *Paket erzeugen*.
+So spielst du sie auf: ZIP entpacken → Tab 4 → *Fertiges Paket einlesen* →
+*Ordner mit mp3- oder wav-Dateien* → den entpackten Ordner wählen.
+
+**Warum Aufnahmen und keine fertigen Pakete?** Ein fertiges Sprachpaket
+enthält immer die Steuerdateien genau eines Modells. Die Aufnahmen dagegen
+passen auf jedes Modell — die App baut daraus das Paket, das zu deinem
+Roboter gehört, und nimmt die Steuerdateien aus dessen Originalpaket.
+
+Für die übrigen vier Dialekte — Hessisch, Schwäbisch, Sächsisch, Kölsch —
+erzeugst du dir die Aufnahmen in Tab 4 selbst.
 
 ### Stimmen
 
@@ -68,9 +79,15 @@ Sprachpaket-Dienst überhaupt kennt — wenn nicht, wird gar nichts geschrieben.
 
 ### Rechtliches
 
-Privates Freizeitprojekt unter MIT-Lizenz. **Ohne Gewährleistung, ohne
-Haftung.** Nicht von Dreame, MOVA, Trouver oder Xiaomi unterstützt oder
-geprüft. Die Nutzung erfolgt auf eigene Verantwortung.
+Privates Freizeitprojekt. **Ohne Gewährleistung, ohne Haftung.** Nicht von
+Dreame, MOVA, Trouver oder Xiaomi unterstützt oder geprüft. Die Nutzung
+erfolgt auf eigene Verantwortung.
+
+Quellcode und Dialekttexte: **MIT-Lizenz**. Die Audiodateien in den
+`*-Aufnahmen.zip` stehen unter eigenen Bedingungen (privat nutzen und
+unverändert weitergeben: ja; als Trainingsmaterial oder eigenständiges
+Produkt: nein) — siehe `LICENSE-AUDIO.md` im Projekt und die
+`LIZENZ-AUDIO.txt` in jedem Archiv.
 
 ### Trinkgeld
 
