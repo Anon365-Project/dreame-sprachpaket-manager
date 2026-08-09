@@ -1,18 +1,3 @@
-# Vorlage für die Release-Beschreibung
-
-Diese Datei gehört nicht zum Programm. Sie ist eine Vorlage: den Text ab der
-nächsten Überschrift kopieren und beim Anlegen eines Releases auf GitHub in
-das Beschreibungsfeld einfügen.
-
-Anzuhängende Dateien:
-
-* `dist/DreameSprachpaket.exe`
-* `Fertige Pakete/Bayerisch-Aufnahmen.zip`
-* `Fertige Pakete/Wienerisch-Aufnahmen.zip`
-* `Fertige Pakete/Berlinerisch-Aufnahmen.zip`
-
----
-
 ## v1.1.0 — Eigene Stimmen für deinen Saugroboter
 
 Gib deinem Dreame, MOVA oder Trouver eine eigene Stimme — **ohne Rooting**,
