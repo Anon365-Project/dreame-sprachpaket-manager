@@ -51,6 +51,7 @@ Alles liegt unter **[Releases](../../releases/latest)**:
 | `Bayerisch-Aufnahmen.zip` | 593 fertig gesprochene Ansagen, echter Dialekt |
 | `Wienerisch-Aufnahmen.zip` | dasselbe auf Wienerisch |
 | `Berlinerisch-Aufnahmen.zip` | dasselbe auf Berlinerisch |
+| `Hessisch-Aufnahmen.zip` | dasselbe auf Hessisch |
 
 Windows meldet beim ersten Start vermutlich „Computer geschützt" — die EXE ist
 nicht signiert (das kostet Geld). Über *Weitere Informationen → Trotzdem
@@ -523,8 +524,8 @@ gekürzt. Wer es genauer will, hört sich die Originalansage in Tab 2 an und
 | Kölsch | `KOELN` | „Alaaf, dann jeht et los. Ich fange aan ze sauge." |
 
 Selbst erzeugte Pakete landen im Ordner `Daten/Meine Pakete`. Für Bayerisch,
-Wienerisch und Berlinerisch gibt es fertig gesprochene Aufnahmen zum
-Herunterladen — siehe [Warum Aufnahmen und keine fertigen
+Wienerisch, Berlinerisch und Hessisch gibt es fertig gesprochene Aufnahmen
+zum Herunterladen — siehe [Warum Aufnahmen und keine fertigen
 Pakete](#warum-aufnahmen-und-keine-fertigen-pakete).
 
 ### Vorher anhören und Texte anpassen

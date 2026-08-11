@@ -1,13 +1,24 @@
-## v1.1.0 — Eigene Stimmen für deinen Saugroboter
+## v1.1.1 — Hessisch dazu
 
 Gib deinem Dreame, MOVA oder Trouver eine eigene Stimme — **ohne Rooting**,
 ohne Valetudo, mit einer einzigen portablen EXE.
 
 ```
-    "So, packma's. I fang zum Saugn o."          Bayerisch
-    "Na servas, dann fang ma au. I saug jetzt."  Wienerisch
-    "Alaaf, dann jeht et los."                   Kölsch
+    "Ei gude, dann geht's los. Isch fang aa zu sauge."   Hessisch
+    "So, packma's. I fang zum Saugn o."                  Bayerisch
+    "Na servas, dann fang ma au. I saug jetzt."          Wienerisch
 ```
+
+### Neu in dieser Fassung
+
+* **Hessisch überarbeitet** — auf Wunsch aus der Community. Die 593 Ansagen
+  sind jetzt durchgehend Frankfurterisch/Rhein-Main geschrieben, mit der
+  hessischen Lenisierung (*basst, bidde, Bladd, Debbisch, schdell, schbäder*)
+  statt halb hochdeutscher Schreibweise.
+* **Hessisch-Aufnahmen.zip** ist neu dabei.
+
+Wer schon v1.1.0 nutzt: Die EXE austauschen lohnt nur, wenn du Hessisch
+willst — die Dialekttexte stecken im Programm. Alles andere ist unverändert.
 
 ### Zum Loslegen
 
@@ -31,7 +42,7 @@ das nicht mag, baut sie sich aus dem Quellcode selbst.
 
 ### Die fertigen Aufnahmen
 
-Für **Bayerisch, Wienerisch und Berlinerisch** liegen je 593 fertig
+Für **Bayerisch, Wienerisch, Berlinerisch und Hessisch** liegen je 593 fertig
 gesprochene Ansagen bereit — mit ElevenLabs erzeugt, also echter Dialekt auch
 in der Aussprache.
 
@@ -43,8 +54,8 @@ enthält immer die Steuerdateien genau eines Modells. Die Aufnahmen dagegen
 passen auf jedes Modell — die App baut daraus das Paket, das zu deinem
 Roboter gehört, und nimmt die Steuerdateien aus dessen Originalpaket.
 
-Für die übrigen vier Dialekte — Hessisch, Schwäbisch, Sächsisch, Kölsch —
-erzeugst du dir die Aufnahmen in Tab 4 selbst.
+Für die übrigen drei Dialekte — Schwäbisch, Sächsisch, Kölsch — erzeugst du
+dir die Aufnahmen in Tab 4 selbst.
 
 ### Stimmen
 

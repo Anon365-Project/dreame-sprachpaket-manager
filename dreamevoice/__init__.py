@@ -8,7 +8,7 @@ Privates Freizeitprojekt unter MIT-Lizenz, ohne Gewährleistung und ohne
 Haftung. Nicht von Dreame unterstützt oder geprüft.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 APP_NAME = "Dreame Sprachpaket-Manager"
 
 # --------------------------------------------------------------------------
