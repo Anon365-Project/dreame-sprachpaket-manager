@@ -26,6 +26,12 @@ from .widgets import (Card, InfoBanner, LogView, ScrollableList, ScrollablePage,
 WAHL_ARCHIV = "ZIP-Datei oder fertiges Paket (.tar.gz)"
 WAHL_ORDNER = "Ordner mit mp3-, wav- oder ogg-Dateien"
 
+# Was passiert, wenn der gewaehlte Name schon vergeben ist. Das Danebenlegen
+# steht zuerst und ist die Vorgabe - ein Paket, das Kontingent gekostet hat,
+# soll nicht mit einem Klick verschwinden.
+WAHL_DANEBEN = "Daneben speichern - das vorhandene bleibt"
+WAHL_ERSETZEN = "Das vorhandene ersetzen"
+
 
 class PackCard(ttk.Frame):
     """Ein Community-Paket als Kachel."""
@@ -631,7 +637,32 @@ class StoreTab(ttk.Frame):
             parent=self)
         if name is None:
             return
-        ziel = library.unique_path(build_dir(), library.safe_name(name))
+
+        # Gibt es den Namen schon, wird gefragt statt stillschweigend eine
+        # zweite Fassung danebenzulegen - wer neuere Aufnahmen einliest,
+        # will meist die alten ersetzen. Vorgabe bleibt trotzdem das
+        # Danebenlegen: ein mit bezahltem Kontingent erzeugtes Paket darf
+        # nicht aus Versehen verschwinden.
+        sicher = library.safe_name(name)
+        schon_da = library.existing_pack(build_dir(), sicher)
+        if schon_da is None:
+            ziel = build_dir() / f"{sicher}.tar.gz"
+        else:
+            alt = library.read_info(schon_da)
+            wahl = self._ask_choice(
+                "Dieses Paket gibt es schon",
+                f"Vorhanden ist:\n{alt.label}\n\n"
+                f"Ersetzen überschreibt es endgültig. Das neue Paket wird "
+                f"zuerst vollständig gebaut - schlägt das fehl, bleibt das "
+                f"vorhandene unangetastet.",
+                [WAHL_DANEBEN, WAHL_ERSETZEN], WAHL_DANEBEN)
+            if wahl is None:
+                return
+            if wahl == WAHL_ERSETZEN:
+                ziel = schon_da
+                self.log.append(f"Ersetze {schon_da.name}.", "warn")
+            else:
+                ziel = library.unique_path(build_dir(), sicher)
 
         kennung = simpledialog.askstring(
             "Kennung",
@@ -711,8 +742,10 @@ class StoreTab(ttk.Frame):
                   wraplength=420, justify="left").pack(anchor="w")
 
         var = tk.StringVar(value=vorgabe or (optionen[0] if optionen else ""))
+        # Breit genug fuer die laengste Wahl ("Daneben speichern - ...").
+        breite = max(40, *(len(o) for o in optionen)) if optionen else 40
         combo = ttk.Combobox(card.content, textvariable=var, state="readonly",
-                             values=optionen, width=40)
+                             values=optionen, width=min(breite + 2, 60))
         combo.pack(anchor="w", pady=(12, 0))
 
         ergebnis = {"wert": None}

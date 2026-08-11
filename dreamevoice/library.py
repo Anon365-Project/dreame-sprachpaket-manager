@@ -66,6 +66,17 @@ def suggest_name(dialect_name: str, engine: str, voice_label: str = "") -> str:
     return safe_name("_".join(teile))
 
 
+def existing_pack(folder: Path, name: str,
+                  suffix: str = ".tar.gz") -> Optional[Path]:
+    """Ein schon vorhandenes Paket dieses Namens - oder None.
+
+    Damit kann die Oberfläche fragen, statt stillschweigend eine zweite
+    Fassung danebenzulegen. Ersetzen ist erlaubt, aber nie die Vorgabe.
+    """
+    ziel = Path(folder) / f"{name}{suffix}"
+    return ziel if ziel.exists() else None
+
+
 def unique_path(folder: Path, name: str, suffix: str = ".tar.gz") -> Path:
     """Ein Pfad, der noch nicht belegt ist - notfalls mit Zähler."""
     folder = Path(folder)

@@ -1192,6 +1192,50 @@ def main() -> int:
     _shutil.rmtree(zip_dir, ignore_errors=True)
 
     # ---------------------------------------------------------------
+    section("24. Ersetzen nur auf ausdrueckliche Wahl")
+
+    from dreamevoice import library as _lib  # noqa: E402
+
+    lib_dir = Path(tempfile.mkdtemp())
+    check("ohne vorhandene Datei meldet existing_pack nichts",
+          _lib.existing_pack(lib_dir, "Hessisch") is None)
+
+    (lib_dir / "Hessisch.tar.gz").write_bytes(b"alt")
+    gefunden = _lib.existing_pack(lib_dir, "Hessisch")
+    check("ein vorhandenes Paket wird gemeldet", gefunden is not None)
+    check("und zwar genau dieses", gefunden and gefunden.name == "Hessisch.tar.gz")
+
+    # Das Danebenlegen darf die vorhandene Datei nicht anfassen.
+    daneben = _lib.unique_path(lib_dir, "Hessisch")
+    check("der Ausweichpfad ist ein anderer", daneben != gefunden,
+          f"{daneben.name} vs {gefunden.name if gefunden else '-'}")
+    check("und das Vorhandene bleibt unberuehrt",
+          (lib_dir / "Hessisch.tar.gz").read_bytes() == b"alt")
+
+    # Der Kern: die Vorgabe im Auswahldialog muss das Behalten sein.
+    check("'Daneben speichern' steht an erster Stelle",
+          _ts.WAHL_DANEBEN.startswith("Daneben"))
+    quelle_imp2 = inspect.getsource(_ts.StoreTab._on_import_ready)
+    pos_frage = quelle_imp2.find("WAHL_DANEBEN, WAHL_ERSETZEN")
+    pos_vorgabe = quelle_imp2.find("WAHL_DANEBEN)")
+    check("und ist die Vorgabe des Dialogs", 0 < pos_frage < pos_vorgabe,
+          f"Liste bei {pos_frage}, Vorgabe bei {pos_vorgabe}")
+    check("ersetzt wird nur bei ausdruecklicher Wahl",
+          "wahl == WAHL_ERSETZEN" in quelle_imp2)
+
+    # build_pack baut in eine .part-Datei und ersetzt erst zum Schluss -
+    # sonst waere ein Fehlschlag mitten im Bauen der Verlust des alten.
+    quelle_build = inspect.getsource(packer.build_pack)
+    pos_part = quelle_build.find('with_suffix(".part")')
+    pos_ersetzt = quelle_build.find("tmp_path.replace(out_path)")
+    check("gebaut wird in eine .part-Datei", pos_part > 0)
+    check("die erst ganz am Ende das Ziel ersetzt",
+          0 < pos_part < pos_ersetzt,
+          f".part bei {pos_part}, Ersetzen bei {pos_ersetzt}")
+
+    _shutil.rmtree(lib_dir, ignore_errors=True)
+
+    # ---------------------------------------------------------------
     print()
     print("=" * 52)
     print(f"  Bestanden: {PASSED}    Fehlgeschlagen: {FAILED}")
