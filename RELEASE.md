@@ -17,6 +17,8 @@ ohne Valetudo, mit einer einzigen portablen EXE.
   hessischen Lenisierung (*basst, bidde, Bladd, Debbisch, schdell, schbäder*)
   statt halb hochdeutscher Schreibweise.
 * **Hessisch-Aufnahmen.zip** ist neu dabei.
+* **Die Aufnahmen lassen sich direkt als ZIP einlesen** — ohne sie vorher zu
+  entpacken. Einfach die heruntergeladene Datei auswählen.
 
 ### Kleinere Korrekturen
 
@@ -29,6 +31,18 @@ die vorher falsch ausgesprochen wurden:
 * Uneinheitliches `nochema` / `nochemol` und `Reinigung` / `Reinischung`
   vereinheitlicht.
 * Die Küche hieß mal `Küch`, mal `Kisch` — im Hessischen immer `Kisch`.
+
+Und beim Einlesen eigener Aufnahmen:
+
+* Zwei Knöpfe hießen fast gleich, sodass man leicht im falschen Dialog
+  landete. Tab 4 heißt jetzt **„Aufnahmen einlesen ..."**, Tab 3
+  **„Gebautes Paket (.tar.gz) wählen ..."**. Wer dort versehentlich ein
+  Aufnahmen-ZIP auswählt, wird nach Tab 4 geschickt statt mit einer
+  Formatmeldung abgewiesen.
+* Der Dateidialog merkt sich, wo zuletzt etwas lag.
+* Das Bauskript konnte an einer harmlosen Meldung des Selbsttests scheitern
+  — und hätte umgekehrt auch einen echten Fehlschlag durchwinken können.
+  Betrifft nur, wer sich die EXE selbst baut.
 
 Wer schon v1.1.0 nutzt: Die EXE austauschen lohnt nur, wenn du Hessisch
 willst — die Dialekttexte stecken im Programm. Alles andere ist unverändert.
@@ -59,8 +73,9 @@ Für **Bayerisch, Wienerisch, Berlinerisch und Hessisch** liegen je 593 fertig
 gesprochene Ansagen bereit — mit ElevenLabs erzeugt, also echter Dialekt auch
 in der Aussprache.
 
-So spielst du sie auf: ZIP entpacken → Tab 4 → *Fertiges Paket einlesen* →
-*Ordner mit mp3- oder wav-Dateien* → den entpackten Ordner wählen.
+So spielst du sie auf: Tab 4 → *Aufnahmen einlesen* → *ZIP-Datei oder
+fertiges Paket* → das heruntergeladene ZIP auswählen. **Entpacken ist nicht
+nötig.**
 
 **Warum Aufnahmen und keine fertigen Pakete?** Ein fertiges Sprachpaket
 enthält immer die Steuerdateien genau eines Modells. Die Aufnahmen dagegen

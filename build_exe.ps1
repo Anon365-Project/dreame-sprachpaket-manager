@@ -23,24 +23,37 @@ try {
     exit 1
 }
 
+# Windows PowerShell macht aus jeder stderr-Zeile eines aufgerufenen
+# Programms einen Fehlerdatensatz. Zusammen mit dem "Stop" oben bricht das
+# den Bau ab, obwohl das Programm sauber mit 0 zurueckkommt - eine einzige
+# Warnzeile von pip oder PyInstaller genuegt. Deshalb laufen alle Aufrufe
+# fremder Programme durch diese Klammer, und ob es geklappt hat, sagt
+# allein der Rueckgabewert in $LASTEXITCODE.
+function Invoke-Native {
+    param([Parameter(Mandatory = $true)][scriptblock]$Befehl)
+    $alt = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try { & $Befehl } finally { $ErrorActionPreference = $alt }
+}
+
 # --- Abhaengigkeiten ---
 Write-Host "Installiere Abhaengigkeiten ..."
 # Ein einziges Fremdpaket. python-miio wird nicht gebraucht - siehe README.
-python -m pip install --quiet --disable-pip-version-check "requests>=2.28"
-if (-not $?) { Write-Host "FEHLER beim Installieren von requests." -ForegroundColor Red; exit 1 }
+Invoke-Native { python -m pip install --quiet --disable-pip-version-check "requests>=2.28" }
+if ($LASTEXITCODE -ne 0) { Write-Host "FEHLER beim Installieren von requests." -ForegroundColor Red; exit 1 }
 
-python -m pip show pyinstaller *> $null
-if (-not $?) {
+Invoke-Native { python -m pip show pyinstaller *> $null }
+if ($LASTEXITCODE -ne 0) {
     Write-Host "Installiere PyInstaller ..."
-    python -m pip install --quiet --disable-pip-version-check pyinstaller
-    if (-not $?) { Write-Host "FEHLER beim Installieren von PyInstaller." -ForegroundColor Red; exit 1 }
+    Invoke-Native { python -m pip install --quiet --disable-pip-version-check pyinstaller }
+    if ($LASTEXITCODE -ne 0) { Write-Host "FEHLER beim Installieren von PyInstaller." -ForegroundColor Red; exit 1 }
 }
 
 # --- Selbsttest, damit keine kaputte EXE entsteht ---
 Write-Host ""
 Write-Host "Fuehre Selbsttest aus ..."
-python selftest.py | Select-Object -Last 4
-if (-not $?) {
+Invoke-Native { python selftest.py } | Select-Object -Last 4
+if ($LASTEXITCODE -ne 0) {
     Write-Host "FEHLER: Der Selbsttest ist fehlgeschlagen. Es wird nichts gebaut." -ForegroundColor Red
     exit 1
 }
@@ -94,8 +107,8 @@ if (Test-Path $datenOrdner) {
     Write-Host "  (dist\Daten bleibt erhalten: $anzahl Dateien)" -ForegroundColor DarkGray
 }
 
-python -m PyInstaller DreameSprachpaket.spec --noconfirm --clean
-if (-not $?) { Write-Host "FEHLER: PyInstaller ist fehlgeschlagen." -ForegroundColor Red; exit 1 }
+Invoke-Native { python -m PyInstaller DreameSprachpaket.spec --noconfirm --clean }
+if ($LASTEXITCODE -ne 0) { Write-Host "FEHLER: PyInstaller ist fehlgeschlagen." -ForegroundColor Red; exit 1 }
 
 $exe = Join-Path $PSScriptRoot "dist\DreameSprachpaket.exe"
 if (-not (Test-Path $exe)) {
@@ -115,8 +128,8 @@ foreach ($p in @("ffmpeg.exe", "ffmpeg\ffmpeg.exe", "ffmpeg\bin\ffmpeg.exe")) {
 
 if ($ffmpeg) {
     Write-Host "Packe ffmpeg mit in die EXE ..."
-    python embed_ffmpeg.py $ffmpeg $exe
-    if (-not $?) { Write-Host "WARNUNG: ffmpeg konnte nicht eingebettet werden." -ForegroundColor Yellow }
+    Invoke-Native { python embed_ffmpeg.py $ffmpeg $exe }
+    if ($LASTEXITCODE -ne 0) { Write-Host "WARNUNG: ffmpeg konnte nicht eingebettet werden." -ForegroundColor Yellow }
 } else {
     Write-Host "Hinweis: keine ffmpeg.exe im Projektordner gefunden." -ForegroundColor Yellow
     Write-Host "Die EXE wird ohne eingebautes ffmpeg gebaut - sie kann es dann auf"

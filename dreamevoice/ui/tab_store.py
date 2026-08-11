@@ -21,6 +21,12 @@ from .widgets import (Card, InfoBanner, LogView, ScrollableList, ScrollablePage,
                       StatusBadge, show_error, show_info, show_warning)
 
 
+# Die beiden Wege zu eigenen Aufnahmen. Der ZIP-Fall steht zuerst und wird
+# beim Namen genannt: so heissen die Dateien auf der Projektseite.
+WAHL_ARCHIV = "ZIP-Datei oder fertiges Paket (.tar.gz)"
+WAHL_ORDNER = "Ordner mit mp3-, wav- oder ogg-Dateien"
+
+
 class PackCard(ttk.Frame):
     """Ein Community-Paket als Kachel."""
 
@@ -171,7 +177,7 @@ class StoreTab(ttk.Frame):
                                             style="Small.TButton",
                                             command=self._on_delete_custom)
         self.btn_delete_custom.pack(side="left", padx=(8, 0))
-        ttk.Button(eigene, text="Fertiges Paket einlesen ...",
+        ttk.Button(eigene, text="Aufnahmen einlesen ...",
                    style="Small.TButton",
                    command=self._on_import_ready).pack(side="left", padx=(8, 0))
 
@@ -180,9 +186,11 @@ class StoreTab(ttk.Frame):
                         "Textsammlung - etwa im Stil einer Filmfigur. Sie "
                         "verhält sich wie ein Dialekt: anhören, Texte ändern, "
                         "mit jeder Stimme erzeugen, nach aufgebrauchtem "
-                        "Kontingent fortsetzen. 'Fertiges Paket einlesen' "
-                        "übernimmt ein fertiges .tar.gz oder einen Ordner "
-                        "voller mp3- und wav-Dateien."),
+                        "Kontingent fortsetzen. 'Aufnahmen einlesen' nimmt "
+                        "fertig gesprochene Ansagen entgegen: eine "
+                        "ZIP-Datei von der Projektseite, ein fertiges "
+                        ".tar.gz oder einen Ordner voller mp3- und "
+                        "wav-Dateien."),
                   style="Muted.TLabel", wraplength=820,
                   justify="left").pack(anchor="w", pady=(6, 0))
 
@@ -556,20 +564,26 @@ class StoreTab(ttk.Frame):
 
         art = self._ask_choice(
             "Was soll eingelesen werden?",
+            "Die Aufnahmen von der Projektseite sind ZIP-Dateien wie "
+            "'Bayerisch-Aufnahmen.zip'. Nimm dafür die erste Zeile und wähle "
+            "das ZIP direkt aus - entpacken musst du nichts.\n\n"
             "Beides landet als fertiges Paket in deiner Sammlung und steht "
             "danach in Tab 3 zur Auswahl.",
-            ["Fertiges Sprachpaket (.tar.gz)",
-             "Ordner mit mp3- oder wav-Dateien"],
-            "Fertiges Sprachpaket (.tar.gz)")
+            [WAHL_ARCHIV, WAHL_ORDNER],
+            WAHL_ARCHIV)
         if art is None:
             return
 
         bekannt = self.state.catalog.ids() if self.state.catalog else None
+        start = self.state.config["last_audio_dir"] or str(
+            Path.home() / "Downloads")
 
-        if art.startswith("Fertiges"):
+        if art == WAHL_ARCHIV:
             quelle = filedialog.askopenfilename(
-                parent=self, title="Fertiges Sprachpaket wählen",
-                filetypes=[("Sprachpaket", "*.tar.gz *.tar *.zip"),
+                parent=self, title="ZIP oder Paketdatei wählen",
+                initialdir=start if Path(start).is_dir() else str(Path.home()),
+                filetypes=[("Aufnahmen und Pakete",
+                            "*.zip *.tar.gz *.tgz *.tar"),
                            ("Alle Dateien", "*.*")])
             if not quelle:
                 return
@@ -582,7 +596,9 @@ class StoreTab(ttk.Frame):
                 return
         else:
             quelle = filedialog.askdirectory(
-                parent=self, title="Ordner mit Aufnahmen wählen")
+                parent=self, title="Ordner mit den Aufnahmen wählen",
+                initialdir=start if Path(start).is_dir() else str(Path.home()),
+                mustexist=True)
             if not quelle:
                 return
             try:
@@ -591,6 +607,11 @@ class StoreTab(ttk.Frame):
             except Exception as exc:                   # noqa: BLE001
                 self._on_import_error(exc)
                 return
+
+        # Beim naechsten Mal dort weitermachen, wo zuletzt etwas lag.
+        merken = Path(quelle)
+        self.state.config["last_audio_dir"] = str(
+            merken if merken.is_dir() else merken.parent)
 
         zuordnung = gefunden.assigned
         if not zuordnung:

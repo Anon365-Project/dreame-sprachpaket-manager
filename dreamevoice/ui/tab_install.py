@@ -180,7 +180,9 @@ class InstallTab(ttk.Frame):
 
         ttk.Button(button_row, text="Paketordner öffnen", style="Small.TButton",
                    command=lambda: open_folder(build_dir())).pack(side="right")
-        ttk.Button(button_row, text="Fertige Paketdatei wählen ...",
+        # Bewusst "Gebautes Paket": in Tab 4 gibt es einen Knopf zum Einlesen
+        # von Aufnahmen, und "Fertiges Paket" hat für beides gepasst.
+        ttk.Button(button_row, text="Gebautes Paket (.tar.gz) wählen ...",
                    style="Small.TButton",
                    command=self._on_pick_pack).pack(side="right", padx=(0, 8))
 
@@ -384,14 +386,29 @@ class InstallTab(ttk.Frame):
                   on_finally=lambda: self.btn_status.configure(state="normal"))
 
     def _on_pick_pack(self) -> None:
-        """Ein bereits fertiges Sprachpaket von der Festplatte übernehmen."""
+        """Ein bereits gebautes Sprachpaket von der Festplatte übernehmen."""
         chosen = filedialog.askopenfilename(
             parent=self,
-            title="Fertiges Sprachpaket wählen",
+            title="Gebautes Sprachpaket wählen (.tar.gz)",
             initialdir=str(build_dir()),
-            filetypes=[("Sprachpaket", "*.tar.gz"), ("Alle Dateien", "*.*")],
+            filetypes=[("Gebautes Sprachpaket", "*.tar.gz *.tgz"),
+                       ("Alle Dateien", "*.*")],
         )
         if not chosen:
+            return
+
+        # Die Aufnahmen-Archive aus dem Projekt sind ZIPs und gehören nach
+        # Tab 4 - hier würden sie nur mit einer Formatmeldung scheitern.
+        if Path(chosen).suffix.lower() == ".zip":
+            show_warning(
+                self, self.theme, "Das sind Aufnahmen, kein fertiges Paket",
+                f"{Path(chosen).name} enthält einzelne Sprachdateien. Hier "
+                f"wird ein bereits gebautes Paket erwartet - eine "
+                f".tar.gz-Datei.",
+                "So kommst du weiter: Tab 4 'Fertige Pakete' öffnen, dort auf "
+                "'Aufnahmen einlesen ...' klicken und genau dieses ZIP "
+                "auswählen. Die App baut daraus das Paket für dein Modell; "
+                "danach steht es hier zur Auswahl. Entpacken musst du nichts.")
             return
 
         try:

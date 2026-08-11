@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import io
+import logging
 import sys
 import tarfile
 import tempfile
@@ -1091,8 +1092,17 @@ def main() -> int:
 
         check("Löschen entfernt die Datei",
               custom.delete(neu.key) and not custom.exists(neu.key))
-        check("kaputte Dateien werden übersprungen",
-              custom.load(eigen_dir / "gibtsnicht.json") is None)
+        # custom.load meldet die fehlende Datei per Logging nach stderr -
+        # hier ist genau das der Prüfpunkt, also darf die Meldung nicht in
+        # der Ausgabe landen. Sonst hält das Bauskript sie für einen Fehler.
+        _laut = logging.getLogger("dreamevoice.custom")
+        _vorher = _laut.disabled
+        _laut.disabled = True
+        try:
+            check("kaputte Dateien werden übersprungen",
+                  custom.load(eigen_dir / "gibtsnicht.json") is None)
+        finally:
+            _laut.disabled = _vorher
     finally:
         custom.data_dir = _alt_data
 
@@ -1127,6 +1137,59 @@ def main() -> int:
 
     unterschrift = inspect.signature(_el.synthesize).parameters
     check("synthesize nimmt 'cancelled' entgegen", "cancelled" in unterschrift)
+
+    # ---------------------------------------------------------------
+    section("23. Aufnahmen-ZIP ohne Entpacken einlesen")
+
+    # Die Anleitung sagt: ZIP herunterladen, direkt auswählen, fertig. Die
+    # Archive von der Projektseite haben oben einen Ordner drin und liegen
+    # neben zwei Textdateien - beides muss der Import wegstecken.
+    import shutil as _shutil  # noqa: E402
+    import zipfile as _zip  # noqa: E402
+
+    zip_dir = Path(tempfile.mkdtemp())
+    archiv = zip_dir / "Test-Aufnahmen.zip"
+    ton = minimal_vorbis_ogg()
+    with _zip.ZipFile(archiv, "w") as zf:
+        for nummer in (1, 7, 42):
+            zf.writestr(f"Test-Aufnahmen/{nummer}.ogg", ton)
+        zf.writestr("Test-Aufnahmen/LIESMICH.txt", "Hinweise")
+        zf.writestr("Test-Aufnahmen/LIZENZ-AUDIO.txt", "Bedingungen")
+
+    ergebnis = importer.import_archive(archiv, zip_dir / "arbeit")
+    check("das ZIP wird ohne Entpacken gelesen", len(ergebnis.assigned) == 3,
+          f"{len(ergebnis.assigned)} statt 3")
+    check("der Ordner im Archiv stoert nicht",
+          sorted(ergebnis.assigned) == [1, 7, 42], str(sorted(ergebnis.assigned)))
+    check("LIESMICH und LIZENZ landen nicht als Ansage",
+          all(p.suffix == ".ogg" for p in ergebnis.assigned.values()))
+
+    # Und derselbe Inhalt als entpackter Ordner - auch eine Ebene tiefer,
+    # weil Windows beim Entpacken gern einen zweiten Ordner erzeugt.
+    entpackt = zip_dir / "entpackt"
+    with _zip.ZipFile(archiv) as zf:
+        zf.extractall(entpackt)
+    check("derselbe Inhalt als Ordner ergibt dasselbe",
+          sorted(importer.scan_folder(entpackt).assigned) == [1, 7, 42])
+
+    # Die Wahlmöglichkeiten dürfen nicht auseinanderlaufen: der Text im
+    # Auswahldialog entscheidet über den Zweig im Code.
+    from dreamevoice.ui import tab_store as _ts  # noqa: E402
+    quelle_imp = inspect.getsource(_ts.StoreTab._on_import_ready)
+    check("der Auswahldialog nennt genau die beiden Konstanten",
+          "WAHL_ARCHIV" in quelle_imp and "WAHL_ORDNER" in quelle_imp)
+    check("und verzweigt darueber, nicht ueber losen Text",
+          "art == WAHL_ARCHIV" in quelle_imp)
+    check("'ZIP' steht in der ersten Wahl", "ZIP" in _ts.WAHL_ARCHIV)
+
+    # Tab 3 nimmt nur gebaute Pakete. Ein Aufnahmen-ZIP dort muss zu einem
+    # Hinweis fuehren, nicht zu einer Formatmeldung.
+    from dreamevoice.ui import tab_install as _ti  # noqa: E402
+    quelle_pick = inspect.getsource(_ti.InstallTab._on_pick_pack)
+    check("Tab 3 faengt ein versehentlich gewaehltes ZIP ab",
+          '".zip"' in quelle_pick and "Tab 4" in quelle_pick)
+
+    _shutil.rmtree(zip_dir, ignore_errors=True)
 
     # ---------------------------------------------------------------
     print()

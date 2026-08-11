@@ -77,10 +77,10 @@ Originalpaket. Nachgemessen mit den 593 bayerischen Aufnahmen:
 | `mova.vacuum.r5977e` | 617 | 566 |
 | `dreame.vacuum.r63018` | 503 | 490 |
 
-**So spielst du sie auf:** ZIP entpacken → Tab 4 → *Fertiges Paket einlesen* →
-*Ordner mit mp3- oder wav-Dateien* → den entpackten Ordner wählen. Die App
-wandelt um, gleicht die Lautstärke an die Originalansagen an und baut das
-Paket für dein Modell.
+**So spielst du sie auf:** Tab 4 → *Aufnahmen einlesen* → *ZIP-Datei oder
+fertiges Paket* → das heruntergeladene ZIP auswählen. Entpacken ist nicht
+nötig. Die App wandelt um, gleicht die Lautstärke an die Originalansagen an
+und baut das Paket für dein Modell.
 
 Die Aufnahmen entstanden mit **ElevenLabs** und sprechen echten Dialekt — auch
 in der Aussprache, nicht nur in der Wortwahl. Sie stehen unter eigenen
@@ -470,15 +470,19 @@ Die Kennung für den Roboter entsteht aus dem Namen (`Bruce Willis` →
 `BRUCEWIL`) und wird gegen die offiziellen Sprachkennungen geprüft, damit ein
 eigenes Paket nie eine mitgelieferte Sprache überschreibt.
 
-### Fertiges Paket einlesen
+### Aufnahmen einlesen
 
-Derselbe Knopf nimmt auch fertiges Material entgegen:
+Derselbe Knopf nimmt fertig gesprochenes Material entgegen:
 
-* **ein fertiges Sprachpaket** als `.tar.gz`, `.tar` oder `.zip`
-* **einen Ordner voller mp3- oder wav-Dateien**
+* **eine ZIP-Datei**, etwa `Bayerisch-Aufnahmen.zip` von der Projektseite —
+  direkt auswählen, ohne sie vorher zu entpacken
+* **ein fertiges Sprachpaket** als `.tar.gz` oder `.tar`
+* **einen Ordner voller mp3-, wav- oder ogg-Dateien**
 
 Die Dateien müssen die Ansage-Nummer im Namen tragen (`7.wav`, `7.mp3`,
-`7.ogg`). Einen passend benannten Vorlagenordner legt Tab 2 an — Originale
+`7.ogg`). Ordner im Archiv und Beipackzettel wie `LIESMICH.txt` stören
+nicht — es werden nur Audiodateien mit Nummer übernommen. Einen passend
+benannten Vorlagenordner legt Tab 2 an — Originale
 anhören, unter demselben Namen neu einsprechen, Ordner einlesen.
 
 Alles wird ins Roboterformat umgewandelt, auf die Lautstärke der
