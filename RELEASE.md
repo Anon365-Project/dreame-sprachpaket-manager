@@ -7,6 +7,7 @@ ohne Valetudo, mit einer einzigen portablen EXE.
     "Ei gude, dann geht's los. Isch fang aa zu sauge."   Hessisch
     "So, packma's. I fang zum Saugn o."                  Bayerisch
     "Na servas, dann fang ma au. I saug jetzt."          Wienerisch
+    "Na denn los. Ick fang an zu sauje."                 Berlinerisch
 ```
 
 ### Neu in dieser Fassung
