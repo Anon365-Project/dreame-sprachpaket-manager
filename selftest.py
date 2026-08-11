@@ -8,6 +8,7 @@ Aufruf:   python selftest.py
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import io
 import logging
@@ -63,6 +64,26 @@ def make_fake_base(path: Path, ids: list[int], ogg_bytes: bytes) -> None:
             info.size = len(payload)
             info.mode = 0o644
             tf.addfile(info, io.BytesIO(payload))
+
+
+@contextlib.contextmanager
+def leise(*namen: str):
+    """Schaltet Logger stumm.
+
+    Manche Prüfungen lösen absichtlich einen Fehlerfall aus - dass die
+    App ihn protokolliert, ist ja gerade richtig. Auf der Konsole sähe es
+    aber nach einem kaputten Selbsttest aus, und Windows PowerShell macht
+    aus jeder stderr-Zeile ohnehin einen Fehlerdatensatz.
+    """
+    logger = [logging.getLogger(n) for n in namen]
+    vorher = [ll.disabled for ll in logger]
+    for ll in logger:
+        ll.disabled = True
+    try:
+        yield
+    finally:
+        for ll, alt in zip(logger, vorher):
+            ll.disabled = alt
 
 
 def minimal_vorbis_ogg() -> bytes:
@@ -1095,14 +1116,9 @@ def main() -> int:
         # custom.load meldet die fehlende Datei per Logging nach stderr -
         # hier ist genau das der Prüfpunkt, also darf die Meldung nicht in
         # der Ausgabe landen. Sonst hält das Bauskript sie für einen Fehler.
-        _laut = logging.getLogger("dreamevoice.custom")
-        _vorher = _laut.disabled
-        _laut.disabled = True
-        try:
+        with leise("dreamevoice.custom"):
             check("kaputte Dateien werden übersprungen",
                   custom.load(eigen_dir / "gibtsnicht.json") is None)
-        finally:
-            _laut.disabled = _vorher
     finally:
         custom.data_dir = _alt_data
 
@@ -1234,6 +1250,142 @@ def main() -> int:
           f".part bei {pos_part}, Ersetzen bei {pos_ersetzt}")
 
     _shutil.rmtree(lib_dir, ignore_errors=True)
+
+    # ---------------------------------------------------------------
+    section("25. Zwei Anhaenge in einer EXE")
+
+    # ffmpeg und die mitgelieferten Dialekte haengen beide hinten an der
+    # EXE. Der zweite darf den ersten nicht unauffindbar machen - genau
+    # das waere passiert, solange nur der letzte Abspann gelesen wurde.
+    import lzma as _lzma          # noqa: E402
+    import tarfile as _tar        # noqa: E402
+    from dreamevoice import embedded as _emb  # noqa: E402
+
+    anh_dir = Path(tempfile.mkdtemp())
+    exe_test = anh_dir / "Test.exe"
+
+    ffmpeg_roh = b"MZ" + b"\xc3" * 1_500_000
+    ffmpeg_pak = _lzma.compress(ffmpeg_roh, preset=1)
+
+    zips = {"Bayerisch-Aufnahmen.zip": b"PK\x03\x04" + b"b" * 1_200_000}
+    puffer = io.BytesIO()
+    with _tar.open(fileobj=puffer, mode="w") as tf_:
+        for name_, roh_ in zips.items():
+            info_ = _tar.TarInfo(name=name_)
+            info_.size = len(roh_)
+            tf_.addfile(info_, io.BytesIO(roh_))
+    dial_tar = puffer.getvalue()
+
+    with exe_test.open("wb") as fh_:
+        fh_.write(b"PROGRAMM" * 1000)
+        fh_.write(ffmpeg_pak)
+        fh_.write(len(ffmpeg_pak).to_bytes(8, "little"))
+        fh_.write(_emb.MAGIC)
+        fh_.write(dial_tar)
+        fh_.write(len(dial_tar).to_bytes(8, "little"))
+        fh_.write(_emb.MAGIC_DIALEKTE)
+
+    _echt_frozen, _echt_exe, _echt_daten = (_emb.is_frozen, sys.executable,
+                                            _emb.data_dir)
+    _emb.is_frozen = lambda: True
+    sys.executable = str(exe_test)
+    _emb.data_dir = lambda: anh_dir / "Daten"
+    try:
+        check("beide Anhaenge werden gefunden", len(_emb._bloecke()) == 2,
+              str(len(_emb._bloecke())))
+        check("ffmpeg bleibt auffindbar, obwohl etwas dahinter liegt",
+              _emb.has_ffmpeg())
+        check("und zwar in voller Laenge",
+              _emb.payload_size() == len(ffmpeg_pak))
+        entpackt_ = _emb.extract_ffmpeg()
+        check("ffmpeg kommt bitgenau wieder heraus",
+              entpackt_ is not None and entpackt_.read_bytes() == ffmpeg_roh)
+
+        check("die Dialekte werden gefunden", _emb.has_dialekte())
+        check("die Liste nennt das Archiv",
+              _emb.list_dialekte() == sorted(zips), str(_emb.list_dialekte()))
+        dpfad = _emb.extract_dialekt("Bayerisch-Aufnahmen.zip")
+        check("und es kommt bitgenau wieder heraus",
+              dpfad is not None
+              and dpfad.read_bytes() == zips["Bayerisch-Aufnahmen.zip"])
+        with leise("dreamevoice.embedded"):
+            check("ein unbekannter Name liefert nichts",
+                  _emb.extract_dialekt("Gibtsnicht.zip") is None)
+
+        leer_ = anh_dir / "Leer.exe"
+        leer_.write_bytes(b"PROGRAMM" * 1000)
+        sys.executable = str(leer_)
+        check("ohne Anhang meldet sich weder ffmpeg ...", not _emb.has_ffmpeg())
+        check("... noch ein Dialekt", not _emb.has_dialekte())
+    finally:
+        _emb.is_frozen, sys.executable, _emb.data_dir = (_echt_frozen,
+                                                         _echt_exe,
+                                                         _echt_daten)
+    _shutil.rmtree(anh_dir, ignore_errors=True)
+
+    # ---------------------------------------------------------------
+    section("26. Vorhoeren aus jeder Paketart")
+
+    from dreamevoice import vorhoeren as _vh  # noqa: E402
+
+    vh_dir = Path(tempfile.mkdtemp())
+    ton_ = minimal_vorbis_ogg()
+    drin = [7, 14, 40, 55, 99]
+
+    # Dieselben Ansagen als Ordner, als ZIP und als gebautes tar.gz - alle
+    # drei Wege muessen zum selben Ergebnis fuehren.
+    als_ordner = vh_dir / "ordner"
+    als_ordner.mkdir()
+    for n_ in drin:
+        (als_ordner / f"{n_}.ogg").write_bytes(ton_)
+    (als_ordner / "LIESMICH.txt").write_text("kein Ton", encoding="utf-8")
+
+    als_zip = vh_dir / "aufnahmen.zip"
+    with _zip.ZipFile(als_zip, "w") as zf_:
+        for n_ in drin:
+            zf_.writestr(f"Irgendein-Ordner/{n_}.ogg", ton_)
+        zf_.writestr("Irgendein-Ordner/LIESMICH.txt", "kein Ton")
+
+    als_tar = vh_dir / "paket.tar.gz"
+    make_fake_base(als_tar, drin, ton_)
+
+    for name_, quelle_ in (("Ordner", als_ordner), ("ZIP", als_zip),
+                           ("tar.gz", als_tar)):
+        ids_ = _vh.verfuegbare_ids(quelle_)
+        check(f"{name_}: alle Ansagen gefunden", sorted(ids_) == drin, str(ids_))
+        gewaehlt = _vh.auswahl(quelle_)
+        check(f"{name_}: die Beispiele werden bevorzugt",
+              gewaehlt == _vh.BEISPIELE, str(gewaehlt))
+        entnommen = _vh.entnehmen(quelle_, vh_dir / f"raus_{name_}")
+        check(f"{name_}: entnommen wird genau die Auswahl",
+              sorted(entnommen) == _vh.BEISPIELE, str(sorted(entnommen)))
+        check(f"{name_}: der Beipackzettel ist keine Ansage",
+              all(p.suffix.lower() != ".txt" for p in entnommen.values()))
+
+    # Ein Paket ohne die Wunschnummern muss trotzdem etwas anbieten.
+    sonder = vh_dir / "sonder"
+    sonder.mkdir()
+    for n_ in (300, 301, 302, 303, 304, 305):
+        (sonder / f"{n_}.ogg").write_bytes(ton_)
+    ersatz = _vh.auswahl(sonder)
+    check("ohne die Wunschnummern werden andere genommen",
+          len(ersatz) == _vh.HOECHSTENS and 300 in ersatz, str(ersatz))
+
+    with leise("dreamevoice.vorhoeren"):
+        check("ein leerer Ordner liefert nichts",
+              _vh.auswahl(vh_dir / "gibtsnicht") == [])
+        check("und probe_vorbereiten dann auch nichts",
+              _vh.probe_vorbereiten(vh_dir / "gibtsnicht", None) == {})
+
+    # Ohne ffmpeg laesst sich nichts in WAV wandeln - das muss sauber
+    # gemeldet werden statt zu krachen.
+    check("ohne ffmpeg gibt es keine Probe",
+          _vh.probe_vorbereiten(als_zip, None) == {})
+    check("eine WAV-Datei braucht kein ffmpeg",
+          _vh.nach_wav(vh_dir / "x.wav", vh_dir / "y.wav", None)
+          == vh_dir / "x.wav")
+
+    _shutil.rmtree(vh_dir, ignore_errors=True)
 
     # ---------------------------------------------------------------
     print()

@@ -138,6 +138,28 @@ if ($ffmpeg) {
     Write-Host "Bezugsquelle: https://github.com/BtbN/FFmpeg-Builds/releases"
 }
 
+# --- Fertige Dialekte mit einpacken --------------------------------------
+# Sie sollen ohne Internet und ohne Umweg ueber die Projektseite bereit
+# stehen. Unkomprimiert angehaengt (Ogg in ZIP ist schon gepackt) und
+# hinter ffmpeg - embedded.py liest die Kette vom Dateiende rueckwaerts.
+Write-Host ""
+$dialekte = Join-Path $PSScriptRoot "Fertige Pakete"
+if (Test-Path $dialekte) {
+    $anzahlZips = @(Get-ChildItem $dialekte -Filter "*-Aufnahmen.zip" -ErrorAction SilentlyContinue).Count
+    if ($anzahlZips -gt 0) {
+        Write-Host "Packe $anzahlZips fertige Dialekte mit in die EXE ..."
+        Invoke-Native { python embed_dialekte.py }
+        if ($LASTEXITCODE -ne 0) { Write-Host "WARNUNG: Dialekte konnten nicht eingebettet werden." -ForegroundColor Yellow }
+    } else {
+        Write-Host "Hinweis: keine *-Aufnahmen.zip in 'Fertige Pakete'." -ForegroundColor Yellow
+        Write-Host "Die EXE wird ohne mitgelieferte Dialekte gebaut."
+    }
+} else {
+    Write-Host "Hinweis: Ordner 'Fertige Pakete' fehlt." -ForegroundColor Yellow
+    Write-Host "Die EXE wird ohne mitgelieferte Dialekte gebaut - die Texte"
+    Write-Host "der sieben Dialekte stecken trotzdem im Programm."
+}
+
 $sizeMb = [math]::Round((Get-Item $exe).Length / 1MB, 1)
 Write-Host ""
 Write-Host "Fertig!" -ForegroundColor Green

@@ -43,15 +43,20 @@ Klick stellt die Originalstimme wieder her.
 
 ## Herunterladen
 
-Alles liegt unter **[Releases](../../releases/latest)**:
+Es genügt **eine einzige Datei** von den
+**[Releases](../../releases/latest)**:
 
 | Datei | Was ist das |
 |---|---|
 | `DreameSprachpaket.exe` | die App — herunterladen, doppelklicken, fertig |
-| `Bayerisch-Aufnahmen.zip` | 593 fertig gesprochene Ansagen, echter Dialekt |
-| `Wienerisch-Aufnahmen.zip` | dasselbe auf Wienerisch |
-| `Berlinerisch-Aufnahmen.zip` | dasselbe auf Berlinerisch |
-| `Hessisch-Aufnahmen.zip` | dasselbe auf Hessisch |
+
+Die vier fertig gesprochenen Dialekte **sind darin enthalten**: Bayerisch,
+Hessisch, Wienerisch und Berlinerisch mit je 593 Ansagen. Ebenso ffmpeg. Man
+braucht sonst nichts.
+
+Daneben liegen die Aufnahmen auch einzeln als `*-Aufnahmen.zip`. Die braucht
+man nur, wenn man eine neuere Fassung möchte als die in der eigenen EXE, oder
+sie an jemanden weitergeben will.
 
 Windows meldet beim ersten Start vermutlich „Computer geschützt" — die EXE ist
 nicht signiert (das kostet Geld). Über *Weitere Informationen → Trotzdem
@@ -77,10 +82,17 @@ Originalpaket. Nachgemessen mit den 593 bayerischen Aufnahmen:
 | `mova.vacuum.r5977e` | 617 | 566 |
 | `dreame.vacuum.r63018` | 503 | 490 |
 
-**So spielst du sie auf:** Tab 4 → *Aufnahmen einlesen* → *ZIP-Datei oder
-fertiges Paket* → das heruntergeladene ZIP auswählen. Entpacken ist nicht
-nötig. Die App wandelt um, gleicht die Lautstärke an die Originalansagen an
-und baut das Paket für dein Modell.
+**Sie sind in der EXE mit dabei.** Kein Download, kein Entpacken, kein Suchen
+im Explorer — die vier Dialekte stecken in der Programmdatei und werden beim
+ersten Bedarf einmalig in den Datenordner ausgepackt. Die App wandelt um,
+gleicht die Lautstärke an die Originalansagen an und baut das Paket für dein
+Modell.
+
+Wer sie trotzdem einzeln haben will — etwa um eine neuere Fassung zu
+holen — findet sie weiterhin als Download bei den
+[Releases](https://github.com/Anon365-Project/dreame-sprachpaket-manager/releases)
+und liest sie über Tab 4 → *Aufnahmen einlesen* ein. Eine so geladene Fassung
+hat dann Vorrang vor der mitgelieferten.
 
 Die Aufnahmen entstanden mit **ElevenLabs** und sprechen echten Dialekt — auch
 in der Aussprache, nicht nur in der Wortwahl. Sie stehen unter eigenen
