@@ -17,6 +17,18 @@ ohne Valetudo, mit einer einzigen portablen EXE.
   statt halb hochdeutscher Schreibweise.
 * **Hessisch-Aufnahmen.zip** ist neu dabei.
 
+### Kleinere Korrekturen
+
+Beim Überarbeiten sind ein paar Fehler in den hessischen Texten aufgefallen,
+die vorher falsch ausgesprochen wurden:
+
+* `Spaeder` (7 Ansagen) — eine Ersatzschreibung ohne Umlaut, die die
+  Sprachausgabe als „Spa-e-der" vorgelesen hat. Jetzt `schbäder`.
+* `risch` (2 Ansagen) — ein abgeschnittenes Wort, richtig ist `rischtisch`.
+* Uneinheitliches `nochema` / `nochemol` und `Reinigung` / `Reinischung`
+  vereinheitlicht.
+* Die Küche hieß mal `Küch`, mal `Kisch` — im Hessischen immer `Kisch`.
+
 Wer schon v1.1.0 nutzt: Die EXE austauschen lohnt nur, wenn du Hessisch
 willst — die Dialekttexte stecken im Programm. Alles andere ist unverändert.
 
