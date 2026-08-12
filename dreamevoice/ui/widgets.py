@@ -10,19 +10,53 @@ from typing import Callable, Optional
 from .theme import Theme
 
 
+def rounded_rect(canvas: tk.Canvas, x1: float, y1: float, x2: float, y2: float,
+                 radius: float, **kwargs) -> int:
+    """Zeichnet ein Rechteck mit runden Ecken.
+
+    Tkinter kann das nicht von Haus aus. Ein Polygon mit `smooth=True`
+    kommt dem am nächsten: An den vier Ecken liegen die Stützpunkte
+    doppelt, sodass die Kurve dort einen sauberen Viertelkreis
+    beschreibt, während die Kanten gerade bleiben.
+    """
+    r = max(0.0, min(radius, (x2 - x1) / 2, (y2 - y1) / 2))
+    punkte = [
+        x1 + r, y1,  x2 - r, y1,  x2, y1,
+        x2, y1 + r,  x2, y2 - r,  x2, y2,
+        x2 - r, y2,  x1 + r, y2,  x1, y2,
+        x1, y2 - r,  x1, y1 + r,  x1, y1,
+    ]
+    return canvas.create_polygon(punkte, smooth=True, splinesteps=16, **kwargs)
+
+
 class Card(ttk.Frame):
-    """Abgesetzter Kasten mit Titel - gliedert die Tabs optisch."""
+    """Abgesetzter Kasten mit Titel und runden Ecken.
+
+    Die Rundung entsteht auf einer Leinwand, die hinter dem Inhalt liegt:
+    Sie füllt die Fläche in der Kartenfarbe und lässt an den Ecken den
+    Seitenhintergrund durchscheinen. Der Inhalt sitzt weit genug innen,
+    dass sein rechteckiger Rahmen die Rundung nicht wieder zudeckt.
+    """
+
+    RADIUS = 12
+    RAND = 18
 
     def __init__(self, master, theme: Theme, title: str = "",
                  subtitle: str = "", **kwargs) -> None:
-        super().__init__(master, style="Card.TFrame", **kwargs)
+        super().__init__(master, style="TFrame", **kwargs)
         self.theme = theme
         self.body = self
 
-        pad_top = 16
+        self._canvas = tk.Canvas(self, highlightthickness=0, bd=0,
+                                 background=theme.color("bg"))
+        self._canvas.place(x=0, y=0, relwidth=1.0, relheight=1.0)
+        self._form = None
+        self.bind("<Configure>", self._neu_zeichnen)
+
+        pad_top = self.RAND
         if title:
             header = ttk.Frame(self, style="Card.TFrame")
-            header.pack(fill="x", padx=18, pady=(16, 0))
+            header.pack(fill="x", padx=self.RAND, pady=(self.RAND, 0))
             ttk.Label(header, text=title, style="Heading.TLabel").pack(anchor="w")
             if subtitle:
                 ttk.Label(header, text=subtitle, style="Muted.TLabel",
@@ -30,7 +64,20 @@ class Card(ttk.Frame):
             pad_top = 12
 
         self.content = ttk.Frame(self, style="Card.TFrame")
-        self.content.pack(fill="both", expand=True, padx=18, pady=(pad_top, 16))
+        self.content.pack(fill="both", expand=True, padx=self.RAND,
+                          pady=(pad_top, self.RAND))
+
+    def _neu_zeichnen(self, _event=None) -> None:
+        breite = self.winfo_width()
+        hoehe = self.winfo_height()
+        if breite <= 1 or hoehe <= 1:
+            return
+        self._canvas.delete("karte")
+        rounded_rect(self._canvas, 0, 0, breite - 1, hoehe - 1, self.RADIUS,
+                     fill=self.theme.color("surface"),
+                     outline=self.theme.color("border"), width=1,
+                     tags="karte")
+        self._canvas.tag_lower("karte")
 
     def separator(self) -> None:
         ttk.Frame(self.content, style="Separator.TFrame", height=1).pack(
@@ -74,11 +121,16 @@ class LogView(ttk.Frame):
         self.theme = theme
         c = theme.colors
 
+        # Ein feiner Rahmen statt gar keinem: sonst schwimmt die Flaeche
+        # im hellen Design haltlos auf der Karte. Gezeichnet wird er ueber
+        # den Fokusrahmen - relief="solid" laesst sich bei einem Textfeld
+        # nicht einfaerben und bliebe schwarz.
         self.text = tk.Text(
             self, height=height, wrap="word", relief="flat", borderwidth=0,
             background=c["log_bg"], foreground=c["log_text"],
             insertbackground=c["log_text"], font=theme.font_mono,
-            padx=12, pady=10, state="disabled",
+            highlightthickness=1, highlightbackground=c["border"],
+            highlightcolor=c["border"], padx=12, pady=10, state="disabled",
         )
         scroll = ttk.Scrollbar(self, orient="vertical", command=self.text.yview)
         self.text.configure(yscrollcommand=scroll.set)
@@ -170,8 +222,17 @@ class ScrollablePage(ttk.Frame):
     def _on_content_configure(self, _event=None) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
+    #: Breiter wird der Inhalt nicht. Auf einem grossen Bildschirm zöge
+    #: sich sonst jede Karte über die volle Fensterbreite, und eine Zeile
+    #: Text wäre kaum noch am Stück zu lesen.
+    MAX_BREITE = 940
+
     def _on_canvas_configure(self, event) -> None:
-        self.canvas.itemconfigure(self._window, width=event.width)
+        # Die Breite eines Canvas-Elements zu setzen löst kein Configure
+        # des Canvas aus - anders als der Umweg über pack(), der sich
+        # selbst immer wieder aufruft und das Fenster einfriert.
+        self.canvas.itemconfigure(self._window,
+                                  width=min(event.width, self.MAX_BREITE))
 
     # -- Mausrad -----------------------------------------------------------
     def _bind_wheel(self, active: bool) -> None:
@@ -196,7 +257,7 @@ class ScrollablePage(ttk.Frame):
         self.canvas.yview_scroll(delta * 3, "units")
 
     def body(self) -> ttk.Frame:
-        """Innerer Rahmen mit Rand - hier kommt der Tab-Inhalt hinein."""
+        """Innerer Rahmen mit Rand - hier kommt der Seiteninhalt hinein."""
         rahmen = ttk.Frame(self.content, style="TFrame")
         rahmen.pack(fill="both", expand=True, padx=self._padx, pady=self._pady)
         return rahmen

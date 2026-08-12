@@ -1390,6 +1390,43 @@ def main() -> int:
     _shutil.rmtree(vh_dir, ignore_errors=True)
 
     # ---------------------------------------------------------------
+    section("26b. Gemerkte Lautheitswerte")
+
+    # Der Schluessel muss am Inhalt haengen, nicht am Pfad oder der
+    # Aenderungszeit: Beim Bauen wird das Aufnahmen-Archiv jedes Mal neu
+    # entpackt, wodurch jede Datei eine frische Zeit bekommt. Haengt der
+    # Schluessel daran, greift der Puffer nie - genau das war der Fall.
+    laut_dir = Path(tempfile.mkdtemp())
+    a = laut_dir / "7.ogg"
+    a.write_bytes(minimal_vorbis_ogg())
+    schluessel_a = audio._lautheit_schluessel(a)
+    check("eine Datei bekommt einen Schluessel", bool(schluessel_a))
+
+    # Dieselbe Datei noch einmal entpackt: anderer Name, andere Zeit,
+    # gleicher Inhalt - der Schluessel muss derselbe sein.
+    b = laut_dir / "kopie" / "7.ogg"
+    b.parent.mkdir()
+    b.write_bytes(a.read_bytes())
+    check("gleicher Inhalt ergibt denselben Schluessel",
+          audio._lautheit_schluessel(b) == schluessel_a)
+
+    c = laut_dir / "8.ogg"
+    c.write_bytes(minimal_vorbis_ogg() + bytes([0]))
+    check("anderer Inhalt ergibt einen anderen Schluessel",
+          audio._lautheit_schluessel(c) != schluessel_a)
+    check("eine fehlende Datei hat keinen Schluessel",
+          audio._lautheit_schluessel(laut_dir / "gibtsnicht.ogg") is None)
+
+    quelle_mess = inspect.getsource(audio.measure_loudness)
+    check("measure_loudness fragt den Puffer",
+          "_LAUTHEIT.get(" in quelle_mess)
+    check("und laesst sich abschalten", "use_cache" in quelle_mess)
+    check("gesichert wird gebuendelt, nicht nach jeder Messung",
+          "_LAUTHEIT_BUENDEL" in inspect.getsource(audio._lautheit_sichern))
+
+    _shutil.rmtree(laut_dir, ignore_errors=True)
+
+    # ---------------------------------------------------------------
     section("27. Das Hauptfenster baut sich auf")
 
     # Falsche Stilnamen, fehlende Widgets, Tippfehler in pack() - all das

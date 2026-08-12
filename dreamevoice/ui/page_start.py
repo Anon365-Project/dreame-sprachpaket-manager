@@ -98,32 +98,44 @@ class StartPage(ttk.Frame):
         card.pack(fill="x")
         inhalt = card.content
 
-        def zeile(text: str, widget) -> None:
-            reihe = ttk.Frame(inhalt, style="Card.TFrame")
-            reihe.pack(fill="x", pady=4)
-            ttk.Label(reihe, text=text, style="Surface.TLabel",
-                      width=13, anchor="w").pack(side="left")
-            widget.pack(side="left", fill="x", expand=True)
+        # Ein Raster statt gestapelter Zeilen: nur so stehen Beschriftungen
+        # und Felder wirklich auf einer Flucht, egal wie lang die Woerter
+        # sind. Die Felder gehoeren dabei ins Raster - werden sie einem
+        # anderen Elternteil zugewiesen, landen sie nebeneinander.
+        # Nicht die volle Kartenbreite: Ein Eingabefeld, das sich über 900
+        # Pixel zieht, sieht nach Datenbankmaske aus - und eine E-Mail
+        # braucht keine 900 Pixel.
+        raster = ttk.Frame(inhalt, style="Card.TFrame")
+        raster.pack(anchor="w")
+        raster.columnconfigure(1, minsize=340)
 
-        zeile("E-Mail", ttk.Entry(inhalt, textvariable=self.var_email))
-        zeile("Passwort", ttk.Entry(inhalt, textvariable=self.var_password,
-                                    show="•"))
+        def beschriftung(zeile: int, text: str) -> None:
+            ttk.Label(raster, text=text, style="Surface.TLabel", anchor="w"
+                      ).grid(row=zeile, column=0, sticky="w",
+                             padx=(0, 12), pady=5)
 
-        reihe_region = ttk.Frame(inhalt, style="Card.TFrame")
-        reihe_region.pack(fill="x", pady=4)
-        ttk.Label(reihe_region, text="Region", style="Surface.TLabel",
-                  width=13, anchor="w").pack(side="left")
+        beschriftung(0, "E-Mail")
+        ttk.Entry(raster, textvariable=self.var_email).grid(
+            row=0, column=1, sticky="ew", pady=5)
+
+        beschriftung(1, "Passwort")
+        ttk.Entry(raster, textvariable=self.var_password, show="•").grid(
+            row=1, column=1, sticky="ew", pady=5)
+
+        beschriftung(2, "Region")
+        region_zelle = ttk.Frame(raster, style="Card.TFrame")
+        region_zelle.grid(row=2, column=1, sticky="ew", pady=5)
         self.combo_region = ttk.Combobox(
-            reihe_region, textvariable=self.var_region, state="readonly",
-            values=[REGION_LABELS[r] for r in REGIONS], width=28)
+            region_zelle, textvariable=self.var_region, state="readonly",
+            values=[REGION_LABELS[r] for r in REGIONS], width=26)
         self.combo_region.pack(side="left")
-        ttk.Checkbutton(reihe_region, text="selbst erkennen",
+        ttk.Checkbutton(region_zelle, text="selbst erkennen",
                         style="TCheckbutton",
                         variable=self.var_autoregion).pack(side="left", padx=(10, 0))
 
-        ttk.Checkbutton(inhalt, text="Zugangsdaten im Windows-Tresor merken",
-                        style="TCheckbutton",
-                        variable=self.var_remember).pack(anchor="w", pady=(8, 0))
+        ttk.Checkbutton(raster, text="Zugangsdaten im Windows-Tresor merken",
+                        style="TCheckbutton", variable=self.var_remember
+                        ).grid(row=3, column=1, sticky="w", pady=(8, 0))
 
         knoepfe = ttk.Frame(inhalt, style="Card.TFrame")
         knoepfe.pack(fill="x", pady=(14, 0))

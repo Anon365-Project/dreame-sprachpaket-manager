@@ -61,6 +61,12 @@ class FertigerDialekt:
     ansagen: int
     stimme: str
     beschreibung: str
+    #: Unter dieser Kennung fuehrt der Roboter das Paket. Bewusst je
+    #: Dialekt verschieden: So verraet die Abfrage am Geraet, welcher
+    #: gerade laeuft - "CUSTOM" fuer alle waere nichtssagend. Offizielle
+    #: Sprachkennungen wie DE sind es nicht, also bleibt die
+    #: mitgelieferte deutsche Stimme unangetastet.
+    kennung: str = "CUSTOM"
 
     @property
     def url(self) -> str:
@@ -86,22 +92,26 @@ KATALOG: List[FertigerDialekt] = [
         key="bayerisch", name="Bayerisch",
         datei="Bayerisch-Aufnahmen.zip", ansagen=593,
         stimme="ElevenLabs, männlich",
-        beschreibung="Oberbayerisch, wie man es um München herum spricht."),
+        beschreibung="Oberbayerisch, wie man es um München herum spricht.",
+        kennung="BAYERN"),
     FertigerDialekt(
         key="hessisch", name="Hessisch",
         datei="Hessisch-Aufnahmen.zip", ansagen=593,
         stimme="ElevenLabs, männlich",
-        beschreibung="Frankfurterisch aus dem Rhein-Main-Gebiet."),
+        beschreibung="Frankfurterisch aus dem Rhein-Main-Gebiet.",
+        kennung="HESSEN"),
     FertigerDialekt(
         key="wienerisch", name="Wienerisch",
         datei="Wienerisch-Aufnahmen.zip", ansagen=593,
         stimme="ElevenLabs, männlich",
-        beschreibung="Wiener Umgangssprache, kein Bühnendialekt."),
+        beschreibung="Wiener Umgangssprache, kein Bühnendialekt.",
+        kennung="WIEN"),
     FertigerDialekt(
         key="berlinerisch", name="Berlinerisch",
         datei="Berlinerisch-Aufnahmen.zip", ansagen=593,
         stimme="ElevenLabs, männlich",
-        beschreibung="Berliner Schnauze, mit dem harten j statt g."),
+        beschreibung="Berliner Schnauze, mit dem harten j statt g.",
+        kennung="BERLIN"),
 ]
 
 

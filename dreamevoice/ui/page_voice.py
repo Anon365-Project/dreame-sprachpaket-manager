@@ -42,11 +42,17 @@ class Auswahl:
     """Ein Eintrag in der Stimmenliste."""
 
     def __init__(self, key: str, name: str, art: str, beschreibung: str,
+                 kennung: str = "CUSTOM",
                  dialekt=None, paket: Optional[Path] = None) -> None:
         self.key = key
         self.name = name
         self.art = art
         self.beschreibung = beschreibung
+        # Jede Stimme bringt ihre eigene Kennung mit. Frueher stand hier
+        # immer der zuletzt benutzte Wert aus der Konfiguration - wer
+        # einmal Hessisch aufgespielt hatte, bekam "HESSEN" auch bei
+        # Bayerisch angeboten.
+        self.kennung = kennung
         self.dialekt = dialekt          # FertigerDialekt oder None
         self.paket = paket              # fertiges .tar.gz oder None
 
@@ -67,7 +73,12 @@ class VoicePage(ttk.Frame):
 
         self._auswahl: List[Auswahl] = []
         self._task: Optional[Task] = None
-        self._proben: Dict[int, Path] = {}
+        #: Laeuft gerade eine Probe? Dann ist der Anhoeren-Knopf der
+        #: Stopp-Knopf.
+        self._probe_laeuft: Optional[Task] = None
+        #: Je Stimme die schon umgewandelten Ansagen - ein zweiter Klick
+        #: spart Auspacken und ffmpeg.
+        self._probe_puffer: Dict[str, Dict[int, Path]] = {}
 
         self.var_stimme = tk.StringVar()
         self.var_lang = tk.StringVar(value=state.config["custom_lang_id"] or "CUSTOM")
@@ -126,9 +137,11 @@ class VoicePage(ttk.Frame):
                   width=11, anchor="w").pack(side="left")
         ttk.Entry(kennung, textvariable=self.var_lang, width=12).pack(side="left")
         ttk.Label(kennung,
-                  text=("CUSTOM lässt die mitgelieferte deutsche Stimme "
-                        "unangetastet."),
-                  style="Muted.TLabel").pack(side="left", padx=(10, 0))
+                  text=("Jede Stimme bringt ihre eigene mit. Solange es keine "
+                        "offizielle Sprachkennung ist, bleibt die deutsche "
+                        "Originalstimme unangetastet."),
+                  style="Muted.TLabel", wraplength=440, justify="left"
+                  ).pack(side="left", padx=(10, 0))
 
         knoepfe = ttk.Frame(card2.content, style="Card.TFrame")
         knoepfe.pack(fill="x", pady=(14, 0))
@@ -191,14 +204,18 @@ class VoicePage(ttk.Frame):
                 key=f"dialekt:{d.key}", name=d.name, art=QUELLE_MITGELIEFERT,
                 beschreibung=f"{d.beschreibung}  ({d.ansagen} Ansagen, "
                              f"{d.stimme}, {woher})",
-                dialekt=d))
+                kennung=d.kennung, dialekt=d))
 
         for info in library.list_packs(build_dir()):
+            # Selbst gebaute Pakete tragen ihre Kennung in der
+            # Beschreibungsdatei. Fehlt sie - etwa bei einem von Hand
+            # hineinkopierten Paket -, bleibt es bei CUSTOM.
             eintraege.append(Auswahl(
                 key=f"paket:{info.path.name}",
                 name=info.dialect or info.path.stem,
                 art=QUELLE_GEBAUT,
                 beschreibung=info.label,
+                kennung=(info.lang_id or "CUSTOM").strip().upper(),
                 paket=info.path))
 
         return eintraege
@@ -210,12 +227,12 @@ class VoicePage(ttk.Frame):
     def _on_pick(self, _event=None) -> None:
         wahl = self._gewaehlt()
         self.lbl_probe.configure(text="")
-        self._proben = {}
         if wahl is None:
             self.lbl_beschreibung.configure(
                 text="Es steht noch keine fertige Stimme bereit.")
             return
         self.lbl_beschreibung.configure(text=wahl.beschreibung)
+        self.var_lang.set(wahl.kennung)
 
     # -- Anhören --------------------------------------------------------
     def _quelle_holen(self, wahl: Auswahl) -> Optional[Path]:
@@ -228,28 +245,48 @@ class VoicePage(ttk.Frame):
         return None
 
     def _on_probe(self) -> None:
+        # Läuft gerade eine Probe, ist derselbe Knopf der Stopp-Knopf.
+        # Zwölf Sekunden zuhören zu müssen, weil man sich verklickt hat,
+        # wäre die unfreundlichste Art, eine Vorschau anzubieten.
+        if self._probe_laeuft is not None:
+            self._probe_laeuft.cancel()
+            return
+
         wahl = self._gewaehlt()
         if wahl is None:
             return
-        self.btn_probe.configure(state="disabled")
-        self.lbl_probe.configure(text="Bereite die Probe vor ...")
+
         ffmpeg = self.state.ffmpeg
         katalog = self.state.catalog
+        # Einmal umgewandelte Ansagen werden gemerkt: Beim zweiten Klick
+        # auf dieselbe Stimme entfällt Auspacken und ffmpeg.
+        gemerkt = self._probe_puffer.get(wahl.key)
+        self.lbl_probe.configure(
+            text="Spiele ab ..." if gemerkt else "Bereite die Probe vor ...")
+        self.btn_probe.configure(text="■ Stopp")
+        aufgabe = Task()
+        self._probe_laeuft = aufgabe
 
         def work(task: Task):
-            quelle = self._quelle_holen(wahl)
-            if quelle is None:
-                return {}
-            proben = vorhoeren.probe_vorbereiten(quelle, ffmpeg,
-                                                 log=lambda m: self._log(m))
-            if not proben:
-                return {}
-            reihenfolge = [proben[n] for n in sorted(proben)]
+            proben = gemerkt
+            if proben is None:
+                quelle = self._quelle_holen(wahl)
+                if quelle is None:
+                    return None
+                proben = vorhoeren.probe_vorbereiten(quelle, ffmpeg,
+                                                     log=lambda m: self._log(m))
+                if not proben:
+                    return {}
+            if task.cancelled:
+                return proben
+
+            nummern = sorted(proben)
+            reihenfolge = [proben[n] for n in nummern]
 
             def melde(index: int) -> None:
-                nummer = sorted(proben)[index]
                 to_main(self, self.lbl_probe.configure,
-                        {"text": f"▶ {vorhoeren.beschriftung(nummer, katalog)}"})
+                        {"text": f"▶ {index + 1}/{len(nummern)}  "
+                                 f"{vorhoeren.beschriftung(nummern[index], katalog)}"})
 
             vorhoeren.abspielen(reihenfolge,
                                 cancelled=lambda: task.cancelled,
@@ -257,6 +294,12 @@ class VoicePage(ttk.Frame):
             return proben
 
         def ok(proben) -> None:
+            if proben is None:
+                self.lbl_probe.configure(text="")
+                show_warning(
+                    self, self.theme, "Aufnahmen nicht gefunden",
+                    f"Die Aufnahmen für {wahl.name} ließen sich nicht öffnen.")
+                return
             if not proben:
                 self.lbl_probe.configure(text="")
                 show_warning(
@@ -265,19 +308,25 @@ class VoicePage(ttk.Frame):
                     "Zum Anhören wird ffmpeg gebraucht. Es steckt in der EXE "
                     "und wird beim ersten Bedarf ausgepackt.")
                 return
-            self._proben = proben
-            self.lbl_probe.configure(
-                text=f"{len(proben)} Ansagen angehört. "
-                     f"Klingt gut? Dann unten aufspielen.")
+            self._probe_puffer[wahl.key] = proben
+            if aufgabe.cancelled:
+                self.lbl_probe.configure(text="Probe abgebrochen.")
+            else:
+                self.lbl_probe.configure(
+                    text=f"{len(proben)} Ansagen angehört. "
+                         f"Klingt gut? Dann unten aufspielen.")
 
         def fail(exc: Exception) -> None:
             self.lbl_probe.configure(text="")
             nachricht, hinweis = error_text(exc)
             show_error(self, self.theme, "Probe fehlgeschlagen", nachricht, hinweis)
 
-        self._task = run_async(self, work, on_success=ok, on_error=fail,
-                               on_finally=lambda: self.btn_probe.configure(
-                                   state="normal"))
+        def fertig() -> None:
+            self._probe_laeuft = None
+            self.btn_probe.configure(text="▶ Anhören")
+
+        run_async(self, work, on_success=ok, on_error=fail, on_finally=fertig,
+                  task=aufgabe)
 
     # -- Aufspielen -----------------------------------------------------
     def _log(self, nachricht: str, art: str = "info") -> None:

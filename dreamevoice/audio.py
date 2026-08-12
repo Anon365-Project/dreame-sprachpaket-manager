@@ -13,6 +13,8 @@ still ein unbrauchbares Paket zu bauen.
 
 from __future__ import annotations
 
+import atexit
+import hashlib
 import json
 import logging
 import struct
@@ -20,12 +22,14 @@ import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from .errors import AudioError
 from .paths import app_dir, data_dir
 
 _LOG = logging.getLogger(__name__)
+
+atexit.register(lambda: _lautheit_sichern(erzwingen=True))
 
 TARGET_CODEC = "vorbis"
 TARGET_RATE = 16000
@@ -164,17 +168,90 @@ def ffmpeg_version(ffmpeg: Optional[Path] = None) -> str:
         return ""
 
 
-def measure_loudness(src: Path, ffmpeg: Optional[Path] = None) -> Optional[dict]:
+#: Gemessene Lautheiten, gemerkt über die Sitzung hinaus.
+#:
+#: Eine Messung ist ein eigener ffmpeg-Aufruf. Beim Bauen eines
+#: Dialektpakets fallen davon knapp 600 an - das waren gemessen 62
+#: Sekunden, obwohl die mitgelieferten Aufnahmen längst auf dem richtigen
+#: Pegel liegen und gar nicht umgewandelt werden müssen. Gemessen an
+#: einem bayerischen Paket: 59 s beim ersten Bau, 5 s bei jedem weiteren.
+_LAUTHEIT: Dict[str, dict] = {}
+_LAUTHEIT_DATEI: Optional[Path] = None
+_LAUTHEIT_UNGESICHERT = 0
+
+#: Erst ab so vielen neuen Werten wird geschrieben. Nach jeder einzelnen
+#: Messung zu speichern waere selbst eine Bremse - die Datei waechst mit
+#: jedem Eintrag, und beim Bauen kommen knapp 600 zusammen.
+_LAUTHEIT_BUENDEL = 40
+
+
+def _lautheit_schluessel(src: Path) -> Optional[str]:
+    """Erkennungsmerkmal einer Datei - über ihren Inhalt, nicht ihren Pfad.
+
+    Die Änderungszeit taugt nicht: Beim Bauen wird das Aufnahmen-Archiv
+    jedes Mal frisch entpackt, wodurch jede Datei eine neue Zeit bekommt
+    und kein einziger Wert je wiedergefunden würde. Der Inhalt dagegen
+    bleibt gleich - und ihn zu lesen kostet bei einer Ansage von wenigen
+    Kilobyte praktisch nichts.
+    """
+    try:
+        roh = src.read_bytes()
+    except OSError:
+        return None
+    return f"{len(roh)}|{hashlib.md5(roh).hexdigest()}"
+
+
+def _lautheit_laden() -> None:
+    global _LAUTHEIT_DATEI
+    if _LAUTHEIT_DATEI is not None:
+        return
+    from .paths import data_dir
+    _LAUTHEIT_DATEI = data_dir() / "lautheit.json"
+    try:
+        roh = json.loads(_LAUTHEIT_DATEI.read_text(encoding="utf-8"))
+        if isinstance(roh, dict):
+            _LAUTHEIT.update({k: v for k, v in roh.items()
+                              if isinstance(v, dict)})
+    except (OSError, ValueError):
+        pass
+
+
+def _lautheit_sichern(erzwingen: bool = False) -> None:
+    global _LAUTHEIT_UNGESICHERT
+    if _LAUTHEIT_DATEI is None:
+        return
+    if not erzwingen and _LAUTHEIT_UNGESICHERT < _LAUTHEIT_BUENDEL:
+        return
+    _LAUTHEIT_UNGESICHERT = 0
+    try:
+        _LAUTHEIT_DATEI.write_text(
+            json.dumps(_LAUTHEIT, separators=(",", ":")), encoding="utf-8")
+    except OSError as exc:
+        _LOG.debug("Lautheitswerte nicht gesichert: %s", exc)
+
+
+def measure_loudness(src: Path, ffmpeg: Optional[Path] = None,
+                     use_cache: bool = True) -> Optional[dict]:
     """Misst die Lautheit einer Datei (erster Durchgang von loudnorm).
 
     Rückgabe: die Messwerte von ffmpeg als Zahlen-Wörterbuch mit den
     Schlüsseln `input_i`, `input_tp`, `input_lra`, `input_thresh` - oder
     None, wenn die Messung nicht geklappt hat. `input_i` ist die
     integrierte Lautheit in LUFS, also das, was man als Lautstärke hört.
+
+    Ergebnisse werden gemerkt; `use_cache=False` erzwingt eine frische
+    Messung.
     """
     ffmpeg = ffmpeg or find_ffmpeg()
     if not ffmpeg or not src.is_file():
         return None
+
+    puffer_schluessel = _lautheit_schluessel(src) if use_cache else None
+    if puffer_schluessel:
+        _lautheit_laden()
+        gemerkt = _LAUTHEIT.get(puffer_schluessel)
+        if gemerkt is not None:
+            return dict(gemerkt)
 
     cmd = [
         str(ffmpeg), "-hide_banner", "-nostats", "-i", str(src), "-vn",
@@ -207,6 +284,12 @@ def measure_loudness(src: Path, ffmpeg: Optional[Path] = None) -> Optional[dict]
         if wert != wert or wert in (float("inf"), float("-inf")):
             return None
         werte[schluessel] = wert
+
+    if puffer_schluessel:
+        global _LAUTHEIT_UNGESICHERT
+        _LAUTHEIT[puffer_schluessel] = dict(werte)
+        _LAUTHEIT_UNGESICHERT += 1
+        _lautheit_sichern()
     return werte
 
 

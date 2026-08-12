@@ -26,6 +26,8 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import time
+import wave
 import zipfile
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -170,12 +172,26 @@ def beschriftung(nummer: int, katalog: Optional[SoundCatalog] = None) -> str:
     return f"Ansage {nummer} · {eintrag.title}" if eintrag else f"Ansage {nummer}"
 
 
+def dauer(datei: Path) -> float:
+    """Länge einer WAV-Datei in Sekunden."""
+    try:
+        with wave.open(str(datei)) as w:
+            rate = w.getframerate()
+            return w.getnframes() / rate if rate else 0.0
+    except (OSError, wave.Error):
+        return 0.0
+
+
 def abspielen(dateien: List[Path],
               cancelled: Optional[Callable[[], bool]] = None,
               melden: Optional[Callable[[int], None]] = None) -> int:
     """Spielt WAV-Dateien nacheinander ab. Gibt zurück, wie viele liefen.
 
-    Läuft in einem Hintergrundfaden, weil winsound blockiert.
+    Läuft in einem Hintergrundfaden. Abgespielt wird bewusst
+    **asynchron** und mit kurzen Wartepausen dazwischen: Ein blockierender
+    Aufruf liesse sich erst nach der ganzen Ansage abbrechen, und wer sich
+    verklickt hat, müsste zwölf Sekunden zuhören. So greift der Abbruch
+    binnen eines Augenblicks.
     """
     cancelled = cancelled or (lambda: False)
     if sys.platform != "win32":
@@ -186,16 +202,34 @@ def abspielen(dateien: List[Path],
         return 0
 
     gespielt = 0
-    for index, datei in enumerate(dateien):
-        if cancelled():
-            break
-        if melden:
-            melden(index)
-        try:
-            winsound.PlaySound(str(datei), winsound.SND_FILENAME)
+    try:
+        for index, datei in enumerate(dateien):
+            if cancelled():
+                break
+            if melden:
+                melden(index)
+            try:
+                winsound.PlaySound(str(datei),
+                                   winsound.SND_FILENAME | winsound.SND_ASYNC)
+            except RuntimeError as exc:
+                _LOG.warning("Abspielen fehlgeschlagen (%s): %s", datei, exc)
+                continue
+
+            rest = dauer(datei) or 3.0
+            while rest > 0:
+                if cancelled():
+                    break
+                schritt = min(0.08, rest)
+                time.sleep(schritt)
+                rest -= schritt
             gespielt += 1
-        except RuntimeError as exc:
-            _LOG.warning("Abspielen fehlgeschlagen (%s): %s", datei, exc)
+    finally:
+        # Bei Abbruch läuft sonst die angefangene Ansage weiter, obwohl
+        # die Oberfläche längst wieder "bereit" meldet.
+        try:
+            winsound.PlaySound(None, winsound.SND_PURGE)
+        except RuntimeError:
+            pass
     return gespielt
 
 

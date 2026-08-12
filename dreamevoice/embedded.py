@@ -223,18 +223,39 @@ def has_dialekte() -> bool:
     return MAGIC_DIALEKTE in _bloecke()
 
 
+#: Einmal gelesen, dann gemerkt. Die Liste zu holen bedeutet, das ganze
+#: angehängte tar durchzublättern - bei 36 MB dauert das spürbar. Die
+#: Oberfläche fragt aber je Dialekt einmal nach, und das bei jedem
+#: Anzeigen der Seite; ungepuffert waren das über 140 MB Lesen pro
+#: Klick, mitten im Hauptthread. Die EXE ändert sich zur Laufzeit nicht,
+#: also ist Merken hier gefahrlos.
+_dialektliste: Optional[List[str]] = None
+
+
 def list_dialekte() -> List[str]:
     """Die Dateinamen der mitgelieferten Aufnahme-Archive."""
+    global _dialektliste
+    if _dialektliste is not None:
+        return list(_dialektliste)
+
     tf = _dialekt_tar()
     if tf is None:
+        _dialektliste = []
         return []
     try:
-        return sorted(m.name for m in tf if m.isfile())
+        _dialektliste = sorted(m.name for m in tf if m.isfile())
     except tarfile.TarError as exc:
         _LOG.error("Dialektliste nicht lesbar: %s", exc)
-        return []
+        _dialektliste = []
     finally:
         tf.close()
+    return list(_dialektliste)
+
+
+def _liste_vergessen() -> None:
+    """Nur für Tests: erzwingt erneutes Lesen."""
+    global _dialektliste
+    _dialektliste = None
 
 
 def dialekte_ordner() -> Path:
