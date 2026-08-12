@@ -12,6 +12,7 @@ from .. import (APP_NAME, AUTOR, HAFTUNG, LIZENZ, PROJEKT_URL, SPENDEN_URL,
                 __version__, textfiles)
 from ..paths import data_dir, log_file
 from .page_start import StartPage
+from .page_voice import VoicePage
 from .shell import NavShell
 from .state import AppState
 from .tab_builder import BuilderTab
@@ -139,21 +140,27 @@ class MainWindow(tk.Tk):
         buehne = self.shell.buehne
         self.page_start = StartPage(buehne, self.theme, self.state_obj,
                                     gehe_zu=self.shell.show)
+        self.page_voice = VoicePage(buehne, self.theme, self.state_obj,
+                                    gehe_zu=self.shell.show)
         self.tab_connect = ConnectTab(buehne, self.theme, self.state_obj)
         self.tab_builder = BuilderTab(buehne, self.theme, self.state_obj)
         self.tab_install = InstallTab(buehne, self.theme, self.state_obj)
         self.tab_store = StoreTab(buehne, self.theme, self.state_obj)
 
         # Oben, was man staendig tut - darunter, was selten vorkommt.
+        # "Fertige Stimmen" fasst zusammen, was frueher auf Tab 4 (aussuchen)
+        # und Tab 3 (aufspielen) verteilt war.
         self.shell.add("start", "Start", "🏠", self.page_start,
                        beim_zeigen=self.page_start.refresh)
-        self.shell.add("stimme", "Fertige Stimmen", "🔊", self.tab_store,
-                       beim_zeigen=self._beim_stimmen)
-        self.shell.add("aufspielen", "Aufspielen", "⬆", self.tab_install,
-                       beim_zeigen=self.tab_install.refresh_summary)
+        self.shell.add("stimme", "Fertige Stimmen", "🔊", self.page_voice,
+                       beim_zeigen=self.page_voice.refresh)
+        self.shell.add("eigene", "Eigene Stimmen", "🎙", self.tab_store,
+                       section="Erweitert", beim_zeigen=self._beim_eigene)
         self.shell.add("ansagen", "Einzelne Ansagen", "🧩", self.tab_builder,
-                       section="Erweitert",
-                       beim_zeigen=self._beim_ansagen)
+                       section="Erweitert", beim_zeigen=self._beim_ansagen)
+        self.shell.add("aufspielen", "Bauen und Aufspielen", "⬆",
+                       self.tab_install, section="Erweitert",
+                       beim_zeigen=self.tab_install.refresh_summary)
         self.shell.add("verbindung", "Verbindung", "🔌", self.tab_connect,
                        section="Erweitert")
 
@@ -172,7 +179,7 @@ class MainWindow(tk.Tk):
         self.tab_builder.refresh_rows()
         self.tab_builder.refresh_counter()
 
-    def _beim_stimmen(self) -> None:
+    def _beim_eigene(self) -> None:
         if hasattr(self.tab_store, "refresh_saved_packs"):
             self.tab_store.refresh_saved_packs()
 
@@ -192,11 +199,9 @@ class MainWindow(tk.Tk):
         ohne_basis = ("Dafür fehlt noch das offizielle Sprachpaket deines "
                       "Roboters. Es wird auf der Startseite einmalig geholt.")
 
-        for key in ("stimme", "ansagen"):
+        for key in ("stimme", "eigene", "ansagen", "aufspielen"):
             self.shell.set_enabled(key, verbunden and basis,
                                    ohne_anmeldung if not verbunden else ohne_basis)
-        self.shell.set_enabled("aufspielen", verbunden and basis,
-                               ohne_anmeldung if not verbunden else ohne_basis)
 
     def _toggle_theme(self) -> None:
         messagebox.showinfo(

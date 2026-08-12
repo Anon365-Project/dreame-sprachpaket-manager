@@ -1415,8 +1415,8 @@ def main() -> int:
 
             _shell = _fenster.shell
             check("alle Eintraege der Seitenleiste sind da",
-                  _shell.keys() == ["start", "stimme", "aufspielen",
-                                    "ansagen", "verbindung"],
+                  _shell.keys() == ["start", "stimme", "eigene",
+                                    "ansagen", "aufspielen", "verbindung"],
                   str(_shell.keys()))
             check("Start ist die erste Seite", _shell.current == "start")
             check("ohne Anmeldung steht das Anmeldeformular",
@@ -1424,7 +1424,7 @@ def main() -> int:
                   _fenster.page_start._zustand)
             check("was ohne Anmeldung sinnlos ist, ist gesperrt",
                   all(not _shell._eintraege[k].enabled
-                      for k in ("stimme", "aufspielen", "ansagen")))
+                      for k in ("stimme", "eigene", "ansagen", "aufspielen")))
             check("Verbindung bleibt erreichbar",
                   _shell._eintraege["verbindung"].enabled)
             check("und traegt einen Warnpunkt",
@@ -1445,6 +1445,15 @@ def main() -> int:
             check("die vier bisherigen Ansichten sind eingezogen",
                   all(getattr(_fenster, n, None) is not None for n in
                       ("tab_connect", "tab_builder", "tab_install", "tab_store")))
+
+            # Die neue Seite muss die mitgelieferten Dialekte auch finden -
+            # eine leere Auswahl waere der peinlichste aller Fehler.
+            _stimmen = _fenster.page_voice._auswahl
+            check("die Stimmenseite findet die Dialekte", len(_stimmen) >= 4,
+                  f"{len(_stimmen)} gefunden")
+            check("und jede laesst sich aufloesen",
+                  all(_fenster.page_voice._quelle_holen(a) is not None
+                      for a in _stimmen))
         finally:
             if _fenster is not None:
                 try:
