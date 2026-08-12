@@ -130,6 +130,17 @@ wenn man mehr will als einen der mitgelieferten Dialekte. Graue Einträge
 sind nicht kaputt — sie brauchen nur erst die Anmeldung; ein Klick darauf
 verrät, was fehlt.
 
+### Vorher anhören
+
+Bevor irgendetwas auf den Roboter geht, spielt *Anhören* vier typische
+Ansagen ab — Reinigung startet, Akku schwach, festgefahren, Rückkehr zur
+Station. Gefällt die Stimme nicht, ist nichts passiert.
+
+Der Knopf wird währenddessen zum **Stopp**; wer sich verklickt hat, muss
+nicht zwölf Sekunden zuhören. Das funktioniert mit allem, was in dieser App
+ein Paket sein kann: einem gebauten `.tar.gz`, einem Aufnahmen-ZIP oder
+einem Ordner voller nummerierter Dateien.
+
 ---
 
 ## Welche Roboter funktionieren?
@@ -266,12 +277,13 @@ Dreame-Cloud. Nur der Download des Pakets läuft direkt vom PC zum Roboter.
 
 ```
 main.py                      Startpunkt
-selftest.py                  Selbsttest der Kernlogik (257 Prüfungen)
+selftest.py                  Selbsttest der Kernlogik (355 Prüfungen)
 namecheck.py                 Sucht unbekannte Namen und Schlüsselwörter
 build_exe.ps1                Baut die portable EXE
 DreameSprachpaket.spec       PyInstaller-Bauplan
 
 embed_ffmpeg.py              Hängt ffmpeg komprimiert an die fertige EXE
+embed_dialekte.py            Hängt die vier fertigen Dialekte an die EXE
 
 dreamevoice/
   cloud.py                   Dreamehome-Cloud: Anmeldung, Geräte, MIoT-Befehle
@@ -280,7 +292,9 @@ dreamevoice/
   audio.py                   Formatprüfung und Umwandlung (OGG Vorbis 16 kHz)
   loudness.py                Lautheit der Originalansagen als Vorlage
   ffmpeg_setup.py            Nutzergesteuerte ffmpeg-Einrichtung
-  embedded.py                Liest das an die EXE angehängte ffmpeg
+  embedded.py                Liest die an die EXE angehängten Daten
+  dialektpakete.py           Die mitgelieferten Dialekte bereitstellen
+  vorhoeren.py               Ansagen entnehmen und abspielen
   server.py                  Kurzlebiger Webserver für die Auslieferung
   installer.py               Ablauf: bauen, ausliefern, Auftrag, Überwachung
   community.py               Geprüfte Community-Pakete
@@ -300,13 +314,16 @@ dreamevoice/
   data/sound_catalog.json    616 Ansagen des X50 Ultra Complete
   ui/
     app.py                   Hauptfenster
+    shell.py                 Seitenleiste, Seitenwechsel, Sperren
     theme.py                 Erscheinungsbild (hell/dunkel, ohne Fremdpakete)
     widgets.py               Bausteine
     state.py                 Gemeinsamer Zustand, Hintergrundarbeit
-    tab_connect.py           *Start*
-    tab_builder.py           *Einzelne Ansagen*
-    tab_install.py           *Fertige Stimmen*
+    page_start.py            *Start* - Anmeldung, Originalpaket, Zustand
+    page_voice.py            *Fertige Stimmen* - wählen, anhören, aufspielen
     tab_store.py             *Eigene Stimmen*
+    tab_builder.py           *Einzelne Ansagen*
+    tab_install.py           *Bauen und Aufspielen*
+    tab_connect.py           *Verbindung*
 ```
 
 ---
@@ -690,11 +707,34 @@ zuweisen — die Textlisten sind dafür eine fertige Vorlage.
 ## Datenschutz
 
 * E-Mail und Passwort gehen ausschließlich an die Dreame-Server.
-* Das Passwort wird nur gespeichert, wenn du es ausdrücklich möchtest, und
-  dann mit der Windows-DPAPI verschlüsselt (gebunden an dein Windows-Konto).
+* **Passwort und ElevenLabs-Schlüssel liegen im
+  Windows-Anmeldeinformationsspeicher** — nicht in einer Datei, nicht in der
+  EXE, nie im Klartext auf der Platte. Nur falls der Anmeldespeicher nicht
+  zur Verfügung steht, weicht die App auf die `config.json` aus und
+  verschlüsselt dort mit der Windows-DPAPI (gebunden an dein Windows-Konto).
 * Alle Dateien liegen im Ordner `Daten` neben der App. Zum Entfernen genügt
   es, diesen Ordner zu löschen.
 * Die App sendet keinerlei Nutzungsdaten.
+
+**Nachgeprüft für v1.2.0:** Arbeitsverzeichnis, die EXE, die
+Zwischenstände und sämtliche Git-Objekte wurden nach dem Passwort und dem
+ElevenLabs-Schlüssel durchsucht — in sechs Kodierungen (Klartext UTF-8 und
+UTF-16, base64 mit und ohne Polster, URL-kodiert, JSON-escaped). Kein
+einziger Treffer. Der Selbsttest hält das fest, samt der Prüfung, dass die
+echten Einträge im Anmeldespeicher einen Testlauf unbeschadet überstehen.
+
+### Die App weitergeben
+
+Im Datenordner steht zwar kein Geheimnis, aber Persönliches: deine
+E-Mail-Adresse, Name, Geräte-ID und MAC deines Roboters, die IP dieses PCs,
+die zuletzt benutzte ElevenLabs-Stimme und das Protokoll.
+
+Unter *Verbindung* räumt **Persönliche Daten entfernen** genau das weg —
+einschließlich der Einträge im Anmeldespeicher. Deine gebauten Sprachpakete
+und die Dialekttexte bleiben erhalten; darin steckt nichts Persönliches.
+
+Wer nur die EXE weitergibt, muss ohnehin nichts tun: Die `config.json`
+liegt im Datenordner.
 
 ---
 

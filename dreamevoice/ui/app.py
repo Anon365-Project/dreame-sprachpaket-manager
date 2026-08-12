@@ -219,26 +219,47 @@ class MainWindow(tk.Tk):
         window = tk.Toplevel(self)
         window.title(f"Über {APP_NAME}")
         window.configure(bg=self.theme.color("bg"))
-        window.geometry("640x560")
+        window.geometry("640x440")
         window.transient(self)
 
         card = Card(window, self.theme, f"{APP_NAME} {__version__}",
                     f"von {AUTOR} · {LIZENZ}-Lizenz")
         card.pack(fill="both", expand=True, padx=16, pady=16)
 
-        text = tk.Text(card.content, wrap="word", relief="flat", borderwidth=0,
+        # Text und Bildlaufleiste nebeneinander in einem eigenen Rahmen.
+        # Vorher war der Text mit side="top" und expand=True gepackt - er
+        # nahm damit die ganze Flaeche, und fuer die Leiste blieb unten
+        # rechts ein sinnloser Stummel uebrig.
+        feld = ttk.Frame(card.content, style="Card.TFrame")
+        feld.pack(fill="both", expand=True)
+
+        text = tk.Text(feld, wrap="word", relief="flat", borderwidth=0,
                        background=self.theme.color("surface"),
                        foreground=self.theme.color("text"),
-                       font=self.theme.font_body, padx=4, pady=4, height=16)
-        scroll = ttk.Scrollbar(card.content, orient="vertical", command=text.yview)
-        text.configure(yscrollcommand=scroll.set)
-        text.pack(side="top", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
+                       highlightthickness=0,
+                       font=self.theme.font_body, padx=4, pady=4, height=14)
+        scroll = ttk.Scrollbar(feld, orient="vertical", command=text.yview)
+        text.pack(side="left", fill="both", expand=True)
+
+        # Die Leiste erscheint nur, wenn der Text wirklich laenger ist als
+        # das Fenster. Beim Haftungstext ist er das meistens nicht.
+        def leiste_zeigen(erster: str, letzter: str) -> None:
+            noetig = not (float(erster) <= 0.0 and float(letzter) >= 1.0)
+            if noetig and not scroll.winfo_ismapped():
+                scroll.pack(side="right", fill="y")
+            elif not noetig and scroll.winfo_ismapped():
+                scroll.pack_forget()
+            scroll.set(erster, letzter)
+
+        text.configure(yscrollcommand=leiste_zeigen)
         text.insert("1.0", HAFTUNG)
         text.configure(state="disabled")
 
-        knoepfe = ttk.Frame(window, style="TFrame")
-        knoepfe.pack(fill="x", padx=16, pady=(0, 16))
+        unten = ttk.Frame(window, style="TFrame")
+        unten.pack(fill="x", padx=16, pady=(0, 16))
+
+        knoepfe = ttk.Frame(unten, style="TFrame")
+        knoepfe.pack(fill="x")
 
         if PROJEKT_URL:
             ttk.Button(knoepfe, text="Projektseite öffnen",
@@ -249,14 +270,17 @@ class MainWindow(tk.Tk):
                 knoepfe, text="Trinkgeld dalassen (freiwillig)",
                 command=lambda: webbrowser.open(SPENDEN_URL)
             ).pack(side="left", padx=(8, 0))
-            ttk.Label(knoepfe,
-                      text=("Freiwillig, ohne Gegenleistung - die App bleibt "
-                            "für alle gleich."),
-                      style="MutedBg.TLabel", wraplength=300,
-                      justify="left").pack(side="left", padx=(10, 0))
 
         ttk.Button(knoepfe, text="Schließen", style="Accent.TButton",
                    command=window.destroy).pack(side="right")
+
+        # Der Hinweis steht unter den Knoepfen, nicht daneben: dazwischen
+        # gequetscht brach er mitten im Satz um.
+        if SPENDEN_URL:
+            ttk.Label(unten,
+                      text=("Freiwillig, ohne Gegenleistung - die App bleibt "
+                            "für alle gleich."),
+                      style="MutedBg.TLabel").pack(anchor="w", pady=(10, 0))
 
     # ------------------------------------------------------------------
     def _show_help(self) -> None:

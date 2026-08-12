@@ -1530,6 +1530,14 @@ def main() -> int:
     # ---------------------------------------------------------------
     section("28. Geheimnisse landen nie in der config.json")
 
+    # Zustand der ECHTEN Eintraege festhalten. Am Ende wird verglichen,
+    # nicht auf Vorhandensein geprueft: Wer frisch installiert hat - oder
+    # gerade "Persoenliche Daten entfernen" benutzt hat - hat zu Recht
+    # keine, und dafuer darf der Selbsttest nicht rot werden. Was er
+    # verhindern muss, ist die VERAENDERUNG.
+    _echt_vorher = (credentials.exists(credentials.TARGET_DREAME),
+                    credentials.exists(credentials.TARGET_ELEVENLABS))
+
     # Passwort und ElevenLabs-Schluessel gehoeren in den Windows-Tresor
     # und sonst nirgendwohin. Frueher hat ein Fehler in genau diesem
     # Selbsttest den echten Schluessel geloescht - Grund genug, den
@@ -1656,12 +1664,20 @@ def main() -> int:
         _cfgmod.log_file = _alt_logdatei
         _shutil.rmtree(weiter_dir, ignore_errors=True)
 
-    # Die echten Eintraege muessen das ueberlebt haben - genau hier ist
-    # frueher der bezahlte Schluessel verlorengegangen.
-    check("der echte Dreamehome-Eintrag ist unberuehrt",
-          credentials.exists(credentials.TARGET_DREAME))
-    check("der echte ElevenLabs-Eintrag ist unberuehrt",
-          credentials.exists(credentials.TARGET_ELEVENLABS))
+    # Die echten Eintraege muessen den Test unveraendert ueberstanden
+    # haben - genau hier ist frueher der bezahlte Schluessel
+    # verlorengegangen.
+    _echt_nachher = (credentials.exists(credentials.TARGET_DREAME),
+                     credentials.exists(credentials.TARGET_ELEVENLABS))
+    check("der echte Dreamehome-Eintrag ist unveraendert",
+          _echt_nachher[0] == _echt_vorher[0],
+          f"vorher {_echt_vorher[0]}, nachher {_echt_nachher[0]}")
+    check("der echte ElevenLabs-Eintrag ist unveraendert",
+          _echt_nachher[1] == _echt_vorher[1],
+          f"vorher {_echt_vorher[1]}, nachher {_echt_nachher[1]}")
+    if not any(_echt_vorher):
+        print("         (zurzeit ist keiner hinterlegt - dann ist genau das"
+              " das richtige Ergebnis)")
 
     # ---------------------------------------------------------------
     print()
