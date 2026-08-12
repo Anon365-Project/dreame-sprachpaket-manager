@@ -31,6 +31,7 @@ DEFAULTS: Dict[str, Any] = {
     "device_mac": "",
     "base_language": "DE",       # Sprache des offiziellen Basis-Pakets
     "custom_lang_id": "CUSTOM",  # Kennung, unter der das eigene Paket landet
+    "last_pack_name": "",        # was zuletzt auf den Roboter ging
     "assignments": {},           # {"7": "C:/pfad/zu/datei.wav", ...}
     "last_audio_dir": "",
     "serve_port": 0,             # 0 = freien Port automatisch wählen

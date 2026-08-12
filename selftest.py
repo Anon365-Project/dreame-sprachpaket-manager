@@ -1388,6 +1388,71 @@ def main() -> int:
     _shutil.rmtree(vh_dir, ignore_errors=True)
 
     # ---------------------------------------------------------------
+    section("27. Das Hauptfenster baut sich auf")
+
+    # Falsche Stilnamen, fehlende Widgets, Tippfehler in pack() - all das
+    # findet kein Namenscheck, sondern erst der Aufbau. Das Fenster wird
+    # deshalb wirklich erzeugt, aber nie sichtbar gemacht.
+    try:
+        import tkinter as _tk       # noqa: E402
+        _wurzel = _tk.Tk()
+        _wurzel.destroy()
+        _tk_da = True
+    except Exception:               # pragma: no cover - Rechner ohne Anzeige
+        _tk_da = False
+        check("Tkinter steht zur Verfuegung", True, "uebersprungen")
+
+    if _tk_da:
+        from dreamevoice.ui.app import MainWindow      # noqa: E402
+        from dreamevoice.ui.page_start import ZUSTAND_ANMELDEN  # noqa: E402
+
+        _fenster = None
+        try:
+            _fenster = MainWindow()
+            _fenster.withdraw()
+            _fenster.update_idletasks()
+            check("das Hauptfenster entsteht", True)
+
+            _shell = _fenster.shell
+            check("alle Eintraege der Seitenleiste sind da",
+                  _shell.keys() == ["start", "stimme", "aufspielen",
+                                    "ansagen", "verbindung"],
+                  str(_shell.keys()))
+            check("Start ist die erste Seite", _shell.current == "start")
+            check("ohne Anmeldung steht das Anmeldeformular",
+                  _fenster.page_start._zustand == ZUSTAND_ANMELDEN,
+                  _fenster.page_start._zustand)
+            check("was ohne Anmeldung sinnlos ist, ist gesperrt",
+                  all(not _shell._eintraege[k].enabled
+                      for k in ("stimme", "aufspielen", "ansagen")))
+            check("Verbindung bleibt erreichbar",
+                  _shell._eintraege["verbindung"].enabled)
+            check("und traegt einen Warnpunkt",
+                  _shell._eintraege["verbindung"].dot == "warn")
+
+            for _key in _shell.keys():
+                _shell._eintraege[_key].enabled = True
+                _shell.show(_key)
+                _fenster.update_idletasks()
+                check(f"Seite '{_key}' laesst sich anzeigen",
+                      _shell.current == _key)
+
+            _platziert = [k for k in _shell.keys()
+                          if _shell._eintraege[k].seite.grid_info()]
+            check("es ist immer genau eine Seite platziert",
+                  _platziert == [_shell.current], str(_platziert))
+
+            check("die vier bisherigen Ansichten sind eingezogen",
+                  all(getattr(_fenster, n, None) is not None for n in
+                      ("tab_connect", "tab_builder", "tab_install", "tab_store")))
+        finally:
+            if _fenster is not None:
+                try:
+                    _fenster.destroy()
+                except Exception:
+                    pass
+
+    # ---------------------------------------------------------------
     print()
     print("=" * 52)
     print(f"  Bestanden: {PASSED}    Fehlgeschlagen: {FAILED}")

@@ -11,6 +11,8 @@ from tkinter import messagebox, ttk
 from .. import (APP_NAME, AUTOR, HAFTUNG, LIZENZ, PROJEKT_URL, SPENDEN_URL,
                 __version__, textfiles)
 from ..paths import data_dir, log_file
+from .page_start import StartPage
+from .shell import NavShell
 from .state import AppState
 from .tab_builder import BuilderTab
 from .tab_connect import ConnectTab
@@ -131,20 +133,34 @@ class MainWindow(tk.Tk):
 
         self.bind("<F11>", lambda _e: self._toggle_maximize())
 
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill="both", expand=True, padx=20, pady=(14, 0))
+        self.shell = NavShell(self, self.theme)
+        self.shell.pack(fill="both", expand=True, padx=(0, 0), pady=(14, 0))
 
-        self.tab_connect = ConnectTab(self.notebook, self.theme, self.state_obj)
-        self.tab_builder = BuilderTab(self.notebook, self.theme, self.state_obj)
-        self.tab_install = InstallTab(self.notebook, self.theme, self.state_obj)
-        self.tab_store = StoreTab(self.notebook, self.theme, self.state_obj)
+        buehne = self.shell.buehne
+        self.page_start = StartPage(buehne, self.theme, self.state_obj,
+                                    gehe_zu=self.shell.show)
+        self.tab_connect = ConnectTab(buehne, self.theme, self.state_obj)
+        self.tab_builder = BuilderTab(buehne, self.theme, self.state_obj)
+        self.tab_install = InstallTab(buehne, self.theme, self.state_obj)
+        self.tab_store = StoreTab(buehne, self.theme, self.state_obj)
 
-        self.notebook.add(self.tab_connect, text="1 · Verbindung")
-        self.notebook.add(self.tab_builder, text="2 · Sprachpaket erstellen")
-        self.notebook.add(self.tab_install, text="3 · Upload & Installation")
-        self.notebook.add(self.tab_store, text="4 · Fertige Pakete")
+        # Oben, was man staendig tut - darunter, was selten vorkommt.
+        self.shell.add("start", "Start", "🏠", self.page_start,
+                       beim_zeigen=self.page_start.refresh)
+        self.shell.add("stimme", "Fertige Stimmen", "🔊", self.tab_store,
+                       beim_zeigen=self._beim_stimmen)
+        self.shell.add("aufspielen", "Aufspielen", "⬆", self.tab_install,
+                       beim_zeigen=self.tab_install.refresh_summary)
+        self.shell.add("ansagen", "Einzelne Ansagen", "🧩", self.tab_builder,
+                       section="Erweitert",
+                       beim_zeigen=self._beim_ansagen)
+        self.shell.add("verbindung", "Verbindung", "🔌", self.tab_connect,
+                       section="Erweitert")
 
-        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+        self.shell.show("start")
+        self._zustand_spiegeln()
+        for ereignis in ("device_changed", "base_pack_changed"):
+            self.state_obj.subscribe(ereignis, self._zustand_spiegeln)
 
         status = ttk.Frame(self, style="TFrame")
         status.pack(fill="x", padx=20, pady=(6, 12))
@@ -152,13 +168,35 @@ class MainWindow(tk.Tk):
                   style="MutedBg.TLabel").pack(side="left")
 
     # ------------------------------------------------------------------
-    def _on_tab_changed(self, _event=None) -> None:
-        current = self.notebook.index(self.notebook.select())
-        if current == 1:
-            self.tab_builder.refresh_rows()
-            self.tab_builder.refresh_counter()
-        elif current == 2:
-            self.tab_install.refresh_summary()
+    def _beim_ansagen(self) -> None:
+        self.tab_builder.refresh_rows()
+        self.tab_builder.refresh_counter()
+
+    def _beim_stimmen(self) -> None:
+        if hasattr(self.tab_store, "refresh_saved_packs"):
+            self.tab_store.refresh_saved_packs()
+
+    def _zustand_spiegeln(self) -> None:
+        """Sperrt, was ohne Anmeldung oder Originalpaket sinnlos wäre.
+
+        Die Eintraege bleiben sichtbar - sie sollen ja verraten, dass es
+        sie gibt. Wer darauf klickt, erfaehrt, woran es liegt.
+        """
+        verbunden = self.state_obj.connected
+        basis = self.state_obj.has_base_pack
+
+        self.shell.set_dot("verbindung", "ok" if verbunden else "warn")
+
+        ohne_anmeldung = ("Dafür muss die App erst wissen, welches Modell dein "
+                          "Roboter ist. Melde dich auf der Startseite an.")
+        ohne_basis = ("Dafür fehlt noch das offizielle Sprachpaket deines "
+                      "Roboters. Es wird auf der Startseite einmalig geholt.")
+
+        for key in ("stimme", "ansagen"):
+            self.shell.set_enabled(key, verbunden and basis,
+                                   ohne_anmeldung if not verbunden else ohne_basis)
+        self.shell.set_enabled("aufspielen", verbunden and basis,
+                               ohne_anmeldung if not verbunden else ohne_basis)
 
     def _toggle_theme(self) -> None:
         messagebox.showinfo(
