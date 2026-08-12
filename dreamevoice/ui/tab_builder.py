@@ -1,4 +1,4 @@
-"""Tab 2: Originalpaket laden und eigene Ansagen zuweisen."""
+"""Seite 'Einzelne Ansagen': jede Ansage einzeln mit einer eigenen Datei belegen."""
 
 from __future__ import annotations
 
@@ -492,7 +492,7 @@ class BuilderTab(ttk.Frame):
         if not self.state.model:
             messagebox.showwarning(
                 "Kein Roboter ausgewählt",
-                "Melde dich zuerst im Tab 'Verbindung' an und wähle deinen Roboter.",
+                "Melde dich zuerst unter 'Verbindung' an und wähle deinen Roboter.",
                 parent=self)
             return
 

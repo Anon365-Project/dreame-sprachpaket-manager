@@ -82,23 +82,23 @@ Originalpaket. Nachgemessen mit den 593 bayerischen Aufnahmen:
 | `mova.vacuum.r5977e` | 617 | 566 |
 | `dreame.vacuum.r63018` | 503 | 490 |
 
-**Sie sind in der EXE mit dabei.** Kein Download, kein Entpacken, kein Suchen
-im Explorer — die vier Dialekte stecken in der Programmdatei und werden beim
-ersten Bedarf einmalig in den Datenordner ausgepackt. Die App wandelt um,
+Zu tun ist dafür nichts: **Die vier Dialekte stecken in der Programmdatei**
+und werden beim ersten Bedarf einmalig in den Datenordner ausgepackt. Unter
+*Fertige Stimmen* aussuchen, anhören, aufspielen — die App wandelt um,
 gleicht die Lautstärke an die Originalansagen an und baut das Paket für dein
 Modell.
 
-Wer sie trotzdem einzeln haben will — etwa um eine neuere Fassung zu
-holen — findet sie weiterhin als Download bei den
+Wer die Aufnahmen trotzdem einzeln haben will — etwa um eine neuere Fassung
+zu holen oder sie weiterzugeben — findet sie als Download bei den
 [Releases](https://github.com/Anon365-Project/dreame-sprachpaket-manager/releases)
-und liest sie über Tab 4 → *Aufnahmen einlesen* ein. Eine so geladene Fassung
-hat dann Vorrang vor der mitgelieferten.
+und liest sie über *Eigene Stimmen* → *Aufnahmen einlesen* ein. Eine so
+geladene Fassung hat dann Vorrang vor der mitgelieferten.
 
 Die Aufnahmen entstanden mit **ElevenLabs** und sprechen echten Dialekt — auch
 in der Aussprache, nicht nur in der Wortwahl. Sie stehen unter eigenen
 Bedingungen, siehe [LICENSE-AUDIO.md](LICENSE-AUDIO.md).
 
-Wer lieber selbst erzeugt: Tab 4, Dialekt wählen, *Kostprobe anhören*, *Paket
+Wer lieber selbst erzeugt: *Eigene Stimmen*, Dialekt wählen, *Kostprobe anhören*, *Paket
 erzeugen*. Mit der Windows-Sprachausgabe offline und kostenlos — dann steckt
 der Dialekt allerdings nur in der Wortwahl.
 
@@ -107,9 +107,28 @@ der Dialekt allerdings nur in der Wortwahl.
 ## Schnellstart
 
 1. `python main.py` — oder die fertige `DreameSprachpaket.exe` doppelklicken.
-2. **Tab 1:** mit den Dreamehome-Zugangsdaten anmelden, Roboter auswählen.
-3. **Tab 2:** Originalpaket herunterladen, dann Ansagen zuweisen.
-4. **Tab 3:** auf *Sprachpaket auf Roboter installieren* klicken.
+2. **Start:** mit den Dreamehome-Zugangsdaten anmelden. Das Originalpaket
+   deines Roboters holt die App danach von selbst — einmalig.
+3. **Fertige Stimmen:** Dialekt aussuchen, *Anhören*, *Aufspielen*.
+
+Das ist der ganze Weg. Die vier Dialekte stecken in der Programmdatei, es
+wird nichts heruntergeladen.
+
+### Die Seitenleiste
+
+| | |
+|---|---|
+| **Start** | Anmeldung, Originalpaket, und was der Roboter gerade spricht |
+| **Fertige Stimmen** | aussuchen, anhören, aufspielen |
+| *Eigene Stimmen* | eigene Texte, weitere Dialekte, Sprachsynthese |
+| *Einzelne Ansagen* | Ansage für Ansage eine eigene Datei zuweisen |
+| *Bauen und Aufspielen* | der ausführliche Weg mit allen Schaltern |
+| *Verbindung* | Konto oder Region wechseln |
+
+Die kursiven Punkte stehen unter **Erweitert** und werden nur gebraucht,
+wenn man mehr will als einen der mitgelieferten Dialekte. Graue Einträge
+sind nicht kaputt — sie brauchen nur erst die Anmeldung; ein Klick darauf
+verrät, was fehlt.
 
 ---
 
@@ -284,10 +303,10 @@ dreamevoice/
     theme.py                 Erscheinungsbild (hell/dunkel, ohne Fremdpakete)
     widgets.py               Bausteine
     state.py                 Gemeinsamer Zustand, Hintergrundarbeit
-    tab_connect.py           Tab 1
-    tab_builder.py           Tab 2
-    tab_install.py           Tab 3
-    tab_store.py             Tab 4
+    tab_connect.py           *Start*
+    tab_builder.py           *Einzelne Ansagen*
+    tab_install.py           *Fertige Stimmen*
+    tab_store.py             *Eigene Stimmen*
 ```
 
 ---
@@ -312,7 +331,7 @@ es eine einzige portable Datei und der Start unverändert schnell (gemessen:
 3,2 s).
 
 Beim Start aus dem Quellcode gibt es diesen Anhang nicht. Dann entweder
-`ffmpeg.exe` neben die App legen oder in Tab 2 auf *ffmpeg automatisch
+`ffmpeg.exe` neben die App legen oder unter *Einzelne Ansagen* auf *ffmpeg automatisch
 einrichten* klicken — die App zeigt vorher Quelladresse und Größe an, lädt nur
 nach Bestätigung und entnimmt dem Archiv gezielt nur `ffmpeg.exe` und
 `ffprobe.exe`.
@@ -342,7 +361,7 @@ werden nur neu erhoben, wenn sich das Paket ändert.
 
 ### Viele Dateien auf einmal übernehmen
 
-Hunderte Ansagen einzeln zuzuweisen macht keine Freude. Tab 2 bietet deshalb:
+Hunderte Ansagen einzeln zuzuweisen macht keine Freude. *Einzelne Ansagen* bietet deshalb:
 
 * **Ganzen Ordner importieren** — durchsucht einen Ordner samt Unterordnern und
   ordnet alles zu.
@@ -380,7 +399,7 @@ Der Roboter meldet eine Kennung, die die App nicht kennt.
   mitgelieferte deutsche Stimme. Zurück geht es über *Originalstimme
   wiederherstellen*.
 
-Ob dein Paket läuft, beantwortet in Tab 3 der Knopf **Sprachpaket am Roboter
+Ob dein Paket läuft, beantwortet unter *Fertige Stimmen* der Knopf **Sprachpaket am Roboter
 abfragen** — die Antwort kommt direkt vom Gerät, nicht aus der App.
 
 ---
@@ -401,7 +420,7 @@ Webspace laden und die öffentliche Adresse im Feld *Eigene URL* eintragen.
 
 ---
 
-## Fertige Pakete (Tab 4)
+## Fertige Stimmen
 
 Einen echten Store gibt es nicht. Was existiert, sind einige Bastelprojekte auf
 GitHub — geprüft und aufgenommen wurden:
@@ -439,7 +458,7 @@ dialekt_Bayerisch_Windows_Microsoft_Stefan.tar.gz
 Existiert der Name schon, hängt die App eine Zahl an. Daneben legt sie eine
 kleine `.info.json` mit Dialekt, Dienst, Stimme, Datum und Anzahl der Ansagen.
 
-In **Tab 3** stehen alle gespeicherten Pakete in einer Auswahlliste, beschriftet
+In ***Fertige Stimmen*** stehen alle gespeicherten Pakete in einer Auswahlliste, beschriftet
 mit genau diesen Angaben — dort entscheidest du beim Installieren, welche
 Fassung auf den Roboter geht.
 
@@ -449,9 +468,9 @@ wirft also nichts weg, was schon Kontingent gekostet hat.
 
 ---
 
-## Eigene Sprachpakete (Tab 4)
+## Eigene Sprachpakete
 
-Die Auswahl in Tab 4 ist zweigeteilt:
+Die Auswahl unter *Eigene Stimmen* ist zweigeteilt:
 
 ```
 Dialekt · Bayerisch        ← die sieben mitgelieferten
@@ -494,17 +513,17 @@ Derselbe Knopf nimmt fertig gesprochenes Material entgegen:
 Die Dateien müssen die Ansage-Nummer im Namen tragen (`7.wav`, `7.mp3`,
 `7.ogg`). Ordner im Archiv und Beipackzettel wie `LIESMICH.txt` stören
 nicht — es werden nur Audiodateien mit Nummer übernommen. Einen passend
-benannten Vorlagenordner legt Tab 2 an — Originale
+benannten Vorlagenordner legt *Einzelne Ansagen* an — Originale
 anhören, unter demselben Namen neu einsprechen, Ordner einlesen.
 
 Alles wird ins Roboterformat umgewandelt, auf die Lautstärke der
 Originalansagen gebracht und als Kopie des Originalpakets gebaut. Das
 Ergebnis landet in derselben Sammlung wie alle anderen Pakete und steht in
-Tab 3 zur Auswahl.
+*Fertige Stimmen* zur Auswahl.
 
 ---
 
-## Dialektpakete (Tab 4)
+## Dialektpakete
 
 Fertige Dialektpakete gibt es für **keinen** Saugroboter zum Herunterladen —
 weder für Dreame noch für Roborock, Xiaomi oder Valetudo. Nachgeprüft: in den
@@ -526,7 +545,7 @@ Tierlaute.
 Der Wortlaut von 90 Ansagen steht in keiner Textdatei des Pakets. Er wurde
 aus den deutschen Originalaufnahmen transkribiert (Windows-Spracherkennung)
 und danach von Hand geglättet: sinngemäß richtig, im Wortlaut sinnvoll
-gekürzt. Wer es genauer will, hört sich die Originalansage in Tab 2 an und
+gekürzt. Wer es genauer will, hört sich die Originalansage unter *Einzelne Ansagen* an und
 ändert den Text im Editor.
 
 | Dialekt | Kennung | Kostprobe (Ansage 7) |
@@ -663,7 +682,7 @@ einen Cent zu zahlen.
 Die Stimme einer real existierenden Person nachbilden — etwa aus
 YouTube-Aufnahmen oder fremden Sprachpaketen. Das berührt das
 Persönlichkeitsrecht, bei Schauspielern kommen Verwertungsrechte dazu. Wer eine
-echte, eigene Dialektstimme will: die Ansagen selbst einsprechen und in Tab 2
+echte, eigene Dialektstimme will: die Ansagen selbst einsprechen und unter *Einzelne Ansagen*
 zuweisen — die Textlisten sind dafür eine fertige Vorlage.
 
 ---

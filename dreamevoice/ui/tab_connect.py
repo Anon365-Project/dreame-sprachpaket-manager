@@ -1,4 +1,4 @@
-"""Tab 1: Verbindung zum Dreamehome-Konto und Auswahl des Roboters."""
+"""Seite 'Verbindung': Anmeldung am Dreamehome-Konto und Wahl des Roboters."""
 
 from __future__ import annotations
 
@@ -306,5 +306,5 @@ class ConnectTab(ttk.Frame):
         if not self.state.connected:
             raise NoDeviceError(
                 "Es ist kein Roboter ausgewählt.",
-                "Melde dich im Tab 'Verbindung' an und wähle deinen Roboter.",
+                "Melde dich unter 'Verbindung' an und wähle deinen Roboter.",
             )

@@ -142,7 +142,7 @@ def build_pack(base_pack: Path,
     if not base_pack.is_file():
         raise PackError(
             "Das Originalpaket fehlt.",
-            "Lade im Tab 'Sprachpaket erstellen' zuerst das offizielle Paket "
+            "Lade unter 'Einzelne Ansagen' zuerst das offizielle Paket "
             "deines Roboters herunter - es dient als sichere Grundlage.",
         )
     if not assignments:
@@ -305,7 +305,7 @@ def load_existing(path: Path) -> BuildResult:
         warnings.append(
             "Diesem Paket fehlen die Steuerdateien des Originals. Es stammt "
             "vermutlich von einem anderen Modell. Sicherer ist es, das Paket "
-            "im Tab 'Fertige Pakete' auf dein Modell anpassen zu lassen.")
+            "unter 'Eigene Stimmen' auf dein Modell anpassen zu lassen.")
 
     return BuildResult(path=path, md5=md5, size=size, replaced=sound_ids,
                        warnings=warnings, total_members=len(sound_ids))
@@ -377,7 +377,7 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
     """
     if not base_pack.is_file():
         raise PackError("Das Originalpaket deines Modells fehlt.",
-                        "Lade es im Tab 'Sprachpaket erstellen' herunter.")
+                        "Lade es unter 'Einzelne Ansagen' herunter.")
 
     log("Lese Fremdpaket ...")
     overlay = _read_ogg_archive(Path(overlay_pack_path))

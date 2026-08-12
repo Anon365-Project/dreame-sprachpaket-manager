@@ -1202,8 +1202,10 @@ def main() -> int:
     # Hinweis fuehren, nicht zu einer Formatmeldung.
     from dreamevoice.ui import tab_install as _ti  # noqa: E402
     quelle_pick = inspect.getsource(_ti.InstallTab._on_pick_pack)
-    check("Tab 3 faengt ein versehentlich gewaehltes ZIP ab",
-          '".zip"' in quelle_pick and "Tab 4" in quelle_pick)
+    check("die ausfuehrliche Seite faengt ein ZIP ab und verweist weiter",
+          '".zip"' in quelle_pick
+          and "Fertige Stimmen" in quelle_pick
+          and "Eigene Stimmen" in quelle_pick)
 
     _shutil.rmtree(zip_dir, ignore_errors=True)
 

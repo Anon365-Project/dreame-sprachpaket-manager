@@ -1,4 +1,4 @@
-﻿"""Das Hauptfenster mit den vier Tabs."""
+﻿"""Das Hauptfenster: Seitenleiste links, jeweils eine Seite rechts."""
 
 from __future__ import annotations
 
@@ -149,7 +149,7 @@ class MainWindow(tk.Tk):
 
         # Oben, was man staendig tut - darunter, was selten vorkommt.
         # "Fertige Stimmen" fasst zusammen, was frueher auf Tab 4 (aussuchen)
-        # und Tab 3 (aufspielen) verteilt war.
+        # und Tab 3 (aufspielen) verteilt war - siehe page_voice.py.
         self.shell.add("start", "Start", "🏠", self.page_start,
                        beim_zeigen=self.page_start.refresh)
         self.shell.add("stimme", "Fertige Stimmen", "🔊", self.page_voice,
@@ -317,22 +317,38 @@ class MainWindow(tk.Tk):
 
 
 HELP_TEXT = """\
-ABLAUF IN DREI SCHRITTEN
+DER KURZE WEG
 
-1. Verbindung
-   Melde dich mit deinen Dreamehome-Zugangsdaten an und wähle deinen
-   Roboter aus. Die App erfährt dadurch die genaue Modellkennung - die
-   braucht sie, um das passende Originalpaket zu finden.
+Wer einfach nur einen bayerisch sprechenden Roboter will, braucht genau
+zwei Seiten:
 
-2. Sprachpaket erstellen
-   Lade zuerst das offizielle Sprachpaket deines Roboters herunter. Es ist
-   die Grundlage deines eigenen Pakets und liefert zugleich die
-   Hörproben, damit du weißt, welche Nummer welche Ansage ist.
-   Danach weist du einzelnen Ansagen eigene Audiodateien zu.
+1. Start
+   Beim ersten Mal steht hier das Anmeldeformular - dieselben
+   Zugangsdaten wie in der Dreamehome-App. Danach holt die App einmalig
+   das offizielle Sprachpaket deines Roboters; das ist die Grundlage für
+   alles Weitere und bleibt gespeichert.
+   Ab dem zweiten Start zeigt die Seite nur noch, was der Roboter gerade
+   spricht.
 
-3. Upload & Installation
-   Die App baut das Paket, startet kurz einen kleinen Webserver und
-   schickt dem Roboter den Auftrag, es dort abzuholen.
+2. Fertige Stimmen
+   Bayerisch, Hessisch, Wienerisch oder Berlinerisch aussuchen, mit
+   "Anhören" vier typische Ansagen probehören, dann "Aufspielen". Die
+   vier Dialekte stecken in der Programmdatei - es wird nichts
+   heruntergeladen.
+
+Das war es. Alles andere steht unter "Erweitert" und wird nur gebraucht,
+wenn man mehr will:
+
+   Eigene Stimmen        eigene Texte, andere Dialekte, Sprachsynthese
+                         über Windows oder ElevenLabs
+   Einzelne Ansagen      Ansage für Ansage eine eigene Datei zuweisen
+   Bauen und Aufspielen  der ausführliche Weg mit allen Schaltern,
+                         Netzwerkeinstellungen und dem Rückweg zur
+                         Originalstimme
+   Verbindung            Konto oder Region wechseln
+
+Graue Einträge in der Leiste sind nicht kaputt - sie brauchen nur erst
+die Anmeldung. Ein Klick darauf verrät, was fehlt.
 
 
 WARUM DAS DEN ROBOTER NICHT BESCHÄDIGT
@@ -378,7 +394,7 @@ Zwei Dinge dazu:
   ersetzt es die mitgelieferte deutsche Stimme. Zurueck geht es
   jederzeit ueber "Originalstimme wiederherstellen".
 
-Ob dein Paket laeuft, verraet in Tab 3 der Knopf "Sprachpaket am
+Ob dein Paket laeuft, verraet auf der Startseite der Knopf "Am
 Roboter abfragen". Die Antwort kommt direkt vom Geraet.
 
 

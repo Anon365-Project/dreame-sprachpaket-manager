@@ -1,4 +1,4 @@
-"""Tab 4: Fertige Sprachpakete aus der Community laden und anpassen."""
+"""Seite 'Eigene Stimmen': Dialekte, eigene Pakete und Sprachsynthese."""
 
 from __future__ import annotations
 
@@ -562,7 +562,7 @@ class StoreTab(ttk.Frame):
         if not self.state.has_base_pack:
             show_warning(
                 self, self.theme, "Originalpaket fehlt",
-                "Lade zuerst in Tab 2 das offizielle Sprachpaket deines "
+                "Lade zuerst unter 'Einzelne Ansagen' das offizielle Sprachpaket deines "
                 "Roboters herunter.",
                 "Jedes eigene Paket entsteht als Kopie davon - sonst fehlen "
                 "dem Roboter alle Ansagen, die du nicht selbst lieferst.")
@@ -574,7 +574,7 @@ class StoreTab(ttk.Frame):
             "'Bayerisch-Aufnahmen.zip'. Nimm dafür die erste Zeile und wähle "
             "das ZIP direkt aus - entpacken musst du nichts.\n\n"
             "Beides landet als fertiges Paket in deiner Sammlung und steht "
-            "danach in Tab 3 zur Auswahl.",
+            "danach unter 'Fertige Stimmen' zur Auswahl.",
             [WAHL_ARCHIV, WAHL_ORDNER],
             WAHL_ARCHIV)
         if art is None:
@@ -626,7 +626,7 @@ class StoreTab(ttk.Frame):
                 f"In {Path(quelle).name} steckt keine zuzuordnende Aufnahme.",
                 "Die Dateien müssen die Ansage-Nummer im Namen tragen, also "
                 "7.ogg, 7.wav oder 7.mp3. Ein passend benannter Vorlagenordner "
-                "lässt sich in Tab 2 anlegen.")
+                "lässt sich unter 'Einzelne Ansagen' anlegen.")
             return
 
         name = simpledialog.askstring(
@@ -709,7 +709,7 @@ class StoreTab(ttk.Frame):
             show_info(self, self.theme, "Paket ist fertig",
                       f"{len(build.replaced)} Ansagen übernommen.",
                       f"Gespeichert als:\n{build.path.name}\n\n"
-                      f"In Tab 3 wählst du es zum Installieren aus.")
+                      f"Unter 'Fertige Stimmen' wählst du es zum Installieren aus.")
 
         def fail(exc: Exception) -> None:
             message, hint = error_text(exc)
@@ -1807,7 +1807,7 @@ class StoreTab(ttk.Frame):
         if not self.state.has_base_pack:
             messagebox.showwarning(
                 "Originalpaket fehlt",
-                "Lade zuerst in Tab 2 das offizielle Sprachpaket deines Roboters "
+                "Lade zuerst unter 'Einzelne Ansagen' das offizielle Sprachpaket deines Roboters "
                 "herunter - es ist die Grundlage jedes Pakets.",
                 parent=self)
             return
@@ -1857,7 +1857,7 @@ class StoreTab(ttk.Frame):
             messagebox.showwarning(
                 "ffmpeg fehlt",
                 "Zum Umwandeln der gesprochenen Ansagen wird ffmpeg gebraucht.\n\n"
-                "Wechsle kurz in Tab 2 - dort richtet die App es ein.",
+                "Wechsle kurz unter 'Einzelne Ansagen' - dort richtet die App es ein.",
                 parent=self)
             return
 
@@ -1997,7 +1997,7 @@ class StoreTab(ttk.Frame):
             self.state.save()
             self.state.notify("assignments_changed")
 
-            # Beschreibung daneben legen, damit in Tab 3 erkennbar bleibt,
+            # Beschreibung daneben legen, damit unter 'Fertige Stimmen' erkennbar bleibt,
             # welche Stimme in welchem Paket steckt.
             library.write_info(
                 build.path, dialect=pack.name, engine=(
@@ -2026,7 +2026,7 @@ class StoreTab(ttk.Frame):
                 f"{len(build.replaced)} Ansagen sprechen jetzt {pack.name}, der "
                 f"Rest bleibt auf Hochdeutsch.{hinweis}\n\n"
                 f"Gespeichert als:\n{build.path.name}\n\n"
-                f"Frühere Pakete bleiben erhalten. Wechsle in Tab 3 - dort "
+                f"Frühere Pakete bleiben erhalten. Wechsle unter 'Fertige Stimmen' - dort "
                 f"wählst du aus, welches installiert wird.",
                 parent=self)
 
@@ -2110,7 +2110,7 @@ class StoreTab(ttk.Frame):
         if not self.state.has_base_pack:
             messagebox.showwarning(
                 "Originalpaket fehlt",
-                "Lade zuerst im Tab 'Sprachpaket erstellen' das offizielle "
+                "Lade zuerst unter 'Einzelne Ansagen' das offizielle "
                 "Sprachpaket deines Roboters herunter. Erst damit kann ein "
                 "Fremdpaket sicher auf dein Modell angepasst werden.",
                 parent=self)

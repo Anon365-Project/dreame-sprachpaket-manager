@@ -1,4 +1,4 @@
-"""Tab 3: Paket bauen, auf den Roboter übertragen, Original wiederherstellen."""
+"""Seite 'Bauen und Aufspielen': der ausfuehrliche Weg mit allen Schaltern."""
 
 from __future__ import annotations
 
@@ -180,7 +180,7 @@ class InstallTab(ttk.Frame):
 
         ttk.Button(button_row, text="Paketordner öffnen", style="Small.TButton",
                    command=lambda: open_folder(build_dir())).pack(side="right")
-        # Bewusst "Gebautes Paket": in Tab 4 gibt es einen Knopf zum Einlesen
+        # Bewusst "Gebautes Paket": unter 'Eigene Stimmen' gibt es einen Knopf zum Einlesen
         # von Aufnahmen, und "Fertiges Paket" hat für beides gepasst.
         ttk.Button(button_row, text="Gebautes Paket (.tar.gz) wählen ...",
                    style="Small.TButton",
@@ -237,8 +237,8 @@ class InstallTab(ttk.Frame):
         if not self._saved:
             self.var_saved.set("")
             self.lbl_saved.configure(
-                text=("Noch keine Pakete gebaut. In Tab 4 entsteht ein "
-                      "Dialektpaket, in Tab 2 ein eigenes."))
+                text=("Noch keine Pakete gebaut. Unter 'Eigene Stimmen' entsteht ein "
+                      "Dialektpaket, unter 'Einzelne Ansagen' ein eigenes."))
             self.combo_saved.configure(state="disabled")
             return
 
@@ -334,7 +334,7 @@ class InstallTab(ttk.Frame):
         """
         if not self.state.connected:
             show_warning(self, self.theme, "Kein Roboter ausgewählt",
-                         "Melde dich zuerst im Tab 'Verbindung' an.")
+                         "Melde dich zuerst unter 'Verbindung' an.")
             return
 
         cloud, device = self.state.cloud, self.state.device
@@ -398,17 +398,21 @@ class InstallTab(ttk.Frame):
             return
 
         # Die Aufnahmen-Archive aus dem Projekt sind ZIPs und gehören nach
-        # Tab 4 - hier würden sie nur mit einer Formatmeldung scheitern.
+        # 'Eigene Stimmen' - hier würden sie nur mit einer Formatmeldung scheitern.
         if Path(chosen).suffix.lower() == ".zip":
             show_warning(
                 self, self.theme, "Das sind Aufnahmen, kein fertiges Paket",
                 f"{Path(chosen).name} enthält einzelne Sprachdateien. Hier "
                 f"wird ein bereits gebautes Paket erwartet - eine "
                 f".tar.gz-Datei.",
-                "So kommst du weiter: Tab 4 'Fertige Pakete' öffnen, dort auf "
-                "'Aufnahmen einlesen ...' klicken und genau dieses ZIP "
-                "auswählen. Die App baut daraus das Paket für dein Modell; "
-                "danach steht es hier zur Auswahl. Entpacken musst du nichts.")
+                "So kommst du weiter: Sind es die Aufnahmen von der"
+                " Projektseite, stehen sie ohnehin schon bereit."
+                " Nimm dafür in der Leiste 'Fertige Stimmen'"
+                " - dort aussuchen, anhören, aufspielen.\n\n"
+                "Sind es eigene Aufnahmen, nimm 'Eigene Stimmen' und klicke"
+                " dort 'Aufnahmen einlesen ...'. Die App baut daraus das"
+                " Paket für dein Modell; danach steht es auch hier zur"
+                " Auswahl. Entpacken musst du nichts.")
             return
 
         try:
@@ -462,14 +466,14 @@ class InstallTab(ttk.Frame):
         if need_device and not self.state.connected:
             messagebox.showwarning(
                 "Kein Roboter ausgewählt",
-                "Melde dich im Tab 'Verbindung' an und wähle deinen Roboter aus.",
+                "Melde dich unter 'Verbindung' an und wähle deinen Roboter aus.",
                 parent=self)
             return False
 
         if not self.state.has_base_pack:
             messagebox.showwarning(
                 "Originalpaket fehlt",
-                "Lade im Tab 'Sprachpaket erstellen' zuerst das offizielle "
+                "Lade unter 'Einzelne Ansagen' zuerst das offizielle "
                 "Sprachpaket deines Roboters herunter. Es ist die Grundlage "
                 "deines eigenen Pakets.",
                 parent=self)
@@ -484,7 +488,7 @@ class InstallTab(ttk.Frame):
                 "Nichts zu tun",
                 "Es ist noch keine einzige Ansage ausgetauscht. Weise im Tab "
                 "'Sprachpaket erstellen' mindestens einer Ansage eine Audiodatei zu "
-                "- oder hole dir im Tab 'Fertige Pakete' ein vorgefertigtes Paket.",
+                "- oder hole dir unter 'Eigene Stimmen' ein vorgefertigtes Paket.",
                 parent=self)
             return False
 
@@ -635,7 +639,7 @@ class InstallTab(ttk.Frame):
     def _on_restore(self) -> None:
         if not self.state.connected:
             messagebox.showwarning("Kein Roboter ausgewählt",
-                                   "Melde dich zuerst im Tab 'Verbindung' an.",
+                                   "Melde dich zuerst unter 'Verbindung' an.",
                                    parent=self)
             return
 

@@ -15,7 +15,7 @@ der lautgetreuen Schreibweise ("i fang zum Saugn o"), nicht in einer
 echten bayerischen Stimme - Windows bringt nur Hochdeutsch mit. Es klingt
 also nach einer Hochdeutsch-Sprecherin, die Bayerisch vorliest. Wer es
 echter will, nimmt die Ansagen mit dem eigenen Mikrofon auf und weist sie
-in Tab 2 zu; die Textliste unten ist dafür eine brauchbare Vorlage.
+unter 'Einzelne Ansagen' zu; die Textliste unten ist dafür eine brauchbare Vorlage.
 
 Die Nummern sind die Ansage-IDs des X50 Ultra Complete.
 """
@@ -317,12 +317,12 @@ def generate(dialect: DialectPack,
     if not base_pack or not Path(base_pack).is_file():
         raise PackError(
             "Das Originalpaket deines Roboters fehlt.",
-            "Lade es in Tab 2 herunter - es ist die Grundlage jedes Pakets.")
+            "Lade es unter 'Einzelne Ansagen' herunter - es ist die Grundlage jedes Pakets.")
 
     if ffmpeg is None:
         raise AudioError(
             "Für die Umwandlung wird ffmpeg gebraucht.",
-            "Richte ffmpeg in Tab 2 ein - ohne den Vorbis-Kodierer lässt sich "
+            "Richte ffmpeg unter 'Einzelne Ansagen' ein - ohne den Vorbis-Kodierer lässt sich "
             "aus der Sprachausgabe kein Sprachpaket bauen.")
 
     work_dir = Path(work_dir)
