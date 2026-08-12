@@ -444,9 +444,15 @@ weiter.
 AUDIODATEIEN
 
 Der Roboter versteht nur OGG Vorbis, mono, 16000 Hz. mp3- und wav-Dateien
-werden beim Bauen automatisch umgewandelt - dafür muss ffmpeg vorhanden
-sein (einfach ffmpeg.exe neben die App legen). Fertige .ogg-Dateien im
-richtigen Format funktionieren auch ohne ffmpeg.
+werden beim Bauen automatisch umgewandelt.
+
+Dafuer wird ffmpeg gebraucht - und das steckt in der Programmdatei mit
+drin. Beim ersten Bedarf packt die App es einmalig in den Datenordner
+aus, danach ist es einfach da. Du musst dich darum nicht kuemmern.
+
+Nur wer die App aus dem Quellcode startet, hat es nicht automatisch
+dabei: Dann sucht sie eine ffmpeg.exe neben der App, im Datenordner oder
+im System-PATH und bietet sonst an, sie herunterzuladen.
 
 Halte die Ansagen kurz - die Originale sind meist zwei bis sechs Sekunden
 lang.

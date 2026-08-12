@@ -1427,6 +1427,33 @@ def main() -> int:
     _shutil.rmtree(laut_dir, ignore_errors=True)
 
     # ---------------------------------------------------------------
+    section("26c. Die Hilfe behauptet nichts Veraltetes")
+
+    # Der Hilfetext stand nach dem Einbetten noch monatelang auf "einfach
+    # ffmpeg.exe neben die App legen" - was in der EXE schlicht falsch
+    # ist. Solche Saetze veralten still, deshalb hier festgenagelt.
+    from dreamevoice.ui import app as _app     # noqa: E402
+
+    hilfe = _app.HELP_TEXT
+    check("die Hilfe sagt, dass ffmpeg mitgeliefert wird",
+          "in der Programmdatei" in hilfe or "in der App enthalten" in hilfe)
+    check("und fordert nicht mehr zum Danebenlegen auf",
+          "ffmpeg.exe neben die App legen" not in hilfe)
+    check("der Sonderfall Quellcode wird trotzdem erwaehnt",
+          "Quellcode" in hilfe)
+
+    # Und die Oberflaeche muss den eingebetteten Weg auch wirklich gehen,
+    # bevor sie zum Herunterladen raet.
+    from dreamevoice.ui.tab_builder import BuilderTab   # noqa: E402
+
+    quelle_check = inspect.getsource(BuilderTab._check_ffmpeg)
+    pos_eingebettet = quelle_check.find("embedded.has_ffmpeg()")
+    pos_download = quelle_check.find("btn_ffmpeg.pack(side=")
+    check("erst das eingebettete ffmpeg, dann der Download",
+          0 < pos_eingebettet < pos_download,
+          f"eingebettet bei {pos_eingebettet}, Download bei {pos_download}")
+
+    # ---------------------------------------------------------------
     section("27. Das Hauptfenster baut sich auf")
 
     # Falsche Stilnamen, fehlende Widgets, Tippfehler in pack() - all das

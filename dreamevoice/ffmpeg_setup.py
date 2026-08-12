@@ -1,8 +1,13 @@
-"""Einrichtungshilfe für ffmpeg.
+"""Einrichtungshilfe für ffmpeg - der Notnagel, nicht der Regelfall.
 
 ffmpeg wird gebraucht, um mp3-, wav- oder m4a-Dateien in das Format zu
 bringen, das der Roboter versteht (OGG Vorbis, mono, 16000 Hz). Fertige
 .ogg-Dateien im richtigen Format funktionieren auch ohne ffmpeg.
+
+**In der EXE ist ffmpeg bereits enthalten** (siehe embedded.py) und wird
+beim ersten Bedarf ausgepackt - dieser Weg hier kommt dann gar nicht zum
+Zug. Gebraucht wird er nur, wenn die App aus dem Quellcode läuft und
+weder neben der App noch im PATH ein ffmpeg liegt.
 
 Diese Datei lädt nichts von allein herunter. Der Download startet
 ausschließlich, wenn der Nutzer ihn in der Oberfläche ausdrücklich
