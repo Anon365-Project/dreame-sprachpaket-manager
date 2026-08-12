@@ -1528,6 +1528,77 @@ def main() -> int:
                     pass
 
     # ---------------------------------------------------------------
+    section("28. Geheimnisse landen nie in der config.json")
+
+    # Passwort und ElevenLabs-Schluessel gehoeren in den Windows-Tresor
+    # und sonst nirgendwohin. Frueher hat ein Fehler in genau diesem
+    # Selbsttest den echten Schluessel geloescht - Grund genug, den
+    # Umgang damit besonders festzunageln.
+    from dreamevoice import config as _cfgmod       # noqa: E402
+
+    geheim_dir = Path(tempfile.mkdtemp())
+    _alt_datei = _cfgmod.config_file
+    _cfgmod.config_file = lambda: geheim_dir / "config.json"
+
+    # Und der Tresor bekommt Testnamen, damit die echten Eintraege
+    # unangetastet bleiben.
+    _alt_ziele = (credentials.TARGET_DREAME, credentials.TARGET_ELEVENLABS)
+    credentials.TARGET_DREAME = "DreameSprachpaket:Selbsttest-Dreame28"
+    credentials.TARGET_ELEVENLABS = "DreameSprachpaket:Selbsttest-Eleven28"
+    try:
+        PROBE_PW = "Geheim!Test#28_pw"
+        PROBE_KEY = "sk_selbsttest_28_" + "x" * 30
+
+        c = _cfgmod.Config.load()
+        c["email"] = "test@example.invalid"
+        c.set_password(PROBE_PW, remember=True)
+        c.set_elevenlabs_key(PROBE_KEY)
+        c.save()
+
+        roh = (geheim_dir / "config.json").read_text(encoding="utf-8")
+        check("das Passwort steht nicht in der Datei", PROBE_PW not in roh)
+        check("der Schluessel steht nicht in der Datei", PROBE_KEY not in roh)
+        import base64 as _b64
+        check("auch nicht base64-kodiert",
+              _b64.b64encode(PROBE_PW.encode()).decode() not in roh
+              and _b64.b64encode(PROBE_KEY.encode()).decode() not in roh)
+
+        # Steht der Tresor bereit, muessen die Ausweichfelder leer sein.
+        if credentials.available():
+            check("password_enc bleibt leer, wenn der Tresor da ist",
+                  not c["password_enc"], repr(c["password_enc"])[:40])
+            check("elevenlabs_key_enc bleibt leer",
+                  not c["elevenlabs_key_enc"])
+            check("das Passwort kommt aus dem Tresor zurueck",
+                  c.password == PROBE_PW)
+            check("der Schluessel auch", c.elevenlabs_key == PROBE_KEY)
+            check("und die App sagt auch, wo es liegt",
+                  "Anmelde" in c.password_location, c.password_location)
+
+        # Vergessen muss wirklich vergessen.
+        c.forget_elevenlabs_key()
+        c.set_password("", remember=False)
+        c.save()
+        roh2 = (geheim_dir / "config.json").read_text(encoding="utf-8")
+        check("nach dem Vergessen ist nichts mehr da",
+              PROBE_PW not in roh2 and PROBE_KEY not in roh2)
+        check("und der Tresoreintrag ist weg",
+              not credentials.exists(credentials.TARGET_ELEVENLABS))
+    finally:
+        credentials.delete(credentials.TARGET_DREAME)
+        credentials.delete(credentials.TARGET_ELEVENLABS)
+        credentials.TARGET_DREAME, credentials.TARGET_ELEVENLABS = _alt_ziele
+        _cfgmod.config_file = _alt_datei
+        _shutil.rmtree(geheim_dir, ignore_errors=True)
+
+    # Die echten Eintraege muessen das ueberlebt haben - genau hier ist
+    # frueher der bezahlte Schluessel verlorengegangen.
+    check("der echte Dreamehome-Eintrag ist unberuehrt",
+          credentials.exists(credentials.TARGET_DREAME))
+    check("der echte ElevenLabs-Eintrag ist unberuehrt",
+          credentials.exists(credentials.TARGET_ELEVENLABS))
+
+    # ---------------------------------------------------------------
     print()
     print("=" * 52)
     print(f"  Bestanden: {PASSED}    Fehlgeschlagen: {FAILED}")
