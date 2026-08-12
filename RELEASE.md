@@ -69,6 +69,8 @@ Zwei Bremsen gefunden und gelöst:
   Kreuzes in den Auswahlkästchen.
 * Die Hilfe behauptete noch, man müsse ffmpeg selbst danebenlegen — es
   ist längst eingebaut.
+* Neu unter *Verbindung*: **Persönliche Daten entfernen** — für alle,
+  die die App weitergeben.
 
 ### Zum Loslegen
 
@@ -100,9 +102,11 @@ Arbeitsverzeichnis, EXE, Zwischenstände und die gesamte Git-Historie
 wurden nach dem Passwort und dem Schlüssel durchsucht, in sechs
 Kodierungen — kein einziger Treffer. Der Selbsttest hält das jetzt fest.
 
-Wer die App weitergibt, kopiert am besten nur die EXE. Im Datenordner
-steht zwar kein Geheimnis, aber die E-Mail-Adresse, der Robotername und
-dessen Kennung.
+Im Datenordner steht zwar kein Geheimnis, aber Persönliches: E-Mail,
+Name und MAC deines Roboters, die IP deines PCs. Wer die App weitergibt,
+findet unter *Verbindung* deshalb den Knopf **Persönliche Daten
+entfernen** — er räumt genau das weg und lässt die gebauten Pakete und
+Dialekttexte stehen.
 
 ### Sicherheit
 
@@ -112,7 +116,7 @@ es selbst gegen MD5 und Größe. Vor dem Senden fragt die App, ob dein
 Gerät den Sprachpaket-Dienst überhaupt kennt — wenn nicht, wird gar
 nichts geschrieben.
 
-Geprüft für diese Fassung: **344 Selbsttests** und ein Praxistest gegen
+Geprüft für diese Fassung: **355 Selbsttests** und ein Praxistest gegen
 die echte Cloud und einen echten Roboter.
 
 ### Rechtliches

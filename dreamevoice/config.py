@@ -12,10 +12,10 @@ from __future__ import annotations
 import base64
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from . import credentials
-from .paths import config_file
+from .paths import config_file, log_file
 
 _LOG = logging.getLogger(__name__)
 
@@ -221,6 +221,56 @@ class Config:
     def forget_elevenlabs_key(self) -> None:
         credentials.delete(credentials.TARGET_ELEVENLABS)
         self._values["elevenlabs_key_enc"] = ""
+
+    # -- Weitergabe --------------------------------------------------------
+    #: Felder, die auf eine bestimmte Person, ihren Roboter oder ihr Netz
+    #: zeigen. Geheimnisse sind das nicht - die liegen im Windows-Tresor -,
+    #: aber wer die App samt Datenordner weitergibt, gibt sonst seine
+    #: E-Mail-Adresse, den Namen und die MAC seines Roboters und die
+    #: IP seines PCs mit.
+    PERSOENLICH = (
+        "email", "device_id", "device_name", "device_model", "device_mac",
+        "host_ip", "elevenlabs_voice_id", "elevenlabs_voice_name",
+    )
+
+    def forget_personal(self, auch_zugangsdaten: bool = True) -> List[str]:
+        """Entfernt alles, was auf den bisherigen Benutzer zeigt.
+
+        Gibt die Namen der Felder zurück, die tatsächlich belegt waren -
+        damit die Oberfläche sagen kann, was weg ist, statt nur
+        "erledigt".
+
+        Die gebauten Pakete und die Dialekttexte bleiben unangetastet:
+        Sie sind das Ergebnis der Arbeit und enthalten nichts Persönliches.
+        """
+        geleert: List[str] = []
+        for feld in self.PERSOENLICH:
+            if self._values.get(feld):
+                geleert.append(feld)
+            self._values[feld] = DEFAULTS.get(feld, "")
+
+        if auch_zugangsdaten:
+            if credentials.exists(credentials.TARGET_DREAME):
+                geleert.append("Dreamehome-Passwort")
+            if credentials.exists(credentials.TARGET_ELEVENLABS):
+                geleert.append("ElevenLabs-Schlüssel")
+            credentials.delete(credentials.TARGET_DREAME)
+            credentials.delete(credentials.TARGET_ELEVENLABS)
+            self._values["password_enc"] = ""
+            self._values["elevenlabs_key_enc"] = ""
+            self._values["remember_password"] = False
+
+        # Im Protokoll stehen die IP dieses PCs und die
+        # Installationsauftraege samt Adresse.
+        try:
+            pfad = log_file()
+            if pfad.is_file() and pfad.stat().st_size:
+                pfad.write_text("", encoding="utf-8")
+                geleert.append("Protokoll")
+        except OSError as exc:
+            _LOG.warning("Protokoll nicht geleert: %s", exc)
+
+        return geleert
 
     # -- Zuordnungen (Sound-ID -> Audiodatei) ------------------------------
     def assignment(self, sound_id: int) -> str:

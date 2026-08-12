@@ -11,7 +11,7 @@ from ..errors import NoDeviceError
 from .state import AppState, error_text, run_async
 from .theme import Theme
 from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge, autowrap,
-                      labeled_value, show_error)
+                      labeled_value, show_error, show_info)
 
 DREAMEHOME_HELP = "https://www.dreametech.com/pages/support"
 
@@ -149,6 +149,81 @@ class ConnectTab(ttk.Frame):
         link = ttk.Button(note, text="Dreame-Hilfeseite öffnen", style="Link.TButton",
                           command=lambda: webbrowser.open(DREAMEHOME_HELP))
         link.pack(anchor="w", pady=(6, 0))
+
+        # ---- Weitergabe -------------------------------------------------
+        # Passwort und Schlüssel liegen im Windows-Tresor und wandern
+        # ohnehin nicht mit. Die config.json enthält aber die E-Mail, den
+        # Namen und die MAC des Roboters und die IP dieses PCs - beim
+        # Weitergeben samt Datenordner ginge das mit.
+        weiter = Card(outer, self.theme, "App weitergeben",
+                      "Persönliche Spuren entfernen, bevor jemand anderes sie bekommt")
+        weiter.pack(fill="x", pady=(14, 0))
+
+        ttk.Label(
+            weiter.content,
+            text=("Dein Passwort und der ElevenLabs-Schlüssel liegen im "
+                  "Windows-Anmeldeinformationsspeicher, nicht in einer Datei - "
+                  "die wandern beim Kopieren also gar nicht erst mit.\n\n"
+                  "Im Datenordner steht trotzdem einiges, was auf dich zeigt: "
+                  "deine E-Mail-Adresse, Name, Geräte-ID und MAC deines "
+                  "Roboters, die IP dieses PCs, die zuletzt benutzte "
+                  "ElevenLabs-Stimme und das Protokoll. Der Knopf löscht "
+                  "genau das."),
+            style="Surface.TLabel", wraplength=780, justify="left").pack(anchor="w")
+
+        ttk.Label(
+            weiter.content,
+            text=("Deine gebauten Sprachpakete, die Dialekttexte und die "
+                  "mitgelieferten Aufnahmen bleiben erhalten - da steckt nichts "
+                  "Persönliches drin."),
+            style="Muted.TLabel", wraplength=780, justify="left"
+        ).pack(anchor="w", pady=(8, 0))
+
+        ttk.Button(weiter.content, text="Persönliche Daten entfernen ...",
+                   command=self._on_forget_personal).pack(anchor="w", pady=(12, 0))
+
+    # ------------------------------------------------------------------
+    def _on_forget_personal(self) -> None:
+        """Räumt alles weg, was auf den bisherigen Benutzer zeigt."""
+        if not messagebox.askyesno(
+                "Persönliche Daten entfernen?",
+                "Entfernt werden:\n\n"
+                "  • E-Mail-Adresse und gespeichertes Passwort\n"
+                "  • der ElevenLabs-Schlüssel\n"
+                "  • Name, Geräte-ID und MAC deines Roboters\n"
+                "  • die IP-Adresse dieses PCs\n"
+                "  • die zuletzt benutzte ElevenLabs-Stimme\n"
+                "  • das Protokoll\n\n"
+                "Deine gebauten Sprachpakete und Dialekttexte bleiben.\n\n"
+                "Beim nächsten Start musst du dich neu anmelden. "
+                "Fortfahren?",
+                parent=self):
+            return
+
+        geleert = self.state.config.forget_personal()
+        self.state.cloud = None
+        self.state.device = None
+        self.state.devices = []
+        self.state.config.save()
+
+        self.var_email.set("")
+        self.var_password.set("")
+        self.tree.delete(*self.tree.get_children())
+        self.lbl_empty.pack(anchor="w", pady=(8, 0))
+        self.badge.set("Nicht angemeldet", "muted")
+        self._load_from_config()
+        self.state.notify("device_changed")
+
+        # Bewusst zwei Zeilen statt eines Bedingungsausdrucks: Der bände
+        # sonst an den ganzen Text und liesse ohne Treffer auch die
+        # Erklaerung verschwinden.
+        kopf = (f"{len(geleert)} Angaben entfernt." if geleert
+                else "Es war nichts zu entfernen.")
+        einzelheiten = ("Die App lässt sich jetzt samt Datenordner weitergeben, "
+                        "ohne dass etwas über dich mitgeht.")
+        if geleert:
+            einzelheiten += "\n\nEntfernt: " + ", ".join(geleert)
+        show_info(self, self.theme, "Erledigt", kopf, einzelheiten)
 
     # ------------------------------------------------------------------
     def _toggle_password(self) -> None:

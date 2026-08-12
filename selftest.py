@@ -1591,6 +1591,71 @@ def main() -> int:
         _cfgmod.config_file = _alt_datei
         _shutil.rmtree(geheim_dir, ignore_errors=True)
 
+    # ---------------------------------------------------------------
+    section("28b. Weitergeben, ohne Spuren zu hinterlassen")
+
+    # Passwort und Schluessel wandern ohnehin nicht mit, die liegen im
+    # Tresor. Die config.json enthaelt aber E-Mail, Robotername, dessen
+    # MAC und die IP des PCs - beim Weitergeben samt Datenordner ginge
+    # das alles mit.
+    weiter_dir = Path(tempfile.mkdtemp())
+    _alt_cfgdatei = _cfgmod.config_file
+    _alt_logdatei = _cfgmod.log_file
+    _cfgmod.config_file = lambda: weiter_dir / "config.json"
+    _cfgmod.log_file = lambda: weiter_dir / "verlauf.log"
+    _alt_ziele2 = (credentials.TARGET_DREAME, credentials.TARGET_ELEVENLABS)
+    credentials.TARGET_DREAME = "DreameSprachpaket:Selbsttest-Dreame28b"
+    credentials.TARGET_ELEVENLABS = "DreameSprachpaket:Selbsttest-Eleven28b"
+    try:
+        (weiter_dir / "verlauf.log").write_text(
+            "2026-01-01 Auftrag http://192.168.10.196:5555/x" + chr(10),
+            encoding="utf-8")
+
+        w = _cfgmod.Config.load()
+        w["email"] = "wer@example.invalid"
+        w["device_id"] = "955461008"
+        w["device_name"] = "X50 Ultra Complete"
+        w["device_mac"] = "70:C9:32:A7:23:6C"
+        w["host_ip"] = "192.168.10.196"
+        w["elevenlabs_voice_id"] = "L8v90KZAhUv5vBKb5enK"
+        w["elevenlabs_voice_name"] = "Irgendeine Stimme"
+        w["last_pack_name"] = "Bayerisch"          # darf bleiben
+        w.set_password("Geheim28b!", remember=True)
+        w.set_elevenlabs_key("sk_28b_" + "y" * 40)
+        w.save()
+
+        geleert = w.forget_personal()
+        w.save()
+        inhalt = (weiter_dir / "config.json").read_text(encoding="utf-8")
+
+        for feld, spur in (("email", "wer@example.invalid"),
+                           ("device_id", "955461008"),
+                           ("device_name", "X50 Ultra Complete"),
+                           ("device_mac", "70:C9:32:A7:23:6C"),
+                           ("host_ip", "192.168.10.196"),
+                           ("elevenlabs_voice_id", "L8v90KZAhUv5vBKb5enK")):
+            check(f"{feld} ist weg", spur not in inhalt)
+
+        check("das Protokoll ist geleert",
+              not (weiter_dir / "verlauf.log").read_text(encoding="utf-8").strip())
+        check("die Tresoreintraege sind geloescht",
+              not credentials.exists(credentials.TARGET_DREAME)
+              and not credentials.exists(credentials.TARGET_ELEVENLABS))
+        check("es wird gemeldet, was entfernt wurde", len(geleert) >= 8,
+              f"{len(geleert)} Angaben")
+
+        # Was zur Arbeit gehoert, muss bleiben.
+        check("der zuletzt benutzte Paketname bleibt",
+              w["last_pack_name"] == "Bayerisch")
+        check("die Kennung bleibt", bool(w["custom_lang_id"]))
+    finally:
+        credentials.delete(credentials.TARGET_DREAME)
+        credentials.delete(credentials.TARGET_ELEVENLABS)
+        credentials.TARGET_DREAME, credentials.TARGET_ELEVENLABS = _alt_ziele2
+        _cfgmod.config_file = _alt_cfgdatei
+        _cfgmod.log_file = _alt_logdatei
+        _shutil.rmtree(weiter_dir, ignore_errors=True)
+
     # Die echten Eintraege muessen das ueberlebt haben - genau hier ist
     # frueher der bezahlte Schluessel verlorengegangen.
     check("der echte Dreamehome-Eintrag ist unberuehrt",
