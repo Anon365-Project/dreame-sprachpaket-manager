@@ -172,7 +172,9 @@ Quellcode liegt offen; wer mag, baut sich die EXE in zwei Minuten selbst
 
 Zur Kontrolle die SHA-256-Prüfsumme dieser EXE:
 
-
+```
+a7458cd1d1fc292804d248c08a03850d54fe13f330d7727d1be5255ae77152a8
+```
 
 Nachrechnen unter Windows:
 `certutil -hashfile DreameSprachpaket.exe SHA256`
