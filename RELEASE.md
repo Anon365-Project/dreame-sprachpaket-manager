@@ -134,3 +134,45 @@ Trainingsmaterial oder eigenständiges Produkt: nein) — siehe
 
 Die App ist kostenlos und bleibt es. Wer mag: ☕
 **https://paypal.me/anon365project** — freiwillig, ohne Gegenleistung.
+
+---
+
+## Warum warnt Windows vor der Datei?
+
+Beim ersten Start meldet Windows **„Der Computer wurde durch Windows
+geschützt"**. Das ist erwartet und kein Zeichen dafür, dass etwas nicht
+stimmt.
+
+**Der Grund:** Die Datei ist nicht mit einem Zertifikat signiert. Ein
+solches kostet je nach Anbieter 200 bis 600 Euro im Jahr — für ein
+kostenloses Freizeitprojekt ohne Einnahmen ist das nicht drin. Ohne
+Signatur baut Microsofts SmartScreen erst dann Vertrauen auf, wenn eine
+Datei oft genug heruntergeladen wurde.
+
+**So startest du sie trotzdem:**
+
+1. Doppelklick auf `DreameSprachpaket.exe`
+2. Im blauen Fenster auf **Weitere Informationen** klicken
+   (der Link ist leicht zu übersehen — er steht klein unter dem Text)
+3. Auf **Trotzdem ausführen**
+
+Das ist einmalig nötig; danach startet sie normal.
+
+**Wenn „Trotzdem ausführen" fehlt** oder Windows die Datei ohne
+Rückfrage blockiert, ist meist **Smart App Control** aktiv (Windows 11,
+neuere Installationen). Das erkennst du unter *Windows-Sicherheit → App-
+und Browsersteuerung → Smart App Control*. Es lässt unsignierte
+Programme grundsätzlich nicht zu und kennt keine Ausnahme für einzelne
+Dateien.
+
+**Du willst dich nicht darauf verlassen?** Verständlich. Der gesamte
+Quellcode liegt offen; wer mag, baut sich die EXE in zwei Minuten selbst
+(siehe README, Abschnitt *Entwicklung*) oder startet die App direkt mit
+`python main.py`. Dann fragt Windows gar nicht erst.
+
+Zur Kontrolle die SHA-256-Prüfsumme dieser EXE:
+
+
+
+Nachrechnen unter Windows:
+`certutil -hashfile DreameSprachpaket.exe SHA256`

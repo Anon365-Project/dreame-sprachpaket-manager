@@ -50,5 +50,11 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,
+    # Symbol und Versionsangaben. Ohne beides ist die Datei fuer Windows
+    # namenlos: SmartScreen zeigt dann nur den Dateinamen, und
+    # heuristische Scanner werten eine Programmdatei ohne jede Angabe
+    # ueber sich selbst als verdaechtiger. Eine Signatur ersetzt das
+    # nicht - aber es kostet nichts.
+    icon="app.ico",
+    version="version_info.txt",
 )
