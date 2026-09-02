@@ -1,4 +1,4 @@
-## v1.3.0 — Eine Frauenstimme, und mehr Ehrlichkeit
+## v1.3.0 — Eine Frauenstimme, zehnmal schnellerer Start
 
 Gib deinem Dreame, MOVA oder Trouver eine eigene Stimme — **ohne Rooting**,
 ohne Valetudo, mit einer einzigen portablen EXE.
