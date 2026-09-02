@@ -14,7 +14,7 @@ from .. import audio, embedded, ffmpeg_setup, importer, official
 from ..errors import DreameError
 from ..paths import data_dir, preview_dir
 from ..sounds import Sound
-from .state import AppState, error_text, run_async, to_main
+from .state import AppState, error_text, run_async, spaeter, to_main
 from .theme import Theme
 from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge, show_error,
                       show_info, show_warning)
@@ -53,6 +53,15 @@ def open_with_default_player(path: Path) -> None:
         subprocess.Popen(["xdg-open", str(path)])
 
 
+#: Wie breit der Text einer Ansagezeile umbrechen darf.
+#:
+#: Gemessen, nicht geschätzt: Die Spalte ist 272 Pixel breit.
+#: Vorher stand hier 430 - der Text lief einfach über den Rand
+#: hinaus und brach mitten im Wort ab, gerade bei der englischen
+#: Originalansage, die verrät, worum es überhaupt geht.
+ZEILENBREITE = 262
+
+
 class SoundRow(ttk.Frame):
     """Eine Zeile: Nummer, Beschreibung, Hörprobe, Dateiwahl."""
 
@@ -70,8 +79,12 @@ class SoundRow(ttk.Frame):
         num.grid(row=0, column=0, rowspan=2, sticky="ne", padx=(0, 10), pady=(4, 0))
 
         # Beschreibung
+        # 430 war Wunschdenken: Die Spalte ist real 272 Pixel breit, und
+        # sie wächst auch im Vollbild nicht mit (ScrollablePage deckelt
+        # die Seite bei 940). Der Text brach dadurch mitten im Wort ab -
+        # bei 28 von 43 Zeilen, ohne Auslassungspunkte.
         title = ttk.Label(self, text=sound.title, style="Surface.TLabel",
-                          anchor="w", wraplength=430, justify="left")
+                          anchor="w", wraplength=ZEILENBREITE, justify="left")
         title.grid(row=0, column=1, sticky="ew")
 
         sub_parts = [sound.group]
@@ -80,7 +93,7 @@ class SoundRow(ttk.Frame):
         elif not sound.de and not sound.en:
             sub_parts.append("keine Beschreibung bekannt - bitte anhören")
         subtitle = ttk.Label(self, text="  ·  ".join(sub_parts), style="Muted.TLabel",
-                             anchor="w", wraplength=430, justify="left")
+                             anchor="w", wraplength=ZEILENBREITE, justify="left")
         subtitle.grid(row=1, column=1, sticky="ew", pady=(1, 0))
 
         # Bedienelemente
@@ -284,17 +297,25 @@ class BuilderTab(ttk.Frame):
         self.combo_group.pack(side="left", padx=(8, 16))
         self.combo_group.bind("<<ComboboxSelected>>", lambda _e: self.rebuild_list())
 
+        # Zweite Zeile: In einer einzigen wurde es zu eng - bei der
+        # Startgröße des Fensters stand dort "Alle Zuwe", der Rest
+        # war abgeschnitten. Ausgerechnet bei einem Knopf, der etwas
+        # löscht, muss lesbar sein, WAS er löscht.
+        filter2 = ttk.Frame(assign.content, style="Card.TFrame")
+        filter2.pack(fill="x", pady=(8, 0))
+
         self.var_common = tk.BooleanVar(value=True)
-        ttk.Checkbutton(filters, text="nur die wichtigsten",
+        ttk.Checkbutton(filter2, text="nur die wichtigsten",
                         variable=self.var_common,
-                        command=self.rebuild_list).pack(side="left", padx=(0, 12))
+                        command=self.rebuild_list).pack(side="left", padx=(0, 16))
 
         self.var_assigned = tk.BooleanVar(value=False)
-        ttk.Checkbutton(filters, text="nur bereits zugewiesene",
+        ttk.Checkbutton(filter2, text="nur bereits zugewiesene",
                         variable=self.var_assigned,
                         command=self.rebuild_list).pack(side="left")
 
-        ttk.Button(filters, text="Alle Zuweisungen löschen", style="Small.TButton",
+        ttk.Button(filter2, text="Alle Zuweisungen löschen",
+                   style="Small.TButton",
                    command=self._clear_all).pack(side="right")
 
         # ---- Massenzuweisung ---------------------------------------------
@@ -315,7 +336,7 @@ class BuilderTab(ttk.Frame):
             bulk,
             text=("Die Zahl im Dateinamen ist die Ansage-Nummer: 7.ogg, 007.wav "
                   "oder '7 - Reinigung.mp3' landen alle bei Ansage 7."),
-            style="Muted.TLabel", wraplength=420, justify="left")
+            style="Muted.TLabel", wraplength=285, justify="left")
         self.lbl_bulk.pack(side="left", padx=(14, 0))
 
         # Kein eigener Scrollbereich mehr: der ganze Tab scrollt. Zwei
@@ -386,7 +407,7 @@ class BuilderTab(ttk.Frame):
                 self._check_ffmpeg(auto_extract=False)
             else:
                 self.lbl_ffmpeg.configure(
-                    text=("Das mitgelieferte ffmpeg liess sich nicht auspacken. "
+                    text=("Das mitgelieferte ffmpeg ließ sich nicht auspacken. "
                           "Lege ersatzweise eine ffmpeg.exe neben die App."),
                     style="Warning.TLabel")
                 self.btn_ffmpeg.pack(side="left")
@@ -447,9 +468,9 @@ class BuilderTab(ttk.Frame):
 
     # ------------------------------------------------------------------
     def _on_device_changed(self) -> None:
+        # Das Verwerfen des alten Gerätestands passiert in AppState.notify -
+        # unabhängig davon, ob diese Seite überhaupt schon gebaut wurde.
         self.base_badge.set("Noch nicht geladen", "muted")
-        self.state.base_pack_path = None
-        self.state.official_packs = []
         self.combo_language.configure(values=[])
         self._load_catalog_async()
 
@@ -563,7 +584,7 @@ class BuilderTab(ttk.Frame):
     def _debounced_rebuild(self) -> None:
         if self._search_job is not None:
             self.after_cancel(self._search_job)
-        self._search_job = self.after(220, self.rebuild_list)
+        self._search_job = spaeter(self, 220, self.rebuild_list)
 
     def _visible_sounds(self) -> List[Sound]:
         group = self.var_group.get()
@@ -763,7 +784,7 @@ class BuilderTab(ttk.Frame):
                 self, self.theme, "Vorlagenordner angelegt",
                 f"{anzahl} Originalansagen liegen jetzt in:\n{pfad}",
                 "So geht es weiter:\n"
-                "1. Datei anhören, damit du weisst, was gesagt wird.\n"
+                "1. Datei anhören, damit du weißt, was gesagt wird.\n"
                 "2. Eigene Aufnahme unter genau demselben Namen speichern.\n"
                 "3. Hier auf 'Ganzen Ordner importieren' klicken.\n\n"
                 "Eine Anleitung liegt als _Anleitung.txt im Ordner. "

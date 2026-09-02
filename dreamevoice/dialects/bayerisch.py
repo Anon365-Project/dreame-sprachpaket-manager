@@ -1,7 +1,7 @@
-"""Bairisch - Muenchen/Oberbayern, wie heute wirklich geredet wird.
+"""Bairisch - München/Oberbayern, wie heute wirklich geredet wird.
 
-Diese Fassung wurde durchgehend ueberarbeitet. Vorher standen hier zwei
-Schreibweisen nebeneinander, und im spaeter ergaenzten Teil war der
+Diese Fassung wurde durchgehend überarbeitet. Vorher standen hier zwei
+Schreibweisen nebeneinander, und im später ergänzten Teil war der
 Wiener Ton durchgeschlagen.
 
 Die Regeln, nach denen hier geschrieben wird:
@@ -15,16 +15,16 @@ Die Regeln, nach denen hier geschrieben wird:
 * schauen -> schaugn: der klarste bairische Marker, nie "schaun"
 * p wird zu b:        bassd, butzn, bisserl
 * an- wird zu o-:     ogreifn, odockn, ofanga, obglehnt
-* Richtungswoerter:   eini, aussa, owa, auffi, umanand
-* kommen -> i kimm, nicht -> ned, nachher -> nacha, spaeter -> spata
+* Richtungswörter:   eini, aussa, owa, auffi, umanand
+* kommen -> i kimm, nicht -> ned, nachher -> nacha, später -> spata
 
-Zwei Fehler der Vorfassung sind raus: "bittschön" (bairisch heißt schoen
-"schee") und "Fuiast nach" (das ist Praesens, gebraucht wird der
+Zwei Fehler der Vorfassung sind raus: "bittschön" (bairisch heißt schön
+"schee") und "Fuiast nach" (das ist Präsens, gebraucht wird der
 Imperativ "Fui nach"). Nebenbei sagt ein granteliger Bayer nicht in
 jedem zweiten Satz bitte - das steht jetzt nur noch dort, wo es sitzt.
 
 Der Grant ist bewusst sparsam dosiert: bei fast 600 Ansagen wird
-Dauergranteln anstrengend, und Fehlermeldungen muessen verstaendlich
+Dauergranteln anstrengend, und Fehlermeldungen müssen verständlich
 bleiben.
 """
 
@@ -535,7 +535,7 @@ TEXTE = {
 }
 
 # --------------------------------------------------------------------------
-# Schematische Ansagen (Akkustand 0-100 %, Raumbestaetigungen).
+# Schematische Ansagen (Akkustand 0-100 %, Raumbestätigungen).
 # Werden aus diesen Mustern erzeugt statt 117-mal von Hand geschrieben.
 # --------------------------------------------------------------------------
 

@@ -139,7 +139,7 @@ def download_and_install(progress: Optional[ProgressFn] = None,
                 if info.is_dir():
                     continue
                 # Nur der reine Dateiname zählt - Pfade aus dem Archiv werden
-                # verworfen, damit nichts ausserhalb von dest landen kann.
+                # verworfen, damit nichts außerhalb von dest landen kann.
                 name = Path(info.filename.replace("\\", "/")).name
                 if name.lower() not in WANTED:
                     continue

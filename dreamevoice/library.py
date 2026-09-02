@@ -1,6 +1,6 @@
 """Die Sammlung der selbst gebauten Sprachpakete.
 
-Der Anlass: bis hierher hiess jedes Dialektpaket schlicht
+Der Anlass: bis hierher hieß jedes Dialektpaket schlicht
 `dialekt_bayerisch.tar.gz`. Wer ein Paket mit seiner bezahlten
 ElevenLabs-Stimme gebaut hatte und danach dasselbe Dialektpaket zum
 Ausprobieren mit einer Windows-Stimme erzeugte, hatte das erste

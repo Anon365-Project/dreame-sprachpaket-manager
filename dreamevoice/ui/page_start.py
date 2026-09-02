@@ -8,7 +8,7 @@ Drei Zustände, eine Seite:
    muss.
 2. **Angemeldet, aber ohne Originalpaket.** Der einmalige Zwischenschritt.
    Er läuft von selbst; hier steht nur, dass er läuft und warum.
-3. **Alles bereit.** Oben gross, was der Roboter gerade spricht, darunter
+3. **Alles bereit.** Oben groß, was der Roboter gerade spricht, darunter
    die Handlungen. Ab dem zweiten Start sieht man nur noch das.
 
 Der Zustand wird nicht geraten, sondern bei jedem Anzeigen aus `AppState`
@@ -25,9 +25,10 @@ from tkinter import messagebox, ttk
 from typing import Optional
 
 from .. import official
-from ..cloud import REGION_LABELS, REGIONS, DreameCloud
+from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
+                     DreameCloud, regionen_fuer)
 from ..paths import preview_dir
-from .state import AppState, error_text, run_async, to_main
+from .state import AppState, error_text, run_async, spaeter, to_main
 from .theme import Theme
 from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge,
                       show_error, show_info, show_warning)
@@ -41,7 +42,7 @@ ZUSTAND_BEREIT = "bereit"
 
 
 class StartPage(ttk.Frame):
-    """Begrüssung, Anmeldung und Zustandsanzeige in einem."""
+    """Begrüßung, Anmeldung und Zustandsanzeige in einem."""
 
     def __init__(self, master, theme: Theme, state: AppState,
                  gehe_zu=None) -> None:
@@ -53,6 +54,11 @@ class StartPage(ttk.Frame):
         self._zustand = ""
         self._laedt_original = False
 
+        # Dreamehome, MOVA Home oder Trouver: verschiedene
+        # Mandanten beim selben Anbieter. Ohne diese Auswahl
+        # ging jede Anmeldung an den Dreame-Mandanten - für
+        # MOVA- und Trouver-Konten scheiterte sie dadurch.
+        self.var_marke = tk.StringVar()
         self.var_email = tk.StringVar()
         self.var_password = tk.StringVar()
         self.var_region = tk.StringVar()
@@ -66,6 +72,9 @@ class StartPage(ttk.Frame):
 
         self.state.subscribe("device_changed", self.refresh)
         self.state.subscribe("base_pack_changed", self.refresh)
+        # Nach dem Aufspielen soll hier der neue Paketname stehen -
+        # ohne dass dafür der ganze Gerätestand verworfen wird.
+        self.state.subscribe("pack_installed", self.refresh)
 
     # ------------------------------------------------------------------
     def _build(self) -> None:
@@ -80,8 +89,8 @@ class StartPage(ttk.Frame):
         self.unterzeile.pack(anchor="w", pady=(3, 16))
 
         # Jeder Zustand bekommt einen eigenen Rahmen. Angezeigt wird immer
-        # genau einer - so kann keine halb ausgefuellte Ansicht stehen
-        # bleiben, wenn sich der Zustand aendert.
+        # genau einer - so kann keine halb ausgefüllte Ansicht stehen
+        # bleiben, wenn sich der Zustand ändert.
         self.rahmen = {
             ZUSTAND_ANMELDEN: self._bau_anmelden(),
             ZUSTAND_ROBOTER: self._bau_roboter(),
@@ -93,14 +102,14 @@ class StartPage(ttk.Frame):
     def _bau_anmelden(self) -> ttk.Frame:
         rahmen = ttk.Frame(self.outer, style="TFrame")
 
-        card = Card(rahmen, self.theme, "Bei Dreamehome anmelden",
-                    "Dieselben Zugangsdaten wie in der Handy-App")
+        card = Card(rahmen, self.theme, "Beim Hersteller-Konto anmelden",
+                    "Dieselben Zugangsdaten wie in deiner Handy-App")
         card.pack(fill="x")
         inhalt = card.content
 
         # Ein Raster statt gestapelter Zeilen: nur so stehen Beschriftungen
-        # und Felder wirklich auf einer Flucht, egal wie lang die Woerter
-        # sind. Die Felder gehoeren dabei ins Raster - werden sie einem
+        # und Felder wirklich auf einer Flucht, egal wie lang die Wörter
+        # sind. Die Felder gehören dabei ins Raster - werden sie einem
         # anderen Elternteil zugewiesen, landen sie nebeneinander.
         # Nicht die volle Kartenbreite: Ein Eingabefeld, das sich über 900
         # Pixel zieht, sieht nach Datenbankmaske aus - und eine E-Mail
@@ -114,17 +123,24 @@ class StartPage(ttk.Frame):
                       ).grid(row=zeile, column=0, sticky="w",
                              padx=(0, 12), pady=5)
 
-        beschriftung(0, "E-Mail")
-        ttk.Entry(raster, textvariable=self.var_email).grid(
-            row=0, column=1, sticky="ew", pady=5)
+        beschriftung(0, "App")
+        self.combo_marke = ttk.Combobox(
+            raster, textvariable=self.var_marke, state="readonly",
+            values=[MARKEN_LABELS[m] for m in MARKEN], width=26)
+        self.combo_marke.grid(row=0, column=1, sticky="w", pady=5)
+        self.combo_marke.bind("<<ComboboxSelected>>", self._on_marke)
 
-        beschriftung(1, "Passwort")
-        ttk.Entry(raster, textvariable=self.var_password, show="•").grid(
+        beschriftung(1, "E-Mail")
+        ttk.Entry(raster, textvariable=self.var_email).grid(
             row=1, column=1, sticky="ew", pady=5)
 
-        beschriftung(2, "Region")
+        beschriftung(2, "Passwort")
+        ttk.Entry(raster, textvariable=self.var_password, show="•").grid(
+            row=2, column=1, sticky="ew", pady=5)
+
+        beschriftung(3, "Region")
         region_zelle = ttk.Frame(raster, style="Card.TFrame")
-        region_zelle.grid(row=2, column=1, sticky="ew", pady=5)
+        region_zelle.grid(row=3, column=1, sticky="ew", pady=5)
         self.combo_region = ttk.Combobox(
             region_zelle, textvariable=self.var_region, state="readonly",
             values=[REGION_LABELS[r] for r in REGIONS], width=26)
@@ -135,7 +151,7 @@ class StartPage(ttk.Frame):
 
         ttk.Checkbutton(raster, text="Zugangsdaten im Windows-Tresor merken",
                         style="TCheckbutton", variable=self.var_remember
-                        ).grid(row=3, column=1, sticky="w", pady=(8, 0))
+                        ).grid(row=4, column=1, sticky="w", pady=(8, 0))
 
         knoepfe = ttk.Frame(inhalt, style="Card.TFrame")
         knoepfe.pack(fill="x", pady=(14, 0))
@@ -229,8 +245,14 @@ class StartPage(ttk.Frame):
         knoepfe.pack(fill="x", pady=(16, 0))
         ttk.Button(knoepfe, text="Andere Stimme wählen", style="Accent.TButton",
                    command=lambda: self.gehe_zu("stimme")).pack(side="left")
+        # "original" war nie eine Seite - der Knopf tat schlicht nichts.
+        # Ausgerechnet der, den jemand drückt, wenn ihm die neue Stimme
+        # auf die Nerven geht. Der Rückweg steht unter "Bauen und
+        # Aufspielen" im Abschnitt "Notausgang", und genau dorthin rollt
+        # _zum_notausgang die Seite - nicht an ihren Anfang, wo als
+        # größter Knopf "Sprachpaket installieren" wartet.
         ttk.Button(knoepfe, text="Originalstimme zurück",
-                   command=lambda: self.gehe_zu("original")
+                   command=self._zum_notausgang
                    ).pack(side="left", padx=(8, 0))
 
         self.lbl_geraet = ttk.Label(rahmen, text="", style="MutedBg.TLabel",
@@ -239,14 +261,48 @@ class StartPage(ttk.Frame):
         return rahmen
 
     # ------------------------------------------------------------------
+    def _zum_notausgang(self) -> None:
+        """Wechselt zu "Bauen und Aufspielen" und rollt zum Notausgang."""
+        self.gehe_zu("aufspielen")
+        fenster = self.winfo_toplevel()
+        seite = getattr(fenster, "tab_install", None)
+        zeigen = getattr(seite, "zeige_notausgang", None)
+        if callable(zeigen):
+            zeigen()
+
+    # ------------------------------------------------------------------
     def _aus_config(self) -> None:
         cfg = self.state.config
+        self.var_marke.set(MARKEN_LABELS.get(cfg["account_type"],
+                                             MARKEN_LABELS["dreame"]))
         self.var_email.set(cfg["email"] or "")
         gespeichert = cfg.password
         if gespeichert:
             self.var_password.set(gespeichert)
         code = cfg["region"] or REGIONS[0]
         self.var_region.set(REGION_LABELS.get(code, REGION_LABELS[REGIONS[0]]))
+
+    def _marke_code(self) -> str:
+        """Aus der Beschriftung zurück auf 'dreame'/'mova'/'trouver'."""
+        gewaehlt = self.var_marke.get()
+        for code, text in MARKEN_LABELS.items():
+            if text == gewaehlt:
+                return code
+        return MARKEN[0]
+
+    def _on_marke(self, _event=None) -> None:
+        """Andere Marke: Die Regionenliste passt sich an.
+
+        Trouver betreibt Korea und China nicht - wer sie dort wählen
+        könnte, liefe in einen DNS-Fehler statt in eine Auskunft.
+        """
+        marke = self._marke_code()
+        self.state.config["account_type"] = marke
+        erlaubt = regionen_fuer(marke)
+        self.combo_region.configure(
+            values=[REGION_LABELS[r] for r in erlaubt])
+        if self._region_code() not in erlaubt:
+            self.var_region.set(REGION_LABELS[erlaubt[0]])
 
     def _region_code(self) -> str:
         label = self.var_region.get()
@@ -292,7 +348,7 @@ class StartPage(ttk.Frame):
                 text=f"{self._geraetename()} gefunden. Es fehlt nur noch das "
                      f"offizielle Sprachpaket - das kommt einmalig und bleibt dann da.")
             if gewechselt and not self._laedt_original:
-                self.after(400, self._on_load_base)
+                spaeter(self, 400, self._on_load_base)
         else:
             self.kopf.configure(text="Start")
             self.unterzeile.configure(text="")
@@ -345,8 +401,11 @@ class StartPage(ttk.Frame):
         self.btn_login.configure(state="disabled")
         self.badge_login.set("Melde an ...", "muted")
 
+        marke = self._marke_code()
+        self.state.config["account_type"] = marke
+
         def work(_task):
-            cloud = DreameCloud(self.state.config["account_type"])
+            cloud = DreameCloud(marke)
             if auto:
                 benutzt = cloud.login_autodetect(email, passwort, region)
             else:
@@ -451,14 +510,15 @@ class StartPage(ttk.Frame):
 
     # -- Bereit ----------------------------------------------------------
     def _zeige_bereit(self, frisch_abfragen: bool = False) -> None:
-        gemerkt = self.state.config["custom_lang_id"] or ""
         name = self.state.prebuilt_name or self.state.config["last_pack_name"] or ""
 
+        # Die Kennung stand hier früher mit dabei. Sie ist inzwischen
+        # für jedes Paket dieselbe und sagt damit nichts mehr aus -
+        # schlimmer noch, sie zeigte zeitweise eine Kennung an, die der
+        # Roboter gar nicht führt.
         if name:
             self.lbl_stimme.configure(text=name)
-            self.lbl_stimme_detail.configure(
-                text=f"zuletzt von hier aufgespielt"
-                     + (f" · Kennung {gemerkt}" if gemerkt else ""))
+            self.lbl_stimme_detail.configure(text="zuletzt von hier aufgespielt")
         else:
             self.lbl_stimme.configure(text="Deutsch")
             self.lbl_stimme_detail.configure(
@@ -472,7 +532,7 @@ class StartPage(ttk.Frame):
                  + (f" · Grundlage {paket.label}" if paket else ""))
 
         if frisch_abfragen:
-            self.after(600, lambda: self._on_query(still=True))
+            spaeter(self, 600, lambda: self._on_query(still=True))
 
     def _on_query(self, still: bool = False) -> None:
         """Fragt den Roboter, welches Paket er gerade führt."""

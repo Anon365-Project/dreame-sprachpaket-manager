@@ -2,7 +2,7 @@
 
 Warum Cloud und nicht python-miio?
 ----------------------------------
-Aeltere Dreame-Modelle liefen über Xiaomi Mi Home. Dort gab es pro Gerät
+Ältere Dreame-Modelle liefen über Xiaomi Mi Home. Dort gab es pro Gerät
 eine lokale IP und ein 32-stelliges miio-Token, mit dem man das Gerät
 direkt im LAN ansprechen konnte (python-miio, Klasse Device).
 
@@ -26,7 +26,7 @@ import json
 import logging
 import random
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 import requests
@@ -67,6 +67,33 @@ PATH_SEND_COMMAND = "device/sendCommand"
 # Regionen, die die Dreamehome-App anbietet. "eu" ist für Deutschland
 # richtig - "de" gibt es nur bei Mi-Home-Konten.
 REGIONS = ["eu", "us", "sg", "ru", "kr", "cn"]
+
+#: Welche Marke welche Region wirklich betreibt.
+#:
+#: Nachgemessen per DNS über alle 18 Kombinationen aus REGIONS und
+#: API_HOST_SUFFIX: kr.iot.trouver-tech.com und cn.iot.trouver-tech.com
+#: lösen nicht auf, die übrigen 16 schon. Wer sie trotzdem anbietet,
+#: schickt einen Trouver-Besitzer in einen DNS-Fehler statt ihm zu
+#: sagen, dass es diese Region für seine Marke nicht gibt.
+REGIONS_JE_MARKE = {
+    "dreame": list(REGIONS),
+    "mova": list(REGIONS),
+    "trouver": ["eu", "us", "sg", "ru"],
+}
+
+#: Wie die Marken in der Oberfläche heißen - so, wie die Handy-App
+#: im Telefon steht.
+MARKEN = ["dreame", "mova", "trouver"]
+MARKEN_LABELS = {
+    "dreame": "Dreamehome",
+    "mova": "MOVA Home",
+    "trouver": "Trouver",
+}
+
+
+def regionen_fuer(marke: str) -> list:
+    """Die Regionen, die es bei dieser Marke gibt."""
+    return REGIONS_JE_MARKE.get(marke, list(REGIONS))
 REGION_LABELS = {
     "eu": "Europa (Deutschland, Österreich, Schweiz)",
     "us": "Nord-/Südamerika",
@@ -78,9 +105,14 @@ REGION_LABELS = {
 
 # MIoT-Adressen des Sprachpaket-Dienstes (Service 7).
 SIID_VOICE = 7
+PIID_VOICE_VOLUME = 1        # Lautstärke der Ansagen, 0-100
 PIID_VOICE_PACKET_ID = 2     # aktuell aktive Sprachpaket-Kennung, z. B. "DE"
 PIID_VOICE_CHANGE_STATUS = 3  # Fortschritt/Zustand der Installation
 PIID_VOICE_CHANGE = 4         # hierhin wird der Installationsauftrag geschrieben
+# Die beiden Aktionen desselben Dienstes. Sie stehen so in der offiziellen
+# MIoT-Spezifikation aller Dreame-Modelle, deren Audio auf siid 7 liegt.
+AIID_VOICE_LOCATE = 1         # "Roboter finden" - er meldet sich
+AIID_VOICE_PLAY_SOUND = 2     # Testton mit der eingestellten Lautstärke
 
 
 class Device:
@@ -247,8 +279,18 @@ class DreameCloud:
         if server_region and server_region != self.region:
             _LOG.info("Server meldet Region %r statt %r", server_region, self.region)
 
-    def login_autodetect(self, email: str, password: str, preferred: str = "eu") -> str:
-        """Probiert Regionen durch und gibt die erfolgreiche zurück."""
+    def login_autodetect(self, email: str, password: str,
+                         preferred: str = "eu") -> str:
+        """Probiert Regionen durch und gibt die erfolgreiche zurück.
+
+        Aber nur, solange das Suchen Sinn hat: Sagt der Server "E-Mail
+        oder Passwort stimmt nicht", ist das in jeder Region dieselbe
+        Antwort. Früher wurden trotzdem alle sechs durchprobiert -
+        das sind sechs Fehlanmeldungen hintereinander auf demselben
+        Konto, und der Weg in eine Sperre. Der Nutzer bekam am Ende
+        außerdem die Meldung aus "cn" zu sehen, nicht die aus seiner
+        eigenen Region.
+        """
         order = [preferred] + [r for r in REGIONS if r != preferred]
         last: Exception | None = None
         for region in order:
@@ -256,8 +298,11 @@ class DreameCloud:
                 self.login(email, password, region)
                 return region
             except LoginError as exc:
-                last = exc
+                # Abgelehnte Zugangsdaten sind überall abgelehnt.
+                raise
             except NetworkError as exc:
+                # Region nicht erreichbar oder unbekannt - hier lohnt
+                # das Weitersuchen.
                 last = exc
         if isinstance(last, Exception):
             raise last
@@ -363,15 +408,67 @@ class DreameCloud:
         return inner["result"]
 
     def get_property(self, device: Device, siid: int, piid: int) -> Any:
+        """Eine einzelne Eigenschaft - oder None.
+
+        Geht bewusst über `get_properties`: Dort wird geprüft, ob
+        der Roboter die Stelle überhaupt beantwortet hat (`code`) und
+        ob die Antwort zur gefragten Adresse gehört.
+
+        Früher nahm diese Funktion schlicht `result[0]["value"]`.
+        Damit galt eine Antwort mit Fehlercode als gültiger Wert -
+        und sogar eine Antwort für eine völlig andere Stelle. Genau
+        darauf stützt sich `supports_voice_service`, die einzige
+        Prüfung, bevor die App auf den Roboter schreibt.
+        """
+        werte = self.get_properties(device, [(siid, piid)])
+        return werte.get((siid, piid))
+
+    def get_properties(self, device: Device,
+                       specs: list) -> Dict[Tuple[int, int], Any]:
+        """Liest mehrere Eigenschaften in einem Aufruf.
+
+        `specs` ist eine Liste von (siid, piid). Der Roboter beantwortet
+        jede Anfrage einzeln - wer hundert Werte einzeln abholt, schickt
+        hundert Anfragen durch die Cloud. Gebündelt ist das eine.
+
+        Zurück kommt nur, was der Roboter auch geliefert hat; nicht
+        vorhandene Stellen fehlen im Ergebnis.
+        """
         result = self.send(device, "get_properties",
-                           [{"did": device.did, "siid": siid, "piid": piid}])
-        if isinstance(result, list) and result:
-            return result[0].get("value")
-        return None
+                           [{"did": device.did, "siid": s, "piid": p}
+                            for s, p in specs])
+        werte: Dict[Tuple[int, int], Any] = {}
+        if not isinstance(result, list):
+            return werte
+        for eintrag in result:
+            if not isinstance(eintrag, dict):
+                continue
+            # code != 0 heißt: diese Stelle gibt es nicht oder sie ist
+            # nicht lesbar. Das ist kein Fehler, sondern die Antwort.
+            if eintrag.get("code", 0) != 0 or "value" not in eintrag:
+                continue
+            try:
+                werte[(int(eintrag["siid"]), int(eintrag["piid"]))] = eintrag["value"]
+            except (KeyError, TypeError, ValueError):
+                continue
+        return werte
 
     def set_property(self, device: Device, siid: int, piid: int, value: Any) -> Any:
         return self.send(device, "set_properties",
                          [{"did": device.did, "siid": siid, "piid": piid, "value": value}])
+
+    def call_action(self, device: Device, siid: int, aiid: int,
+                    args: Optional[list] = None) -> Any:
+        """Löst eine MIoT-Aktion aus.
+
+        Anders als eine Eigenschaft *tut* eine Aktion etwas - auf den
+        Dienstnummern eines Saugroboters liegen unter anderem Reinigung
+        starten und zur Station fahren. Die App ruft deshalb nur
+        Aktionen auf, deren Nummer belegt ist; geraten wird hier nichts.
+        """
+        return self.send(device, "action",
+                         {"did": device.did, "siid": siid, "aiid": aiid,
+                          "in": args or []})
 
     # -- Sprachpaket -------------------------------------------------------
 
@@ -388,6 +485,86 @@ class DreameCloud:
         except (NetworkError, LoginError):
             return None
 
+    def voice_state(self, device: Device) -> Dict[str, Any]:
+        """Aktive Kennung und Installationszustand in EINEM Aufruf.
+
+        Zurück kommt ein Wörterbuch mit den Schlüsseln "paket" und
+        "zustand" - **aber nur für die Stellen, die der Roboter auch
+        beantwortet hat.** Ein leeres Wörterbuch heißt: nichts gelesen.
+
+        Warum nicht einfach None für das Fehlende: Weil die
+        Erfolgserkennung Werte miteinander vergleicht. Käme eine nicht
+        beantwortete Stelle als None zurück, sähe sie aus wie ein
+        geänderter Wert - und ein einzelner Aussetzer würde als Beweis
+        durchgehen, dass am Roboter etwas passiert ist. Genau dieser
+        Fehler steckte hier schon einmal drin. "Nicht beantwortet" und
+        "hat None geantwortet" müssen unterscheidbar bleiben.
+        """
+        try:
+            werte = self.get_properties(
+                device, [(SIID_VOICE, PIID_VOICE_PACKET_ID),
+                         (SIID_VOICE, PIID_VOICE_CHANGE_STATUS)])
+        except (NetworkError, LoginError) as exc:
+            _LOG.warning("Sprachzustand nicht lesbar: %s", exc)
+            return {}
+        ergebnis: Dict[str, Any] = {}
+        if (SIID_VOICE, PIID_VOICE_PACKET_ID) in werte:
+            ergebnis["paket"] = werte[(SIID_VOICE, PIID_VOICE_PACKET_ID)]
+        if (SIID_VOICE, PIID_VOICE_CHANGE_STATUS) in werte:
+            ergebnis["zustand"] = werte[(SIID_VOICE, PIID_VOICE_CHANGE_STATUS)]
+        return ergebnis
+
+    def voice_volume(self, device: Device) -> Optional[int]:
+        """Lautstärke der Ansagen (0-100), oder None wenn nicht lesbar."""
+        try:
+            wert = self.get_property(device, SIID_VOICE, PIID_VOICE_VOLUME)
+        except (NetworkError, LoginError) as exc:
+            _LOG.warning("Lautstärke nicht lesbar: %s", exc)
+            return None
+        # Nur übernehmen, was plausibel ist - bei einem Gerät, das an
+        # dieser Stelle etwas ganz anderes führt, wird lieber nichts
+        # zurückgeschrieben.
+        if isinstance(wert, bool) or not isinstance(wert, (int, float)):
+            return None
+        wert = int(wert)
+        return wert if 0 <= wert <= 100 else None
+
+    def play_voice_test(self, device: Device) -> bool:
+        """Lässt den Roboter den Testton mit der eingestellten Lautstärke abspielen.
+
+        NACHGEMESSEN am 30.08.2026 am X50 Ultra Complete (r2532v):
+        Der Roboter nimmt die Aktion an und meldet Erfolg - **zu hören
+        ist nichts**. Weder eine Ansage noch ein Ton.
+
+        Deshalb gibt es bewusst KEINEN Knopf "Roboter jetzt sprechen
+        lassen" in der Oberfläche. Er sähe nützlich aus und täte
+        nichts, und das ist schlimmer als gar keiner. Wer die Frage für
+        ein anderes Modell klären will, nimmt
+        `Werkzeuge/Testton-prüfen.py` - das führt genau einen Versuch
+        durch und fragt, was zu hören war.
+
+        Die Referenz-Integration ruft das nach jedem Schreiben der
+        Lautstärke auf. Sie sagt nicht, warum. Ob die Firmware den Wert
+        dadurch anwendet, ist ebenso wenig belegt - siehe
+        `installer.LAUTSTAERKE_TESTTON`.
+        """
+        try:
+            self.call_action(device, SIID_VOICE, AIID_VOICE_PLAY_SOUND)
+        except (NetworkError, LoginError) as exc:
+            _LOG.warning("Testton nicht auslösbar: %s", exc)
+            return False
+        return True
+
+    def set_voice_volume(self, device: Device, wert: int) -> bool:
+        """Setzt die Lautstärke und prüft nach, ob der Roboter sie übernommen hat."""
+        wert = max(0, min(100, int(wert)))
+        try:
+            self.set_property(device, SIID_VOICE, PIID_VOICE_VOLUME, wert)
+        except (NetworkError, LoginError) as exc:
+            _LOG.warning("Lautstärke nicht setzbar: %s", exc)
+            return False
+        return self.voice_volume(device) == wert
+
     def supports_voice_service(self, device: Device) -> bool:
         """Hat dieser Roboter den Sprachpaket-Dienst an der erwarteten Stelle?
 
@@ -401,8 +578,13 @@ class DreameCloud:
         try:
             wert = self.get_property(device, SIID_VOICE, PIID_VOICE_PACKET_ID)
         except (NetworkError, LoginError) as exc:
+            # NICHT als "kennt keine Sprachpakete" durchgehen lassen:
+            # Ein schlafender Roboter, ein Serverfehler und ein
+            # Mähroboter sahen von hier aus gleich aus. Der Nutzer
+            # bekam dann die Auskunft, sein Gerät könne das gar
+            # nicht - und suchte an der falschen Stelle.
             _LOG.warning("Sprachdienst nicht abfragbar: %s", exc)
-            return False
+            raise
         # Erwartet wird eine Sprachkennung wie "DE", "EN", "CUSTOM".
         return isinstance(wert, str) and 1 <= len(wert.strip()) <= 16
 

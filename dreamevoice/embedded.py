@@ -3,7 +3,7 @@
 Warum nicht einfach über PyInstaller bündeln?
 ---------------------------------------------
 PyInstaller entpackt im Onefile-Modus **bei jedem Start** sämtliche
-gebündelten Dateien in einen Temp-Ordner. Bei einer 139 MB grossen
+gebündelten Dateien in einen Temp-Ordner. Bei einer 139 MB großen
 ffmpeg.exe würde die App dadurch jedes Mal mehrere Sekunden zum Starten
 brauchen - und das für ein Werkzeug, das die meisten Nutzer nie
 benötigen, weil sie fertige .ogg-Dateien verwenden.
@@ -41,6 +41,12 @@ from typing import Callable, Dict, List, Optional, Tuple
 from .paths import data_dir, is_frozen
 
 _LOG = logging.getLogger(__name__)
+
+#: Größer kann ffmpeg nicht sein. Ein gepackter Anhang von
+#: 30 kB entpackte sich sonst zu 200 MB auf die Platte - wer die EXE
+#: umschreiben kann, besitzt sie zwar ohnehin, aber die Grenze kostet
+#: nichts.
+MAX_FFMPEG_BYTES = 400 * 1024 * 1024
 
 MAGIC = b"DREAMEVOICE_FFMP"          # exakt 16 Byte, LZMA-gepackt
 MAGIC_DIALEKTE = b"DREAMEVOICE_DIAL"  # exakt 16 Byte, unkomprimiertes tar
@@ -86,7 +92,7 @@ def _bloecke() -> Dict[bytes, Tuple[int, int]]:
                 start = ende - TRAILER_SIZE - laenge
                 if laenge <= 0 or start < 0:
                     break
-                # Der äusserste Block gewinnt, falls eine Signatur doppelt
+                # Der äußerste Block gewinnt, falls eine Signatur doppelt
                 # vorkommt - das ist der zuletzt angehängte.
                 gefunden.setdefault(signatur, (start, laenge))
                 ende = start
@@ -96,7 +102,7 @@ def _bloecke() -> Dict[bytes, Tuple[int, int]]:
 
 
 def payload_size() -> int:
-    """Grösse des ffmpeg-Anhangs in Byte, 0 wenn keiner vorhanden ist."""
+    """Größe des ffmpeg-Anhangs in Byte, 0 wenn keiner vorhanden ist."""
     block = _bloecke().get(MAGIC)
     return block[1] if block else 0
 
@@ -146,6 +152,10 @@ def extract_ffmpeg(progress: Optional[ProgressFn] = None,
                 if chunk:
                     dst.write(chunk)
                     written += len(chunk)
+                    if written > MAX_FFMPEG_BYTES:
+                        raise lzma.LZMAError(
+                            f"Der Anhang packt sich auf mehr als "
+                            f"{MAX_FFMPEG_BYTES // (1024 * 1024)} MB aus.")
                 if progress:
                     progress(length - remaining, length)
     except (OSError, lzma.LZMAError) as exc:
@@ -268,6 +278,14 @@ def extract_dialekt(dateiname: str,
 
     Ein bereits ausgepacktes Archiv wird wiederverwendet.
     """
+    # Heute kommen die Namen aus einer festen Liste in dialektpakete.py.
+    # Der Riegel steht hier trotzdem: Käme der Name irgendwann von
+    # außen, dürfte "..\\..\\autostart.exe" nicht aus dem Ordner
+    # herausführen.
+    if dateiname != Path(dateiname).name or not dateiname:
+        _LOG.warning("Unzulässiger Dialektname abgewiesen: %r", dateiname)
+        return None
+
     ziel = dialekte_ordner() / dateiname
     if ziel.is_file() and ziel.stat().st_size > 1_000_000:
         return ziel

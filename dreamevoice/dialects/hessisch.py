@@ -1,6 +1,6 @@
 """Hessisch - Frankfurt und Rhein-Main, lautgetreu geschrieben.
 
-Diese Fassung wurde durchgehend ueberarbeitet. Vorher mischten sich zwei
+Diese Fassung wurde durchgehend überarbeitet. Vorher mischten sich zwei
 Schreibweisen, und die Lautung war nur halb umgesetzt.
 
 Die Regeln, nach denen hier geschrieben wird:
@@ -8,20 +8,20 @@ Die Regeln, nach denen hier geschrieben wird:
 * -ig wird -isch:      fertisch, dreckisch, wenisch, rischtisch, gleisch
 * ich/mich/dich/sich:  isch, misch, disch, sisch
 * Lenisierung:         p->b, t->d (basst, Bladd, gud, bidde, Duch, Debbisch)
-* sp->schb, st->schd:  schbaeder, schdell, schdimmt - und im Wortinneren
-                       erschd, feschd, bischd, Fenschder, Buerschd
-* ue wird i:           Kisch (Kueche), zurick, misse, Glick, Fieß, fer
+* sp->schb, st->schd:  schbäder, schdell, schdimmt - und im Wortinneren
+                       erschd, feschd, bischd, Fenschder, Bürschd
+* ue wird i:           Kisch (Küche), zurick, misse, Glick, Fieß, fer
 * ei wird aa:          waaß, haaß, aans, zwaa, kaa
 * eu/aeu wird ei:      Beidel, Leit, heit, Freind
 * b/w zwischen Vokalen: iwwer, owwe, unne, widder, dribbe
 
-Das k bleibt: "Gard" fuer Karte waere rheinhessisch. Frankfurt sagt Kart,
+Das k bleibt: "Gard" für Karte wäre rheinhessisch. Frankfurt sagt Kart,
 Kerb, Kuh, kaputt.
 
-Achtung beim Lesen: **aa** heisst "an" (isch fang aa, guck der des aa),
-**aach** heisst "auch". Das ist der haeufigste Schreibfehler im Hessischen.
+Achtung beim Lesen: **aa** heißt "an" (isch fang aa, guck der des aa),
+**aach** heißt "auch". Das ist der häufigste Schreibfehler im Hessischen.
 
-Der Ton ist gutgelaunt-geschwaetzig statt grantig - der hessische Roboter
+Der Ton ist gutgelaunt-geschwätzig statt grantig - der hessische Roboter
 kommentiert gern und nimmt sich nicht zu ernst. Fehlermeldungen bleiben
 trotzdem klar.
 """
@@ -533,7 +533,7 @@ TEXTE = {
 }
 
 # --------------------------------------------------------------------------
-# Schematische Ansagen (Akkustand 0-100 %, Raumbestaetigungen).
+# Schematische Ansagen (Akkustand 0-100 %, Raumbestätigungen).
 # Werden aus diesen Mustern erzeugt statt 117-mal von Hand geschrieben.
 # --------------------------------------------------------------------------
 

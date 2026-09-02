@@ -8,7 +8,7 @@ nirgends - und weil beide Reiter einen fast gleich benannten Knopf für
 Hier ist es eine Handlung: Liste, Probe, Knopf. Was zur Auswahl steht,
 kommt aus drei Quellen und ist als solche gekennzeichnet:
 
-* **mitgeliefert** - die vier Dialekte aus der EXE (dialektpakete.py)
+* **mitgeliefert** - die Dialektstimmen aus der EXE (dialektpakete.py)
 * **gebaut** - was in dieser App schon entstanden ist (library.py)
 * **selbst erzeugen** - Verweis auf die Seite für eigene Stimmen
 
@@ -25,7 +25,8 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Dict, List, Optional, Tuple
 
-from .. import dialektpakete, importer, installer, library, packer, vorhoeren
+from .. import (dialektpakete, embedded, importer, installer, library,
+                packer, vorhoeren)
 from ..paths import build_dir
 from .state import AppState, Task, error_text, run_async, to_main
 from .theme import Theme
@@ -42,17 +43,14 @@ class Auswahl:
     """Ein Eintrag in der Stimmenliste."""
 
     def __init__(self, key: str, name: str, art: str, beschreibung: str,
-                 kennung: str = "CUSTOM",
                  dialekt=None, paket: Optional[Path] = None) -> None:
         self.key = key
         self.name = name
         self.art = art
         self.beschreibung = beschreibung
-        # Jede Stimme bringt ihre eigene Kennung mit. Frueher stand hier
-        # immer der zuletzt benutzte Wert aus der Konfiguration - wer
-        # einmal Hessisch aufgespielt hatte, bekam "HESSEN" auch bei
-        # Bayerisch angeboten.
-        self.kennung = kennung
+        # Eine Kennung führt der Eintrag nicht mehr mit: Aufgespielt
+        # wird grundsätzlich unter CUSTOM, damit sich die Pakete auf
+        # dem Roboter nicht ansammeln. Siehe installer.install_pack.
         self.dialekt = dialekt          # FertigerDialekt oder None
         self.paket = paket              # fertiges .tar.gz oder None
 
@@ -73,7 +71,7 @@ class VoicePage(ttk.Frame):
 
         self._auswahl: List[Auswahl] = []
         self._task: Optional[Task] = None
-        #: Laeuft gerade eine Probe? Dann ist der Anhoeren-Knopf der
+        #: Läuft gerade eine Probe? Dann ist der Anhören-Knopf der
         #: Stopp-Knopf.
         self._probe_laeuft: Optional[Task] = None
         #: Je Stimme die schon umgewandelten Ansagen - ein zweiter Klick
@@ -81,7 +79,6 @@ class VoicePage(ttk.Frame):
         self._probe_puffer: Dict[str, Dict[int, Path]] = {}
 
         self.var_stimme = tk.StringVar()
-        self.var_lang = tk.StringVar(value=state.config["custom_lang_id"] or "CUSTOM")
 
         self._build()
         self.refresh()
@@ -98,7 +95,7 @@ class VoicePage(ttk.Frame):
                   ).pack(anchor="w")
         ttk.Label(
             outer,
-            text=("Aussuchen, anhören, aufspielen. Die vier Dialekte sind in der "
+            text=("Aussuchen, anhören, aufspielen. Die Stimmen sind in der "
                   "App enthalten - es wird nichts heruntergeladen."),
             style="MutedBg.TLabel", wraplength=760, justify="left"
         ).pack(anchor="w", pady=(3, 16))
@@ -135,11 +132,14 @@ class VoicePage(ttk.Frame):
         kennung.pack(fill="x")
         ttk.Label(kennung, text="Kennung", style="Surface.TLabel",
                   width=11, anchor="w").pack(side="left")
-        ttk.Entry(kennung, textvariable=self.var_lang, width=12).pack(side="left")
+        ttk.Label(kennung, text=installer.DEFAULT_CUSTOM_LANG_ID,
+                  style="Surface.TLabel").pack(side="left")
         ttk.Label(kennung,
-                  text=("Jede Stimme bringt ihre eigene mit. Solange es keine "
-                        "offizielle Sprachkennung ist, bleibt die deutsche "
-                        "Originalstimme unangetastet."),
+                  text=("Fest, und das mit Absicht: Jede Stimme landet an "
+                        "derselben Stelle im Roboter und überschreibt die "
+                        "vorige. Sonst sammeln sie sich dort an, und löschen "
+                        "kann man sie nicht. Die deutsche Originalstimme "
+                        "bleibt davon unberührt."),
                   style="Muted.TLabel", wraplength=440, justify="left"
                   ).pack(side="left", padx=(10, 0))
 
@@ -201,21 +201,18 @@ class VoicePage(ttk.Frame):
                 dialektpakete.QUELLE_PROJEKTORDNER: "aus dem Projektordner",
             }.get(quelle, "")
             eintraege.append(Auswahl(
-                key=f"dialekt:{d.key}", name=d.name, art=QUELLE_MITGELIEFERT,
+                key=f"dialekt:{d.key}", name=d.anzeigename,
+                art=QUELLE_MITGELIEFERT,
                 beschreibung=f"{d.beschreibung}  ({d.ansagen} Ansagen, "
                              f"{d.stimme}, {woher})",
-                kennung=d.kennung, dialekt=d))
+                dialekt=d))
 
         for info in library.list_packs(build_dir()):
-            # Selbst gebaute Pakete tragen ihre Kennung in der
-            # Beschreibungsdatei. Fehlt sie - etwa bei einem von Hand
-            # hineinkopierten Paket -, bleibt es bei CUSTOM.
             eintraege.append(Auswahl(
                 key=f"paket:{info.path.name}",
                 name=info.dialect or info.path.stem,
                 art=QUELLE_GEBAUT,
                 beschreibung=info.label,
-                kennung=(info.lang_id or "CUSTOM").strip().upper(),
                 paket=info.path))
 
         return eintraege
@@ -232,7 +229,6 @@ class VoicePage(ttk.Frame):
                 text="Es steht noch keine fertige Stimme bereit.")
             return
         self.lbl_beschreibung.configure(text=wahl.beschreibung)
-        self.var_lang.set(wahl.kennung)
 
     # -- Anhören --------------------------------------------------------
     def _quelle_holen(self, wahl: Auswahl) -> Optional[Path]:
@@ -268,8 +264,23 @@ class VoicePage(ttk.Frame):
         self._probe_laeuft = aufgabe
 
         def work(task: Task):
+            nonlocal ffmpeg
             proben = gemerkt
             if proben is None:
+                # Das Versprechen aus dem Hinweistext einlösen: ffmpeg
+                # steckt in der EXE und wird beim ersten Bedarf
+                # ausgepackt. Bisher geschah das nur auf der Seite
+                # "Einzelne Ansagen" - wer die nie aufschlug, bekam
+                # hier die Auskunft, ffmpeg fehle.
+                if ffmpeg is None and embedded.has_ffmpeg():
+                    to_main(self, self.lbl_probe.configure,
+                            {"text": "ffmpeg wird einmalig ausgepackt ..."})
+                    try:
+                        ffmpeg = embedded.extract_ffmpeg()
+                        self.state.ffmpeg = ffmpeg
+                    except OSError as exc:
+                        _LOG.warning("ffmpeg ließ sich nicht auspacken: %s",
+                                     exc)
                 quelle = self._quelle_holen(wahl)
                 if quelle is None:
                     return None
@@ -365,22 +376,13 @@ class VoicePage(ttk.Frame):
                          "der Startseite einmalig geholt.")
             return
 
-        kennung = self.var_lang.get().strip().upper() or "CUSTOM"
-        try:
-            kennung, warnung = installer.validate_lang_id(kennung)
-        except Exception as exc:                       # noqa: BLE001
-            nachricht, hinweis = error_text(exc)
-            show_error(self, self.theme, "Kennung ungültig", nachricht, hinweis)
-            return
-        if warnung and not messagebox.askyesno(
-                "Offizielle Kennung", warnung + "\n\nTrotzdem fortfahren?",
-                parent=self):
-            return
+        kennung = installer.DEFAULT_CUSTOM_LANG_ID
 
         if not messagebox.askyesno(
                 "Aufspielen?",
                 f"'{wahl.name}' auf {self.state.device.name or self.state.model} "
-                f"aufspielen?\n\nKennung: {kennung}\n\n"
+                f"aufspielen?\n\nKennung: {kennung} - eine schon dort liegende "
+                f"eigene Stimme wird dabei überschrieben.\n\n"
                 f"Der Rückweg zur Originalstimme bleibt jederzeit offen.",
                 parent=self):
             return
@@ -440,7 +442,7 @@ class VoicePage(ttk.Frame):
             self._log("", "info")
             self._log("Übertrage auf den Roboter", "step")
             return installer.install_pack(
-                cloud=cloud, device=geraet, build=build, lang_id=kennung,
+                cloud=cloud, device=geraet, build=build,
                 port=port, host_ip=host,
                 log=lambda m: self._log(m), step=self._step,
                 cancelled=lambda: task.cancelled)
@@ -448,22 +450,44 @@ class VoicePage(ttk.Frame):
         def ok(ergebnis: installer.InstallOutcome) -> None:
             if ergebnis.success:
                 self.progress.configure(value=100)
-                self.badge.set("Erfolgreich aufgespielt", "ok")
-                self.log.append(ergebnis.message, "ok")
+                # Belegt oder nur wahrscheinlich - der Unterschied darf
+                # hier nicht verlorengehen. Ein Download belegt die
+                # Übertragung, nicht die Installation.
+                if ergebnis.bestaetigt:
+                    self.badge.set("Erfolgreich aufgespielt", "ok")
+                else:
+                    self.badge.set("Übertragen, nicht bestätigt", "warn")
+                self.log.append(ergebnis.message,
+                                "ok" if ergebnis.bestaetigt else "warn")
                 self.state.config["custom_lang_id"] = kennung
                 self.state.config["last_pack_name"] = wahl.name
                 self.state.prebuilt_name = wahl.name
                 self.state.save()
-                self.state.notify("device_changed")
+                # NICHT "device_changed": Der Roboter ist derselbe, nur
+                # seine Stimme ist neu. Das andere Ereignis verwirft
+                # Originalpaket und Sprachliste - vier Seiten würden
+                # grau, und der Nutzer landete direkt nach der
+                # Erfolgsmeldung wieder auf der Startseite.
+                self.state.notify("pack_installed")
                 show_info(
-                    self, self.theme, "Fertig",
-                    f"{wahl.name} läuft jetzt auf deinem Roboter.",
+                    self, self.theme,
+                    "Fertig" if ergebnis.bestaetigt else "Übertragen",
+                    (f"{wahl.name} läuft jetzt auf deinem Roboter."
+                     if ergebnis.bestaetigt else
+                     f"{wahl.name} wurde auf den Roboter übertragen."),
                     "Probier es aus: Lass ihn eine Reinigung starten - er "
                     "sollte anders klingen.\n\nIn der Dreamehome-App taucht "
-                    "das Paket nicht auf; das ist normal und kein Fehler.")
+                    "das Paket nicht auf; das ist normal und kein Fehler.\n\n"
+                    # Der Hinweis aus dem Ergebnis sagt bei einem nur
+                    # wahrscheinlichen Erfolg, woran es liegt. Er stand
+                    # bisher nur im Protokoll - im Fenster las der Nutzer
+                    # trotzdem die Tatsachenbehauptung.
+                    + (ergebnis.hint or installer.NEUSTART_HINWEIS))
             else:
                 self.badge.set("Nicht aufgespielt", "error")
                 self.log.append(ergebnis.message, "error")
+                if ergebnis.hint:
+                    self.log.append(ergebnis.hint, "warn")
 
         def fail(exc: Exception) -> None:
             nachricht, hinweis = error_text(exc)

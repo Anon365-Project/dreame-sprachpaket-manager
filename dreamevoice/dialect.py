@@ -5,7 +5,7 @@ Herunterladen - weder für Dreame noch für Roborock, Xiaomi oder Valetudo.
 In den einschlägigen Foren wurde Bayerisch zwar immer wieder gewünscht,
 gebaut hat es niemand. Vorhanden ist lediglich ein Schweizerdeutsch-Paket
 für den Roborock S5. Es gibt also kein Fremdpaket, das sich umbauen
-liesse.
+ließe.
 
 Deshalb entstehen die Texte hier neu und werden mit der in Windows
 eingebauten deutschen Sprachausgabe gesprochen. Alles läuft offline.
@@ -17,7 +17,11 @@ also nach einer Hochdeutsch-Sprecherin, die Bayerisch vorliest. Wer es
 echter will, nimmt die Ansagen mit dem eigenen Mikrofon auf und weist sie
 unter 'Einzelne Ansagen' zu; die Textliste unten ist dafür eine brauchbare Vorlage.
 
-Die Nummern sind die Ansage-IDs des X50 Ultra Complete.
+Die Nummern sind die Ansage-IDs des X50 Ultra Complete - sie gelten aber
+nicht nur für ihn: Dreame nutzt für alle Marken eine gemeinsame
+Nummerierung. An acht fremden Modellen von Dreame, MOVA und Trouver
+wurden die Textbausteine verglichen, sie stimmten vollständig überein
+(siehe docs/Modelle.md). Was ein Modell nicht kennt, übergeht der Bau.
 """
 
 from __future__ import annotations
@@ -179,7 +183,7 @@ def write_manifest(work_dir: Path, texte: Dict[int, str]) -> None:
 def classify_recordings(pack: DialectPack, work_dir: Path):
     """Teilt vorhandene Aufnahmen in passend, übernommen und veraltet.
 
-    Die Regel ist bewusst grosszügig, damit selbst eingespielte oder aus
+    Die Regel ist bewusst großzügig, damit selbst eingespielte oder aus
     einer Sicherung zurückkopierte Aufnahmen erhalten bleiben:
 
     * Der Vermerk passt zum aktuellen Text  -> passend, wird verwendet.

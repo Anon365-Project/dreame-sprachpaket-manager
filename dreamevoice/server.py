@@ -13,6 +13,7 @@ import socket
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import unquote
 from typing import Callable, List, Optional, Tuple
 
 from .errors import InstallError
@@ -25,7 +26,7 @@ LogFn = Callable[[str], None]
 def local_ip_for_internet() -> str:
     """Ermittelt die IP-Adresse, unter der der PC im LAN erreichbar ist.
 
-    Es wird ein UDP-Socket "verbunden" (ohne dass Daten fliessen), damit
+    Es wird ein UDP-Socket "verbunden" (ohne dass Daten fließen), damit
     das Betriebssystem die Schnittstelle wählt, über die es auch mit dem
     Router spricht. Das trifft bei mehreren Netzwerkkarten oder aktivem
     VPN deutlich zuverlässiger als ein Blick auf den Hostnamen.
@@ -73,7 +74,11 @@ class _Handler(BaseHTTPRequestHandler):
     on_hit: Optional[Callable[[str, str], None]] = None
 
     def _serve(self, head_only: bool) -> None:
-        requested = self.path.split("?", 1)[0].lstrip("/")
+        # Der Client kodiert Leerzeichen und Umlaute im Pfad. Ohne
+        # Dekodierung schlug jeder Paketname mit Leerzeichen fehl -
+        # und der Fehlschlag wurde dann auch noch als Firewall- oder
+        # Netzproblem erklärt.
+        requested = unquote(self.path.split("?", 1)[0].lstrip("/"))
         client = self.client_address[0]
 
         if requested != self.url_name:
@@ -100,6 +105,12 @@ class _Handler(BaseHTTPRequestHandler):
         if head_only:
             return
 
+        # Erst wenn alle Bytes draußen sind, gilt der Download als
+        # erfolgt. Vorher wurde schon die bloße Anfrage als "abgeholt"
+        # gemeldet - die Installation galt damit als angelaufen,
+        # während die Datei noch übertrug. Ein HEAD zur
+        # Größenprüfung reichte sogar ganz ohne Nutzdaten.
+        geschrieben = 0
         try:
             with self.file_path.open("rb") as fh:
                 while True:
@@ -107,8 +118,13 @@ class _Handler(BaseHTTPRequestHandler):
                     if not block:
                         break
                     self.wfile.write(block)
+                    geschrieben += len(block)
         except (OSError, ConnectionError) as exc:
             _LOG.warning("Auslieferung an %s abgebrochen: %s", client, exc)
+            return
+
+        if geschrieben >= size and self.on_hit:
+            self.on_hit(client, "vollstaendig")
 
     def do_GET(self) -> None:  # noqa: N802 - von BaseHTTPRequestHandler vorgegeben
         self._serve(head_only=False)
@@ -150,9 +166,13 @@ class PackServer:
 
     def _record_hit(self, client: str, what: str) -> None:
         self.hits.append((client, what))
-        self._log(f"Roboter ({client}) holt das Paket ab [{what}]")
-        if what in ("GET", "HEAD"):
+        if what == "vollstaendig":
+            self._log(f"Roboter ({client}) hat das Paket vollständig "
+                      f"geladen.")
+            # Nur das ist ein Download. Alles davor ist eine Anfrage.
             self._hit_event.set()
+        else:
+            self._log(f"Roboter ({client}) fragt das Paket an [{what}]")
 
     def start(self) -> str:
         handler = type("_BoundHandler", (_Handler,), {

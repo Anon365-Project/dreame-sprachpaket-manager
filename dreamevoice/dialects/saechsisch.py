@@ -153,7 +153,7 @@ TEXTE = {
 }
 
 # --------------------------------------------------------------------------
-# Schematische Ansagen (Akkustand 0-100 %, Raumbestaetigungen).
+# Schematische Ansagen (Akkustand 0-100 %, Raumbestätigungen).
 # Werden aus diesen Mustern erzeugt statt 117-mal von Hand geschrieben.
 # --------------------------------------------------------------------------
 
@@ -181,8 +181,8 @@ RAUM_NAMEN = {
 TEXTE.update(muster.erzeuge(AKKU_MUSTER, RAUM_MUSTER, RAUM_NAMEN))
 
 # --------------------------------------------------------------------------
-# Vollstaendige Abdeckung: die restlichen Ansagen des X50 Ultra Complete.
-# Nummern ohne Sprachinhalt (Klaenge, Tierlaute) bleiben im Original; die
+# Vollständige Abdeckung: die restlichen Ansagen des X50 Ultra Complete.
+# Nummern ohne Sprachinhalt (Klänge, Tierlaute) bleiben im Original; die
 # Nummern-Umsetzung des Modells versorgt 856, 858, 859, 863 und 864.
 # --------------------------------------------------------------------------
 
@@ -470,7 +470,7 @@ TEXTE.update({
 # Die letzten Ansagen des r2532v (X50 Ultra Complete). Ihr Wortlaut steht in
 # keiner Textdatei des Pakets - er wurde aus den deutschen Originalaufnahmen
 # transkribiert (Windows-Spracherkennung) und anschliessend von Hand
-# geglaettet. Sinngemaess richtig, im Wortlaut sinnvoll gekuerzt.
+# geglättet. Sinngemäß richtig, im Wortlaut sinnvoll gekürzt.
 # --------------------------------------------------------------------------
 
 TEXTE.update({

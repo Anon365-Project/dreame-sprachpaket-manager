@@ -259,7 +259,7 @@ def _verify(result: BuildResult, base_pack: Path) -> None:
             base_names = {m.name for m in tf.getmembers() if m.isfile()}
     except tarfile.TarError as exc:
         raise PackError(
-            "Das gebaute Paket liess sich nicht wieder öffnen.",
+            "Das gebaute Paket ließ sich nicht wieder öffnen.",
             f"Es wird nicht installiert. Technische Details: {exc}",
         ) from exc
 

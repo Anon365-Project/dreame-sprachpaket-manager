@@ -11,6 +11,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 _APP_DIRNAME = "DreameSprachpakete"
 
@@ -84,3 +85,18 @@ def preview_dir() -> Path:
 
 def log_file() -> Path:
     return data_dir() / "verlauf.log"
+
+
+def icon_file() -> Optional[Path]:
+    """Die Symboldatei der App - oder None, wenn sie fehlt.
+
+    Gesucht wird im Bündel der EXE, neben der EXE und im
+    Projektordner. Fehlt sie, bleibt es bei Tks Feder; ein hübscheres
+    Symbol ist es nicht wert, dass die App nicht startet.
+    """
+    for kandidat in (resource_dir() / "app.ico",
+                     app_dir() / "app.ico",
+                     Path(__file__).resolve().parent.parent / "app.ico"):
+        if kandidat.is_file():
+            return kandidat
+    return None

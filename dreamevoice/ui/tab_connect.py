@@ -1,4 +1,4 @@
-"""Seite 'Verbindung': Anmeldung am Dreamehome-Konto und Wahl des Roboters."""
+﻿"""Seite 'Verbindung': Anmeldung am Herstellerkonto und Wahl des Roboters."""
 
 from __future__ import annotations
 
@@ -6,12 +6,15 @@ import tkinter as tk
 import webbrowser
 from tkinter import messagebox, ttk
 
-from ..cloud import REGION_LABELS, REGIONS, DreameCloud
+from .. import aktualisierung
+from .. import __version__
+from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
+                     DreameCloud, regionen_fuer)
 from ..errors import NoDeviceError
-from .state import AppState, error_text, run_async
+from .state import AppState, error_text, run_async, to_main
 from .theme import Theme
 from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge, autowrap,
-                      labeled_value, show_error, show_info)
+                      labeled_value, show_error, show_info, show_warning)
 
 DREAMEHOME_HELP = "https://www.dreametech.com/pages/support"
 
@@ -23,6 +26,16 @@ class ConnectTab(ttk.Frame):
         self.state = state
         self._build()
         self._load_from_config()
+        #: Läuft gerade ein Neuaufbau der Liste? Dann ist die Auswahl im
+        #: Baum eine Folge davon und keine Entscheidung des Benutzers.
+        self._baue_liste = False
+
+        # Bewusst KEINE Anmeldung auf "device_changed": Das ergab eine
+        # Endlosschleife (liste_auffrischen -> selection_set ->
+        # <<TreeviewSelect>> -> _on_select_device -> notify -> zurück),
+        # und die App blieb beim Öffnen dieser Seite stehen. Nötig ist
+        # sie auch nicht: Wer die Liste sehen will, öffnet die Seite,
+        # und dabei läuft beim_zeigen ohnehin.
 
     # ------------------------------------------------------------------
     def _build(self) -> None:
@@ -32,15 +45,17 @@ class ConnectTab(ttk.Frame):
 
         InfoBanner(
             outer, self.theme,
-            "Die App meldet sich mit deinen Dreamehome-Zugangsdaten an - denselben, "
-            "die du in der Handy-App benutzt. Die Daten gehen ausschließlich an "
-            "Dreame, nicht an Dritte. Ohne Anmeldung kennt die App weder dein "
-            "Robotermodell noch kann sie ihm etwas schicken.",
+            "Die App meldet sich mit denselben Zugangsdaten an, die du in "
+            "deiner Handy-App benutzt - Dreamehome, MOVA Home oder Trouver. "
+            "Welche es ist, stellst du unten unter 'App' ein. Die Daten gehen "
+            "ausschließlich an Dreame (MOVA und Trouver gehören dazu), nicht "
+            "an Dritte. Ohne Anmeldung kennt die App weder dein Robotermodell "
+            "noch kann sie ihm etwas schicken.",
         ).pack(fill="x", pady=(0, 14))
 
         # ---- Konto ----------------------------------------------------
-        account = Card(outer, self.theme, "Dreamehome-Konto",
-                       "E-Mail und Passwort wie in der Dreamehome-App.")
+        account = Card(outer, self.theme, "Herstellerkonto",
+                       "E-Mail und Passwort wie in deiner Hersteller-App.")
         account.pack(fill="x")
         body = account.content
 
@@ -48,16 +63,29 @@ class ConnectTab(ttk.Frame):
         grid.pack(fill="x")
         grid.columnconfigure(1, weight=1)
 
-        ttk.Label(grid, text="E-Mail", style="Surface.TLabel").grid(
+        # Dreamehome, MOVA Home und Trouver sind verschiedene Mandanten
+        # beim selben Anbieter - andere Adresse, andere Mandanten-ID.
+        # Ohne diese Auswahl ging jede Anmeldung an den Dreame-Mandanten,
+        # und MOVA- wie Trouver-Konten scheiterten ohne erkennbaren Grund.
+        ttk.Label(grid, text="App", style="Surface.TLabel").grid(
             row=0, column=0, sticky="w", pady=6, padx=(0, 12))
+        self.var_marke = tk.StringVar()
+        self.combo_marke = ttk.Combobox(
+            grid, textvariable=self.var_marke, state="readonly",
+            values=[MARKEN_LABELS[m] for m in MARKEN], width=42)
+        self.combo_marke.grid(row=0, column=1, sticky="w", pady=6)
+        self.combo_marke.bind("<<ComboboxSelected>>", self._on_marke)
+
+        ttk.Label(grid, text="E-Mail", style="Surface.TLabel").grid(
+            row=1, column=0, sticky="w", pady=6, padx=(0, 12))
         self.var_email = tk.StringVar()
         ttk.Entry(grid, textvariable=self.var_email).grid(
-            row=0, column=1, sticky="ew", pady=6)
+            row=1, column=1, sticky="ew", pady=6)
 
         ttk.Label(grid, text="Passwort", style="Surface.TLabel").grid(
-            row=1, column=0, sticky="w", pady=6, padx=(0, 12))
+            row=2, column=0, sticky="w", pady=6, padx=(0, 12))
         pw_row = ttk.Frame(grid, style="Card.TFrame")
-        pw_row.grid(row=1, column=1, sticky="ew", pady=6)
+        pw_row.grid(row=2, column=1, sticky="ew", pady=6)
         self.var_password = tk.StringVar()
         self.entry_password = ttk.Entry(pw_row, textvariable=self.var_password, show="•")
         self.entry_password.pack(side="left", fill="x", expand=True)
@@ -66,9 +94,9 @@ class ConnectTab(ttk.Frame):
                         command=self._toggle_password).pack(side="left", padx=(10, 0))
 
         ttk.Label(grid, text="Region", style="Surface.TLabel").grid(
-            row=2, column=0, sticky="w", pady=6, padx=(0, 12))
+            row=3, column=0, sticky="w", pady=6, padx=(0, 12))
         region_row = ttk.Frame(grid, style="Card.TFrame")
-        region_row.grid(row=2, column=1, sticky="ew", pady=6)
+        region_row.grid(row=3, column=1, sticky="ew", pady=6)
         self.var_region = tk.StringVar(value=REGION_LABELS["eu"])
         self.combo_region = ttk.Combobox(
             region_row, textvariable=self.var_region, state="readonly",
@@ -155,6 +183,25 @@ class ConnectTab(ttk.Frame):
         # ohnehin nicht mit. Die config.json enthält aber die E-Mail, den
         # Namen und die MAC des Roboters und die IP dieses PCs - beim
         # Weitergeben samt Datenordner ginge das mit.
+
+        # ---- Aktualisierung ------------------------------------------
+        # Steht seit Version 1.3.0 in einem eigenen Fenster, erreichbar
+        # über den Knopf oben rechts. Hier bleibt nur ein Verweis für
+        # alle, die es an dieser Stelle gewohnt sind.
+        akt = Card(outer, self.theme, "Aktualisierung",
+                   "Nachsehen, ob es eine neuere Fassung gibt")
+        akt.pack(fill="x", pady=(14, 0))
+
+        ttk.Label(
+            akt.content,
+            text=(f"Diese Fassung: {__version__}\n\n"
+                  "Das Nachsehen und der Schalter 'beim Start nachsehen' "
+                  "stehen jetzt oben rechts unter 'Aktualisierung'."),
+            style="Surface.TLabel", wraplength=780, justify="left").pack(anchor="w")
+
+        ttk.Button(akt.content, text="Aktualisierung öffnen ...",
+                   command=self._on_update_oeffnen).pack(anchor="w", pady=(12, 0))
+
         weiter = Card(outer, self.theme, "App weitergeben",
                       "Persönliche Spuren entfernen, bevor jemand anderes sie bekommt")
         weiter.pack(fill="x", pady=(14, 0))
@@ -181,6 +228,21 @@ class ConnectTab(ttk.Frame):
 
         ttk.Button(weiter.content, text="Persönliche Daten entfernen ...",
                    command=self._on_forget_personal).pack(anchor="w", pady=(12, 0))
+
+
+    # -- Aktualisierung --------------------------------------------------
+    def _on_update_oeffnen(self) -> None:
+        """Öffnet das Aktualisierungsfenster des Hauptfensters.
+
+        Die Kette selbst - laden, prüfen, austauschen, neu starten -
+        liegt in ui/fenster_update.py. Zweimal dieselbe Kette zu
+        pflegen wäre der sichere Weg, sie irgendwann auseinanderlaufen
+        zu lassen.
+        """
+        fenster = self.winfo_toplevel()
+        oeffnen = getattr(fenster, "_show_update", None)
+        if callable(oeffnen):
+            oeffnen()
 
     # ------------------------------------------------------------------
     def _on_forget_personal(self) -> None:
@@ -215,8 +277,8 @@ class ConnectTab(ttk.Frame):
         self.state.notify("device_changed")
 
         # Bewusst zwei Zeilen statt eines Bedingungsausdrucks: Der bände
-        # sonst an den ganzen Text und liesse ohne Treffer auch die
-        # Erklaerung verschwinden.
+        # sonst an den ganzen Text und ließe ohne Treffer auch die
+        # Erklärung verschwinden.
         kopf = (f"{len(geleert)} Angaben entfernt." if geleert
                 else "Es war nichts zu entfernen.")
         einzelheiten = ("Die App lässt sich jetzt samt Datenordner weitergeben, "
@@ -229,6 +291,24 @@ class ConnectTab(ttk.Frame):
     def _toggle_password(self) -> None:
         self.entry_password.configure(show="" if self.var_show_pw.get() else "•")
 
+    def _marke_code(self) -> str:
+        """Aus der Beschriftung zurück auf 'dreame'/'mova'/'trouver'."""
+        gewaehlt = self.var_marke.get()
+        for code, text in MARKEN_LABELS.items():
+            if text == gewaehlt:
+                return code
+        return MARKEN[0]
+
+    def _on_marke(self, _event=None) -> None:
+        """Andere Marke: Die Regionenliste passt sich an."""
+        marke = self._marke_code()
+        self.state.config["account_type"] = marke
+        erlaubt = regionen_fuer(marke)
+        self.combo_region.configure(
+            values=[REGION_LABELS[r] for r in erlaubt])
+        if self._region_code() not in erlaubt:
+            self.var_region.set(REGION_LABELS[erlaubt[0]])
+
     def _region_code(self) -> str:
         label = self.var_region.get()
         for code, text in REGION_LABELS.items():
@@ -238,6 +318,8 @@ class ConnectTab(ttk.Frame):
 
     def _load_from_config(self) -> None:
         cfg = self.state.config
+        self.var_marke.set(MARKEN_LABELS.get(cfg["account_type"],
+                                             MARKEN_LABELS["dreame"]))
         self.var_email.set(cfg["email"])
         self.var_region.set(REGION_LABELS.get(cfg["region"], REGION_LABELS["eu"]))
         self.var_remember.set(bool(cfg["remember_password"]))
@@ -279,8 +361,11 @@ class ConnectTab(ttk.Frame):
         self._busy(True)
         self.badge.set("Melde an ...", "muted")
 
+        marke = self._marke_code()
+        self.state.config["account_type"] = marke
+
         def work(_task):
-            cloud = DreameCloud(self.state.config["account_type"])
+            cloud = DreameCloud(marke)
             if auto:
                 used_region = cloud.login_autodetect(email, password, region)
             else:
@@ -305,13 +390,49 @@ class ConnectTab(ttk.Frame):
         self.var_region.set(REGION_LABELS.get(region, self.var_region.get()))
         self.state.save()
 
+        self.liste_auffrischen(region)
+
+    # ------------------------------------------------------------------
+    def liste_auffrischen(self, region: str = "") -> None:
+        """Zeigt die Roboter, die die App kennt.
+
+        Nimmt die Geräte aus dem gemeinsamen Zustand, nicht aus einem
+        Rückgabewert: Wer sich auf der Startseite anmeldet - der übliche
+        Weg -, fand hier sonst eine leere Liste vor, obwohl oben
+        "Zuletzt gespeicherter Roboter geladen" stand und die
+        Detailfelder darunter ausgefüllt waren.
+        """
+        devices = list(self.state.devices or [])
+        self._baue_liste = True
+        try:
+            self._liste_fuellen(devices, region)
+        finally:
+            self._baue_liste = False
+
+    def _liste_fuellen(self, devices: list, region: str) -> None:
+        """Der eigentliche Aufbau - immer unter dem Riegel oben."""
         self.tree.delete(*self.tree.get_children())
+
         if not devices:
-            self.badge.set("Angemeldet, aber kein Saugroboter gefunden", "warn")
-            self.lbl_empty.configure(
-                text=("In diesem Konto ist kein Saugroboter hinterlegt. Prüfe, ob "
-                      "du dieselbe E-Mail wie in der Dreamehome-App nutzt und ob "
-                      "der Roboter dort auftaucht."))
+            if self.state.connected:
+                # Angemeldet, aber die Liste ist leer: Das kann nur ein
+                # Konto ohne Saugroboter sein.
+                self.badge.set("Angemeldet, aber kein Saugroboter gefunden",
+                               "warn")
+                self.lbl_empty.configure(
+                    text=("In diesem Konto ist kein Saugroboter hinterlegt. "
+                          "Prüfe, ob du dieselbe E-Mail wie in deiner "
+                          "Hersteller-App nutzt und ob der Roboter dort "
+                          "auftaucht."))
+            elif self.state.config["device_id"]:
+                # Nicht angemeldet, aber ein Roboter ist gemerkt. Das ist
+                # der Normalfall beim Start - und kein Fehler.
+                self.lbl_empty.configure(
+                    text=("Der zuletzt benutzte Roboter steht unten. Für die "
+                          "vollständige Liste oben anmelden."))
+            else:
+                self.lbl_empty.configure(
+                    text="Noch keine Roboter geladen - melde dich oben an.")
             self.lbl_empty.pack(anchor="w", pady=(8, 0))
             return
 
@@ -320,13 +441,19 @@ class ConnectTab(ttk.Frame):
             self.tree.insert("", "end", iid=device.did,
                              values=(device.name, device.model, device.did))
 
-        self.badge.set(f"Angemeldet ({region.upper()}) - {len(devices)} Roboter gefunden", "ok")
+        wo = f" ({region.upper()})" if region else ""
+        self.badge.set(f"Angemeldet{wo} - {len(devices)} Roboter gefunden", "ok")
 
         # Zuletzt genutzten Roboter wieder auswählen, sonst den ersten.
         preferred = self.state.config["device_id"]
-        target = preferred if preferred in self.tree.get_children() else devices[0].did
+        target = (preferred if preferred in self.tree.get_children()
+                  else devices[0].did)
         self.tree.selection_set(target)
         self.tree.focus(target)
+
+    def beim_zeigen(self) -> None:
+        """Beim Öffnen der Seite nachziehen, was inzwischen bekannt ist."""
+        self.liste_auffrischen(self.state.config["region"] or "")
 
     def _on_login_error(self, exc: Exception) -> None:
         message, hint = error_text(exc)
@@ -336,6 +463,12 @@ class ConnectTab(ttk.Frame):
 
     # ------------------------------------------------------------------
     def _on_select_device(self, _event=None) -> None:
+        # Während die Liste neu aufgebaut wird, kommt die Auswahl von
+        # uns selbst. Sie dann zu verarbeiten hieße: speichern,
+        # "device_changed" melden, und über die Empfänger wieder hier
+        # landen - eine Schleife, die die App zum Stehen brachte.
+        if getattr(self, "_baue_liste", False):
+            return
         selection = self.tree.selection()
         if not selection:
             return

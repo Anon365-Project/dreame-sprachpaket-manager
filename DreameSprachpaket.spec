@@ -14,7 +14,15 @@ a = Analysis(
     pathex=[str(BASE)],
     binaries=[],
     # Der Sound-Katalog muss mit ins Bündel - er wird zur Laufzeit gelesen.
-    datas=[("dreamevoice/data/sound_catalog.json", "dreamevoice/data")],
+    # Die Anleitungen aus `docs` ebenfalls: Das Hilfe-Fenster verlinkt
+    # sie, und wer nur die EXE hat, hätte sonst gar keinen Zugang zu
+    # ihnen. Zusammen wiegen sie unter 100 kB.
+    # app.ico steckt zwar unten schon als EXE-Symbol drin, aber nur als
+    # Ressource der Programmdatei - auslesen lässt sich das zur
+    # Laufzeit nicht. Fürs Fenstersymbol muss die Datei daneben liegen.
+    datas=[("dreamevoice/data/sound_catalog.json", "dreamevoice/data"),
+           ("docs", "docs"),
+           ("app.ico", ".")],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -50,10 +58,10 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    # Symbol und Versionsangaben. Ohne beides ist die Datei fuer Windows
+    # Symbol und Versionsangaben. Ohne beides ist die Datei für Windows
     # namenlos: SmartScreen zeigt dann nur den Dateinamen, und
     # heuristische Scanner werten eine Programmdatei ohne jede Angabe
-    # ueber sich selbst als verdaechtiger. Eine Signatur ersetzt das
+    # über sich selbst als verdächtiger. Eine Signatur ersetzt das
     # nicht - aber es kostet nichts.
     icon="app.ico",
     version="version_info.txt",

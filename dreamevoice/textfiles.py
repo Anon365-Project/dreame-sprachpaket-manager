@@ -50,15 +50,19 @@ def file_for(key: str) -> Path:
 # --------------------------------------------------------------------------
 
 KOPF = """\
-# {name} - Sprachpaket für den Dreame X50 Ultra Complete
+# {name} - Sprachpaket für Dreame-, MOVA- und Trouver-Saugroboter
 # {anzahl} Ansagen.
+#
+# Die Nummern gelten für alle Modelle: Dreame nutzt eine gemeinsame
+# Nummerierung, nachgeprüft an acht fremden Modellen. Ansagen, die dein
+# Roboter nicht kennt, übergeht die App beim Bauen.
 #
 # So arbeitest du damit:
 #   1. Diese Datei komplett kopieren und einer Sprach-KI geben. Ein
 #      Auftrag, der sich bewährt hat:
 #
 #        "Unten stehen die Ansagen eines Saugroboters auf {name}.
-#         Bitte überarbeite ausschliesslich die dritte Spalte, damit sie
+#         Bitte überarbeite ausschließlich die dritte Spalte, damit sie
 #         natürlich und einheitlich klingt. Nummer und Bedeutung
 #         unverändert lassen, den Aufbau der Zeilen beibehalten und alle
 #         Zeilen zurückgeben. Die Sätze bleiben kurz und werden

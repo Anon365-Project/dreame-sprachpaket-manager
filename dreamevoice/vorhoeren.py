@@ -21,7 +21,9 @@ die Ogg-Dateien vorher durch ffmpeg gehen.
 
 from __future__ import annotations
 
+import atexit
 import logging
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -29,6 +31,7 @@ import tempfile
 import time
 import wave
 import zipfile
+import zlib
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
@@ -79,7 +82,8 @@ def verfuegbare_ids(quelle: Path) -> List[int]:
         if zipfile.is_zipfile(quelle):
             return sorted(_mitglieder_zip(quelle))
         return sorted(_mitglieder_tar(quelle))
-    except (OSError, tarfile.TarError, zipfile.BadZipFile) as exc:
+    except (OSError, tarfile.TarError, zipfile.BadZipFile,
+            EOFError, zlib.error) as exc:
         _LOG.warning("Paket nicht lesbar (%s): %s", quelle, exc)
         return []
 
@@ -138,7 +142,8 @@ def entnehmen(quelle: Path, ziel: Path,
                     aus = ziel / f"{nummer}{Path(name).suffix}"
                     aus.write_bytes(fh.read())
                     heraus[nummer] = aus
-    except (OSError, tarfile.TarError, zipfile.BadZipFile) as exc:
+    except (OSError, tarfile.TarError, zipfile.BadZipFile,
+            EOFError, zlib.error) as exc:
         _LOG.warning("Ansagen nicht entnommen (%s): %s", quelle, exc)
     return heraus
 
@@ -189,7 +194,7 @@ def abspielen(dateien: List[Path],
 
     Läuft in einem Hintergrundfaden. Abgespielt wird bewusst
     **asynchron** und mit kurzen Wartepausen dazwischen: Ein blockierender
-    Aufruf liesse sich erst nach der ganzen Ansage abbrechen, und wer sich
+    Aufruf ließe sich erst nach der ganzen Ansage abbrechen, und wer sich
     verklickt hat, müsste zwölf Sekunden zuhören. So greift der Abbruch
     binnen eines Augenblicks.
     """
@@ -233,6 +238,48 @@ def abspielen(dateien: List[Path],
     return gespielt
 
 
+#: Arbeitsordner der Hörproben dieses Laufs.
+#:
+#: Sie können nicht sofort weg: Der Aufrufer spielt die WAV-Dateien
+#: daraus ab und merkt sie sich, damit ein zweiter Klick nicht wieder
+#: auspacken muss. Also werden sie beim Beenden geräumt - vorher
+#: blieb jede Hörprobe für immer liegen, beim Entwickeln waren es
+#: über hundert Ordner.
+_ARBEITSORDNER: List[Path] = []
+
+#: Wie alt eine fremde Hörprobe sein muss, damit sie beim Start
+#: weggeräumt wird. Ein laufendes zweites Fenster soll nicht
+#: mitten im Abspielen seine Dateien verlieren.
+_ALTLAST_STUNDEN = 24
+
+
+def _aufraeumen() -> None:
+    """Löscht die Arbeitsordner dieses Laufs."""
+    while _ARBEITSORDNER:
+        shutil.rmtree(_ARBEITSORDNER.pop(), ignore_errors=True)
+
+
+atexit.register(_aufraeumen)
+
+
+def _altlasten_raeumen() -> int:
+    """Räumt liegengebliebene Hörproben früherer Läufe weg."""
+    grenze = time.time() - _ALTLAST_STUNDEN * 3600
+    weg = 0
+    try:
+        eltern = Path(tempfile.gettempdir())
+        for ordner in eltern.glob("dreamevoice_probe_*"):
+            try:
+                if ordner.is_dir() and ordner.stat().st_mtime < grenze:
+                    shutil.rmtree(ordner, ignore_errors=True)
+                    weg += 1
+            except OSError:
+                continue
+    except OSError:                                   # pragma: no cover
+        pass
+    return weg
+
+
 def probe_vorbereiten(quelle: Path, ffmpeg: Optional[Path],
                       ids: Optional[List[int]] = None,
                       log: Optional[LogFn] = None) -> Dict[int, Path]:
@@ -241,12 +288,23 @@ def probe_vorbereiten(quelle: Path, ffmpeg: Optional[Path],
     Der Rückgabewert ist nach Nummer sortiert einsetzbar; ein leerer
     bedeutet, dass sich nichts anhören lässt.
     """
+    _altlasten_raeumen()
     arbeit = Path(tempfile.mkdtemp(prefix="dreamevoice_probe_"))
-    roh = entnehmen(quelle, arbeit, ids)
+    try:
+        roh = entnehmen(quelle, arbeit, ids)
+    except BaseException:
+        # Wirft das Entpacken, blieb der Ordner früher liegen - und
+        # zwar unsichtbar, weil er in keiner Liste stand.
+        shutil.rmtree(arbeit, ignore_errors=True)
+        raise
     if not roh:
+        # Nichts entnommen, also auch nichts abzuspielen - der
+        # Ordner kann sofort weg statt bis zum Beenden zu warten.
+        shutil.rmtree(arbeit, ignore_errors=True)
         if log:
             log("In diesem Paket ist keine Ansage zum Anhören.")
         return {}
+    _ARBEITSORDNER.append(arbeit)
 
     fertig: Dict[int, Path] = {}
     for nummer in sorted(roh):
@@ -254,6 +312,11 @@ def probe_vorbereiten(quelle: Path, ffmpeg: Optional[Path],
         if wav is not None:
             fertig[nummer] = wav
 
-    if not fertig and log:
-        log("Zum Anhören wird ffmpeg gebraucht - es ließ sich nicht nutzen.")
+    if not fertig:
+        shutil.rmtree(arbeit, ignore_errors=True)
+        if arbeit in _ARBEITSORDNER:
+            _ARBEITSORDNER.remove(arbeit)
+        if log:
+            log("Zum Anhören wird ffmpeg gebraucht - es ließ sich "
+                "nicht nutzen.")
     return fertig

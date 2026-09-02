@@ -42,11 +42,11 @@ TARGET_CHANNELS = 1
 # Haar Luft nach oben gelassen, damit nichts übersteuert.
 TARGET_LUFS = -15.5
 # Grenze des Limiters. Sie steuert den Spitzenpegel; die Lautheit bleibt
-# davon unberuehrt, weil eine Nachkorrektur die Verstaerkung anpasst.
+# davon unberührt, weil eine Nachkorrektur die Verstärkung anpasst.
 # Nachgemessen an den ungünstigsten Ansagen: -0,5 dBFS ergab bis zu
 # +2,3 dBTP, -1,0 dBFS ergibt im Mittel +0,7 dBTP. Die Originalansagen
 # liegen bei +0,2 dBTP im Median. Tiefer zu gehen kostet Lautheit, ohne
-# hoerbar etwas zu gewinnen.
+# hörbar etwas zu gewinnen.
 TARGET_PEAK = -1.0
 TARGET_LRA = 11.0
 
@@ -122,13 +122,25 @@ def needs_conversion(path: Path) -> bool:
 # --------------------------------------------------------------------------
 
 def _candidate_paths() -> List[Path]:
+    """Wo nach ffmpeg gesucht wird - in dieser Reihenfolge.
+
+    Der eigene Datenordner kommt ZUERST. Dorthin packt die App das
+    mitgelieferte ffmpeg aus, und dorthin legt sie es auch, wenn der
+    Benutzer es bewusst herunterlädt - beides bekannte Herkunft.
+
+    Früher stand der Ordner der Anwendung vorn. Eine dort abgelegte
+    ffmpeg.exe schlug damit das eigene, mitgelieferte - und wurde
+    ungeprüft ausgeführt. Bei einer portablen App, die im
+    Download-Ordner liegt oder als Bundel weitergegeben wird, ist das
+    ein realer Weg, ihr ein fremdes Programm unterzuschieben.
+    """
     exe = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
     return [
+        data_dir() / "ffmpeg" / exe,
+        data_dir() / "ffmpeg" / "bin" / exe,
         app_dir() / exe,
         app_dir() / "ffmpeg" / exe,
         app_dir() / "ffmpeg" / "bin" / exe,
-        data_dir() / "ffmpeg" / exe,
-        data_dir() / "ffmpeg" / "bin" / exe,
     ]
 
 
@@ -180,7 +192,7 @@ _LAUTHEIT_DATEI: Optional[Path] = None
 _LAUTHEIT_UNGESICHERT = 0
 
 #: Erst ab so vielen neuen Werten wird geschrieben. Nach jeder einzelnen
-#: Messung zu speichern waere selbst eine Bremse - die Datei waechst mit
+#: Messung zu speichern wäre selbst eine Bremse - die Datei wächst mit
 #: jedem Eintrag, und beim Bauen kommen knapp 600 zusammen.
 _LAUTHEIT_BUENDEL = 40
 

@@ -531,7 +531,7 @@ TEXTE = {
 }
 
 # --------------------------------------------------------------------------
-# Schematische Ansagen (Akkustand 0-100 %, Raumbestaetigungen).
+# Schematische Ansagen (Akkustand 0-100 %, Raumbestätigungen).
 # Werden aus diesen Mustern erzeugt statt 117-mal von Hand geschrieben.
 # --------------------------------------------------------------------------
 

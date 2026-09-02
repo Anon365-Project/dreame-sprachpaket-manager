@@ -121,7 +121,7 @@ def _eindeutige_namen(wurzel: Path) -> Dict[str, Set[str]]:
 
     Nur die lassen sich bei einem Aufruf ohne Modulpräfix sicher
     zuordnen - `run_async(...)` etwa. Kommt ein Name in mehreren Modulen
-    vor, wird er uebergangen, damit es keine Fehlalarme gibt.
+    vor, wird er übergangen, damit es keine Fehlalarme gibt.
     """
     zaehler: Dict[str, List[Set[str]]] = {}
     for modul in _signaturen(wurzel).values():
@@ -135,8 +135,8 @@ def pruefe_aufrufe(wurzel: Path) -> Dict[Path, List[Tuple[int, str]]]:
     """Sucht Aufrufe mit einem Schlüsselwort, das die Funktion nicht kennt.
 
     Erfasst zwei Formen:
-      * `modul.funktion(schluessel=...)`
-      * `funktion(schluessel=...)` bei direkt importierten Funktionen,
+      * `modul.funktion(schlüssel=...)`
+      * `funktion(schlüssel=...)` bei direkt importierten Funktionen,
         deren Name im Projekt eindeutig ist
     """
     bekannt = _signaturen(wurzel)

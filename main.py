@@ -15,7 +15,7 @@ def _enable_dpi_awareness() -> None:
 
     Ohne das behandelt Windows eine Tkinter-App auf skalierten Bildschirmen
     (125 %, 150 %, 4K) als "alte" Anwendung: Sie bekommt eine verkleinerte,
-    virtuelle Bildschirmgrösse und wird anschliessend hochskaliert. Das
+    virtuelle Bildschirmgröße und wird anschließend hochskaliert. Das
     Ergebnis ist unscharf, und beim Maximieren nutzt das Fenster den
     Bildschirm nicht wirklich aus.
 
@@ -29,7 +29,7 @@ def _enable_dpi_awareness() -> None:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
     except Exception:
         try:
-            ctypes.windll.user32.SetProcessDPIAware()   # aeltere Windows
+            ctypes.windll.user32.SetProcessDPIAware()   # ältere Windows
         except Exception:
             pass
 

@@ -10,7 +10,7 @@ tar-Archiv mit Ogg-Dateien im erwarteten Schema.
 
 Bayerisch, Schwäbisch oder eine Prominentenstimme wie Bruce Willis gibt
 es als fertiges Dreame-Paket nicht. Solche Pakete müsste man selbst
-erzeugen - technisch geht das mit dem Tab "Sprachpaket erstellen", indem
+erzeugen - technisch geht das über "Einzelne Ansagen", indem
 man die gewünschten Ansagen mit einer Sprachsynthese erzeugt und
 zuweist. Stimmen realer Personen nachzubilden ist rechtlich heikel
 (Persönlichkeitsrecht) und deshalb bewusst nicht Teil dieser App.
@@ -32,6 +32,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Callable, List, Optional
 
 import requests
@@ -43,6 +44,30 @@ from .paths import data_dir
 _LOG = logging.getLogger(__name__)
 
 ProgressFn = Callable[[int, int], None]
+
+#: Größer ist kein Sprachpaket. Das größte Fremdpaket in dieser
+#: Liste wiegt 18,8 MB; die Originalpakete von Dreame rund 10 MB.
+#: Ohne Grenze lädt ein `archive/refs/heads/main.zip` so viel, wie der
+#: Projektinhaber gerade hineinlegt - und `Content-Length` fehlt dort.
+MAX_PAKET_BYTES = 200 * 1024 * 1024
+
+#: Von wo ein Fremdpaket kommen darf. Nachgemessen an allen sieben
+#: Einträgen: ausgeliefert wird von release-assets.githubusercontent.com,
+#: raw.githubusercontent.com und codeload.github.com - alle unter
+#: github.com bzw. githubusercontent.com.
+ERLAUBTE_HOSTS = ("github.com", "githubusercontent.com")
+
+
+def adresse_erlaubt(url: str) -> bool:
+    """Nur gesichert und nur von GitHub."""
+    try:
+        teil = urlsplit(url or "")
+    except ValueError:
+        return False
+    if teil.scheme.lower() != "https":
+        return False
+    wirt = (teil.hostname or "").lower()
+    return any(wirt == h or wirt.endswith("." + h) for h in ERLAUBTE_HOSTS)
 
 
 @dataclass
@@ -137,7 +162,7 @@ PACKS: List[CommunityPack] = [
         key="glados_findus23",
         name="GLaDOS (Variante 15.ai)",
         description=(
-            "Aeltere GLaDOS-Fassung, mit der Sprachsynthese 15.ai erzeugt. "
+            "Ältere GLaDOS-Fassung, mit der Sprachsynthese 15.ai erzeugt. "
             "Andere Betonung als die Variante oben."
         ),
         language="Englisch",
@@ -184,6 +209,10 @@ PACKS: List[CommunityPack] = [
         license="MIT",
         approx_sounds=199,
         expected_size=3585448,
+        # Selbst nachgerechnet: gzip-tar mit genau 199 .ogg-Dateien,
+        # ohne Steuerdateien. Ohne diese Angabe galt eine einmal
+        # geladene Datei für immer als gültig.
+        expected_md5="55bfe4272ce1e77d9bbafebf9ec99330",
         tags=["Sprache"],
     ),
     CommunityPack(
@@ -226,6 +255,12 @@ def download(pack: CommunityPack, progress: Optional[ProgressFn] = None,
             return target
         target.unlink(missing_ok=True)
 
+    if not adresse_erlaubt(pack.url):
+        raise NetworkError(
+            f"Die Bezugsadresse von '{pack.name}' ist nicht zulässig.",
+            f"Fremdpakete werden nur von GitHub geladen.\n\nAdresse: "
+            f"{pack.url}")
+
     tmp = target.with_suffix(target.suffix + ".part")
     try:
         with requests.get(pack.url, stream=True, timeout=90,
@@ -243,12 +278,24 @@ def download(pack: CommunityPack, progress: Optional[ProgressFn] = None,
                         continue
                     fh.write(block)
                     done += len(block)
+                    if done > MAX_PAKET_BYTES:
+                        raise NetworkError(
+                            f"'{pack.name}' ist unerwartet groß.",
+                            "Der Download wurde abgebrochen. Ein "
+                            "Sprachpaket wiegt rund zehn Megabyte.")
                     if progress:
                         progress(done, total)
     except requests.exceptions.RequestException as exc:
         tmp.unlink(missing_ok=True)
         raise NetworkError(f"Das Paket '{pack.name}' konnte nicht geladen werden.",
                            f"Technische Details: {exc}") from exc
+    except BaseException:
+        # Der Abbruch wegen Überlänge ist ein NetworkError und damit
+        # keine RequestException - er liefe sonst an dieser Zeile vorbei
+        # und ließe die halbe Datei liegen. Auch für den Abbruch durch
+        # den Nutzer gilt das.
+        tmp.unlink(missing_ok=True)
+        raise
 
     if pack.expected_md5:
         actual = md5_of_file(tmp)

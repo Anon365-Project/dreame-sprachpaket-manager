@@ -153,7 +153,7 @@ TEXTE = {
 }
 
 # --------------------------------------------------------------------------
-# Schematische Ansagen (Akkustand 0-100 %, Raumbestaetigungen).
+# Schematische Ansagen (Akkustand 0-100 %, Raumbestätigungen).
 # Werden aus diesen Mustern erzeugt statt 117-mal von Hand geschrieben.
 # --------------------------------------------------------------------------
 
@@ -181,8 +181,8 @@ RAUM_NAMEN = {
 TEXTE.update(muster.erzeuge(AKKU_MUSTER, RAUM_MUSTER, RAUM_NAMEN))
 
 # --------------------------------------------------------------------------
-# Vollstaendige Abdeckung: die restlichen Ansagen des X50 Ultra Complete.
-# Nummern ohne Sprachinhalt (Klaenge, Tierlaute) bleiben im Original; die
+# Vollständige Abdeckung: die restlichen Ansagen des X50 Ultra Complete.
+# Nummern ohne Sprachinhalt (Klänge, Tierlaute) bleiben im Original; die
 # Nummern-Umsetzung des Modells versorgt 856, 858, 859, 863 und 864.
 # --------------------------------------------------------------------------
 
@@ -470,7 +470,7 @@ TEXTE.update({
 # Die letzten Ansagen des r2532v (X50 Ultra Complete). Ihr Wortlaut steht in
 # keiner Textdatei des Pakets - er wurde aus den deutschen Originalaufnahmen
 # transkribiert (Windows-Spracherkennung) und anschliessend von Hand
-# geglaettet. Sinngemaess richtig, im Wortlaut sinnvoll gekuerzt.
+# geglättet. Sinngemäß richtig, im Wortlaut sinnvoll gekürzt.
 # --------------------------------------------------------------------------
 
 TEXTE.update({
@@ -493,17 +493,17 @@ TEXTE.update({
     665: 'Wenn alles passt, sag zu mr: Hey Rover, fang a zom Reiniga.',
     666: 'Sag zu mr: Hey Rover, mach d Saugkraft stärker.',
     667: 'Sag zu mr: Hey Rover, gib meh Wasser.',
-    668: 'Sag zu mr: Hey Rover, fang a zom Sauga. Spaeter sagsch wischa, no wechsel i den Modus.',
-    669: 'Sag zu mr: Hey Rover, fang a zom Wischa. Spaeter kasch den Modus wechsla.',
+    668: 'Sag zu mr: Hey Rover, fang a zom Sauga. Später sagsch wischa, no wechsel i den Modus.',
+    669: 'Sag zu mr: Hey Rover, fang a zom Wischa. Später kasch den Modus wechsla.',
     670: 'Sag zu mr: Hey Rover, komm her ond mach do sauber.',
-    671: 'Sag zu mr: Hey Rover, fang a zom Sauga. Spaeter kasch den Modus wechsla.',
-    672: 'Sag zu mr: Hey Rover, fang a zom Reiniga. Spaeter kasch d ganz Wohnong macha lassa.',
+    671: 'Sag zu mr: Hey Rover, fang a zom Sauga. Später kasch den Modus wechsla.',
+    672: 'Sag zu mr: Hey Rover, fang a zom Reiniga. Später kasch d ganz Wohnong macha lassa.',
     674: 'Mei Mopp klemmt vielleicht oder hot sich ebbes neigwicklet. Guck noch ond mach en sauber.',
     682: 'Mei Mopp dreht sich nemme.',
     683: 'Dr Mopp isch et dra. Mach zerscht den Mopp dra ond probiers no amol.',
     689: 'I fang a, Staubbehälter ond Beutel z trockna.',
     690: 'S Trockna vo Staubbehälter ond Beutel isch gstoppt.',
-    691: 'Dr Mopp wird grad gwäscha. Probiers spaeter no amol.',
+    691: 'Dr Mopp wird grad gwäscha. Probiers später no amol.',
     692: 'I fahr zom Lada. A extra Reinigong goht grad et.',
     696: 'Fehler an dr Klappe.',
     697: 'I bin gsperrt. Mach zerscht d Kindersicherong aus.',
@@ -529,14 +529,14 @@ TEXTE.update({
     725: 'Fehler an dr Moppabdeckong.',
     726: 'Fehler am Rollmopp.',
     728: 'I fang mit dr Bodapfleg a.',
-    729: 'Dr Mopp wird grad gwechslet. Probiers spaeter no amol.',
+    729: 'Dr Mopp wird grad gwechslet. Probiers später no amol.',
     731: 'Mei Schmutzwassertank isch voll. Stell mi zrück auf d Station, dass i den Mopp wäscha ka.',
     752: 'I mach mit dr Bodapfleg weiter.',
     754: 'I hab mi gfonda. I mach mit dr Bodapfleg weiter.',
     755: 'Dr Lasersensor mag et. Guck noch, ob do ebbes dreckig isch oder klemmt.',
     757: 'Mei Schmutzwassertank isch voll. Leer en glei aus.',
     758: 'Z wenig Wasser. Stell mi zrück auf d Station ond drück auf Start, no wird nochgfüllt.',
-    765: 'Dr Mopp wird grad gwechslet. Probiers spaeter no amol.',
+    765: 'Dr Mopp wird grad gwechslet. Probiers später no amol.',
     771: 'Dr Rollmopp bleibt stoh oder isch blockiert.',
     775: 'Solang dr Mopp lauft, lass d Klappe zua.',
     777: 'D Zeit isch rom. Guck noch, ob onterm Gerät ebbes im Weg isch.',

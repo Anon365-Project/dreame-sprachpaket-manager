@@ -61,12 +61,10 @@ class FertigerDialekt:
     ansagen: int
     stimme: str
     beschreibung: str
-    #: Unter dieser Kennung fuehrt der Roboter das Paket. Bewusst je
-    #: Dialekt verschieden: So verraet die Abfrage am Geraet, welcher
-    #: gerade laeuft - "CUSTOM" fuer alle waere nichtssagend. Offizielle
-    #: Sprachkennungen wie DE sind es nicht, also bleibt die
-    #: mitgelieferte deutsche Stimme unangetastet.
-    kennung: str = "CUSTOM"
+    #: "männlich" oder "weiblich". Steht im angezeigten Namen, weil es
+    #: das erste ist, wonach man auswählt - vorher stand es klein
+    #: hinten in der Klammer und ging unter.
+    geschlecht: str = "männlich"
 
     @property
     def url(self) -> str:
@@ -80,38 +78,45 @@ class FertigerDialekt:
         return ordner() / self.datei
 
     @property
+    def anzeigename(self) -> str:
+        """Name mit Geschlecht, so wie er in der Liste steht."""
+        return f"{self.name} ({self.geschlecht})"
+
+    @property
     def label(self) -> str:
-        return f"{self.name}  ({self.ansagen} Ansagen, {self.stimme})"
+        return f"{self.anzeigename}  ({self.ansagen} Ansagen, {self.stimme})"
 
 
-# Genau die vier, für die es Aufnahmen im Release gibt. Die übrigen drei
-# Dialekte (Schwäbisch, Sächsisch, Kölsch) stecken als Texte im Programm
-# und werden in Tab 4 selbst erzeugt.
+# Die Stimmen, für die es fertige Aufnahmen gibt - vier Dialekte, davon
+# Bayerisch in zwei Stimmen. Die übrigen drei Dialekte (Schwäbisch,
+# Sächsisch, Kölsch) stecken als Texte im Programm und werden unter
+# "Eigene Stimmen" selbst erzeugt.
 KATALOG: List[FertigerDialekt] = [
     FertigerDialekt(
         key="bayerisch", name="Bayerisch",
         datei="Bayerisch-Aufnahmen.zip", ansagen=593,
-        stimme="ElevenLabs, männlich",
-        beschreibung="Oberbayerisch, wie man es um München herum spricht.",
-        kennung="BAYERN"),
+        stimme="ElevenLabs",
+        beschreibung="Oberbayerisch, wie man es um München herum spricht."),
+    FertigerDialekt(
+        key="bayerisch-weiblich", name="Bayerisch",
+        datei="Bayerisch-Weiblich-Aufnahmen.zip", ansagen=598,
+        stimme="ElevenLabs", geschlecht="weiblich",
+        beschreibung="Oberbayerisch, wie man es um München herum spricht."),
     FertigerDialekt(
         key="hessisch", name="Hessisch",
         datei="Hessisch-Aufnahmen.zip", ansagen=593,
-        stimme="ElevenLabs, männlich",
-        beschreibung="Frankfurterisch aus dem Rhein-Main-Gebiet.",
-        kennung="HESSEN"),
+        stimme="ElevenLabs",
+        beschreibung="Frankfurterisch aus dem Rhein-Main-Gebiet."),
     FertigerDialekt(
         key="wienerisch", name="Wienerisch",
         datei="Wienerisch-Aufnahmen.zip", ansagen=593,
-        stimme="ElevenLabs, männlich",
-        beschreibung="Wiener Umgangssprache, kein Bühnendialekt.",
-        kennung="WIEN"),
+        stimme="ElevenLabs",
+        beschreibung="Wiener Umgangssprache, kein Bühnendialekt."),
     FertigerDialekt(
         key="berlinerisch", name="Berlinerisch",
         datei="Berlinerisch-Aufnahmen.zip", ansagen=593,
-        stimme="ElevenLabs, männlich",
-        beschreibung="Berliner Schnauze, mit dem harten j statt g.",
-        kennung="BERLIN"),
+        stimme="ElevenLabs",
+        beschreibung="Berliner Schnauze, mit dem harten j statt g."),
 ]
 
 
@@ -265,7 +270,7 @@ def download(eintrag: FertigerDialekt,
             f"{eintrag.name} konnte nicht geladen werden.",
             f"Technische Details: {exc}") from exc
 
-    # Eine Fehlerseite statt eines Archivs faellt hier auf, bevor sie
+    # Eine Fehlerseite statt eines Archivs fällt hier auf, bevor sie
     # als Sprachpaket missverstanden wird.
     if tmp.stat().st_size < MINDESTGROESSE:
         groesse = tmp.stat().st_size

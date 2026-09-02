@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 import sys
 import tempfile
@@ -54,6 +55,19 @@ class Voice:
         return f"{self.name} ({geschlecht})"
 
 
+def _powershell_exe() -> str:
+    """Der volle Pfad zu powershell.exe.
+
+    Ohne Pfad sucht Windows zuerst im Verzeichnis der laufenden Anwendung.
+    Bei einer heruntergeladenen EXE ist das oft der Download-Ordner - und
+    eine dort abgelegte powershell.exe würde dann anstelle der echten
+    starten. Mit vollem Pfad ist das ausgeschlossen.
+    """
+    wurzel = os.environ.get("SystemRoot") or r"C:\Windows"
+    pfad = Path(wurzel) / "System32" / "WindowsPowerShell" / "v1.0" / "powershell.exe"
+    return str(pfad) if pfad.is_file() else "powershell"
+
+
 def _powershell(script: str, timeout: int = 300) -> subprocess.CompletedProcess:
     """Führt ein PowerShell-Skript aus, ohne ein Fenster aufblitzen zu lassen."""
     kwargs = {}
@@ -64,7 +78,7 @@ def _powershell(script: str, timeout: int = 300) -> subprocess.CompletedProcess:
         kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
 
     return subprocess.run(
-        ["powershell", "-NoProfile", "-NonInteractive",
+        [_powershell_exe(), "-NoProfile", "-NonInteractive",
          "-ExecutionPolicy", "Bypass", "-Command", script],
         capture_output=True, text=True, encoding="utf-8", errors="replace",
         timeout=timeout, **kwargs)
@@ -89,8 +103,8 @@ try {
 } catch { }
 
 # Neuere OneCore-Stimmen. System.Speech sieht sie nicht - dort taucht unter
-# Deutsch nur Hedda auf. Ueber die Windows-Runtime sind sie aber ohne
-# Adminrechte erreichbar, und dort gibt es auch maennliche Stimmen (Stefan).
+# Deutsch nur Hedda auf. Über die Windows-Runtime sind sie aber ohne
+# Adminrechte erreichbar, und dort gibt es auch männliche Stimmen (Stefan).
 try {
     [Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media, ContentType = WindowsRuntime] | Out-Null
     foreach ($v in [Windows.Media.SpeechSynthesis.SpeechSynthesizer]::AllVoices) {
@@ -162,7 +176,7 @@ def synthesize(texts: Dict[int, str],
     `rate` steuert das Tempo, `pitch` die Tonhöhe - beide in Stufen von
     -10 bis 10. Beides läuft über SSML und wirkt dadurch bei den alten
     SAPI-Stimmen genauso wie bei den neueren OneCore-Stimmen; ohne SSML
-    liesse sich die Tonhöhe gar nicht steuern.
+    ließe sich die Tonhöhe gar nicht steuern.
     """
     if not available():
         raise AudioError(
@@ -284,8 +298,14 @@ Write-Output ("FERTIG|" + $done)
 """
 
 # Die Windows-Runtime arbeitet asynchron. In PowerShell 5.1 gibt es kein
-# 'await', deshalb wird die Aufgabe ueber AsTask in eine .NET-Task
+# 'await', deshalb wird die Aufgabe über AsTask in eine .NET-Task
 # umgewandelt und abgewartet.
+#
+# Die Meldungen IM Skript kommen ohne Umlaute aus, und das mit Absicht:
+# PowerShell 5.1 schreibt seine Fehlerausgabe in der Codepage der
+# Konsole, gelesen wird sie hier als UTF-8. Ein "ü" käme also als
+# Fragezeichen beim Benutzer an. Ein umlautfreier Satz ist besser als
+# ein zerlegter.
 _ONECORE_SCRIPT = """
 $ErrorActionPreference = 'Stop'
 [Windows.Media.SpeechSynthesis.SpeechSynthesizer, Windows.Media, ContentType = WindowsRuntime] | Out-Null
@@ -299,7 +319,7 @@ $asTask = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
 
 function Await($op, $type) {{
     $task = $asTask.MakeGenericMethod($type).Invoke($null, @($op))
-    if (-not $task.Wait(60000)) {{ throw 'Zeitueberschreitung bei der Sprachausgabe' }}
+    if (-not $task.Wait(60000)) {{ throw 'Die Sprachausgabe hat zu lange gedauert' }}
     $task.Result
 }}
 

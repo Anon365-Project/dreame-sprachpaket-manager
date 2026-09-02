@@ -92,7 +92,7 @@ def main() -> int:
 
     nachher = exe.stat().st_size
     print()
-    print(f"{len(archive)} Dialekte angehaengt "
+    print(f"{len(archive)} Dialekte angehängt "
           f"({len(nutzlast) / 1024 / 1024:.1f} MB)")
     print(f"EXE vorher:  {vorher / 1024 / 1024:8.1f} MB")
     print(f"EXE nachher: {nachher / 1024 / 1024:8.1f} MB")

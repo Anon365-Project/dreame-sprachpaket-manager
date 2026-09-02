@@ -24,8 +24,10 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import tarfile
 from pathlib import Path
+from urllib.parse import urlsplit
 from typing import Any, Callable, Dict, List, Optional
 
 import requests
@@ -38,6 +40,47 @@ _LOG = logging.getLogger(__name__)
 CATALOG_URL = ("https://awsde0.fds.api.xiaomi.com/dreame-product/"
                "{model}/voices/soundpackage.json")
 
+#: Von wo ein offizielles Sprachpaket kommen darf.
+#:
+#: Der Katalog liegt auf einem fremden Server, und seine `download`-Adresse
+#: geht direkt als Auftrag an den Roboter - der lädt dann selbst. Ohne
+#: diese Schranke bestimmte also der Server, welche Datei der Roboter
+#: holt: `file://`, `http://` auf eine LAN-Adresse, jede beliebige Domain.
+#: Dass der Roboter die Prüfsumme selbst kontrolliert, hilft dabei
+#: nichts - sie kommt aus derselben Antwort.
+#:
+#: Nachgemessen am 30.08.2026 über neun Modelle von Dreame, MOVA und
+#: Trouver: Ausgeliefert wird von `oss.iot.dreame.life` (143 Einträge)
+#: und `oss.iot.dreame.tech` (38), ausnahmslos über https. `.life`
+#: fehlte hier zuerst - damit verwarf die App jeden einzelnen Eintrag
+#: und ließ sich überhaupt nicht mehr benutzen. Wer diese Liste
+#: ändert, prüft sie bitte gegen den echten Katalog, nicht nur gegen
+#: die Angriffstests.
+ERLAUBTE_HOSTS = ("api.xiaomi.com", "mi-img.com", "miot-spec.org",
+                  "dreametech.com", "dreame.tech", "dreame.life",
+                  "mova-tech.com", "trouver-tech.com")
+
+#: Größer ist kein Sprachpaket. Das Originalpaket des X50 wiegt 10,6 MB.
+MAX_PAKET_BYTES = 200 * 1024 * 1024
+
+#: Eine Kennung darf nur das sein - kein Pfad. Sie landet im Dateinamen
+#: des Zwischenspeichers; mit "../.." schrieb die App sonst außerhalb
+#: ihres Datenordners.
+_KENNUNG_OK = re.compile(r"^[A-Za-z0-9_-]{1,16}$")
+
+
+def adresse_erlaubt(url: str) -> bool:
+    """Nur gesichert und nur von einem bekannten Hersteller-Server."""
+    try:
+        teil = urlsplit(url or "")
+    except ValueError:
+        return False
+    if teil.scheme.lower() != "https":
+        return False
+    wirt = (teil.hostname or "").lower()
+    return any(wirt == h or wirt.endswith("." + h) for h in ERLAUBTE_HOSTS)
+
+
 # Dateien im Paket, die keine Audiodaten sind, sondern Steuerinformationen.
 METADATA_FILES = {
     "voice_mapping.json", "tts.json", "dmr_audio.json",
@@ -47,18 +90,94 @@ METADATA_FILES = {
 ProgressFn = Callable[[int, int], None]
 
 
+def _text(wert) -> str:
+    """Nur echter Text gilt. Alles andere ist keine Angabe.
+
+    Der Katalog kommt von einem fremden Server; was dort steht, ist
+    eine Behauptung. Eine Zahl als Kennung hat früher alle Schranken
+    passiert, weil geprüft wurde, was `str(wert)` ergibt - gespeichert
+    blieb aber die Zahl.
+    """
+    return wert.strip() if isinstance(wert, str) else ""
+
+
+def _zahl(wert) -> int:
+    """Zahl oder Zahltext; alles andere ist 0 und fällt damit auf.
+
+    `int("groß")` warf früher eine ValueError bis in den
+    Fehlerdialog - auf Englisch, ohne jeden Hinweis.
+    """
+    if isinstance(wert, bool):
+        return 0
+    if isinstance(wert, int):
+        return wert
+    if isinstance(wert, float):
+        return int(wert)
+    if isinstance(wert, str) and wert.strip().lstrip("+").isdigit():
+        return int(wert.strip())
+    return 0
+
+
 class VoicePackInfo:
     """Ein offizielles Sprachpaket laut Dreame-Katalog."""
 
     def __init__(self, raw: Dict[str, Any]) -> None:
+        # Jede Angabe wird auf ihren Typ gebracht, statt ihn zu
+        # unterstellen. Was nicht passt, wird leer bzw. 0 - und fällt
+        # damit unten in `einwand` auf, statt als Ausnahme aus einer
+        # ganz anderen Zeile zu kommen.
+        if not isinstance(raw, dict):
+            raw = {}
         self.raw = raw
-        self.id: str = raw.get("id", "")
-        self.size: int = int(raw.get("size", 0) or 0)
-        self.md5: str = (raw.get("md5sum", "") or "").lower()
-        self.url: str = raw.get("download", "")
-        self.preview_url: str = raw.get("listen", "")
-        name = raw.get("name") or {}
-        self.name: str = name.get("default") or self.id
+        self.id: str = _text(raw.get("id"))
+        self.size: int = _zahl(raw.get("size"))
+        self.md5: str = _text(raw.get("md5sum")).lower()
+        self.url: str = _text(raw.get("download"))
+        self.preview_url: str = _text(raw.get("listen"))
+        name = raw.get("name")
+        if isinstance(name, dict):
+            self.name: str = _text(name.get("default")) or self.id
+        else:
+            self.name = _text(name) or self.id
+
+    @property
+    def einwand(self) -> str:
+        """Was gegen diesen Eintrag spricht - leer heißt: nichts.
+
+        Gibt einen kurzen Grund zurück statt nur True/False. Als das
+        hier bloß "unbrauchbar" meldete, verwarf die App wegen einer
+        fehlenden Zeile in der Erlaubnisliste stillschweigend den
+        gesamten Katalog - und sagte dem Nutzer nur, er sehe
+        "ungewöhnlich aus".
+        """
+        if not _KENNUNG_OK.match(str(self.id or "")):
+            return f"unzulässige Kennung {self.id!r}"
+        teil = urlsplit(self.url or "")
+        if teil.scheme.lower() != "https":
+            return f"Bezugsadresse ohne https ({teil.scheme or 'ohne Schema'})"
+        if not adresse_erlaubt(self.url):
+            return f"unbekannter Server {teil.hostname or '?'}"
+        if len(self.md5) != 32 or any(z not in "0123456789abcdef"
+                                      for z in self.md5):
+            # Ohne brauchbare Prüfsumme kann weder die App noch der
+            # Roboter feststellen, ob unterwegs etwas verändert wurde.
+            # Geprueft wurde das früher erst NACH dem Download.
+            return f"unbrauchbare Prüfsumme {self.md5!r}"
+        if self.size <= 0:
+            return "keine Größenangabe"
+        if self.size > MAX_PAKET_BYTES:
+            return f"unplausible Größe {self.size} Bytes"
+        return ""
+
+    @property
+    def brauchbar(self) -> bool:
+        """Taugt dieser Eintrag überhaupt für den Roboter?
+
+        Kennung ohne Pfadanteile, Adresse von einem bekannten
+        Server, Größe plausibel. Was das nicht erfüllt, wird gar
+        nicht erst angeboten.
+        """
+        return not self.einwand
 
     @property
     def label(self) -> str:
@@ -72,7 +191,7 @@ def fetch_catalog(model: str, timeout: int = 20) -> List[VoicePackInfo]:
     """Lädt die Sprachpaketliste für ein Modell (z. B. dreame.vacuum.r2532h)."""
     if not model:
         raise PackError("Es ist kein Robotermodell bekannt.",
-                        "Melde dich zuerst im Tab 'Verbindung' an.")
+                        "Melde dich zuerst unter 'Verbindung' an.")
     url = CATALOG_URL.format(model=model)
     try:
         resp = requests.get(url, timeout=timeout)
@@ -95,9 +214,42 @@ def fetch_catalog(model: str, timeout: int = 20) -> List[VoicePackInfo]:
     except ValueError as exc:
         raise PackError("Die Sprachpaketliste war unlesbar.") from exc
 
-    voices = ((data.get("data") or {}).get("voices")) or []
-    packs = [VoicePackInfo(v) for v in voices if v.get("download")]
+    # Der Umschlag selbst ist auch nur eine Behauptung: `data` als
+    # Liste, `voices` als Wörterbuch, Einträge als Text - alles das
+    # kam früher als englische Ausnahme im Fehlerdialog an.
+    inhalt = data.get("data") if isinstance(data, dict) else None
+    voices = inhalt.get("voices") if isinstance(inhalt, dict) else None
+    if not isinstance(voices, list):
+        raise PackError(
+            "Die Sprachpaketliste von Dreame hat eine unerwartete Form.",
+            "Erwartet wurde eine Liste von Sprachpaketen. Es wurde nichts "
+            "geladen und nichts an den Roboter geschickt. Bleibt es dabei, "
+            "hat Dreame das Format geändert - dann hilft nur eine neue "
+            "Fassung dieser App.")
+    alle = [VoicePackInfo(v) for v in voices
+            if isinstance(v, dict) and _text(v.get("download"))]
+    # Was die Schranken nicht erfüllt, wird gar nicht erst angeboten.
+    # Der Katalog liegt auf einem fremden Server, und seine Adresse
+    # geht als Auftrag an den Roboter - er lädt dann selbst.
+    packs = [p for p in alle if p.brauchbar]
+    verworfen = [(p.id, p.einwand) for p in alle if not p.brauchbar]
+    if verworfen:
+        _LOG.warning("Katalogeinträge verworfen: %s",
+                     "; ".join(f"{k}: {grund}" for k, grund in verworfen[:10]))
     if not packs:
+        if alle:
+            # Der häufigste Grund zuerst, im Klartext. Früher stand
+            # hier nur "sieht ungewöhnlich aus" - der Grund lag im
+            # Protokoll, und auch dort nur als Kennung ohne Ursache.
+            gruende = sorted({grund for _, grund in verworfen})
+            raise PackError(
+                "Der Sprachpaket-Katalog von Dreame sieht ungewöhnlich aus.",
+                f"Alle {len(alle)} Einträge wurden abgelehnt. Grund: "
+                + "; ".join(gruende[:3])
+                + ".\n\nEs wurde nichts geladen und nichts an den Roboter "
+                "geschickt. Nennt der Grund einen unbekannten Server, hat "
+                "Dreame die Auslieferung umgestellt - dann hilft nur eine "
+                "neue Fassung dieser App.")
         raise PackError(f"Dreame listet für {model} keine Sprachpakete auf.")
     return packs
 
@@ -135,7 +287,9 @@ def download_pack(pack: VoicePackInfo, model: str,
             return target
         target.unlink(missing_ok=True)
 
-    tmp = target.with_suffix(".part")
+    # ".tar.gz" -> ".tar.part" wäre es mit with_suffix geworden; der
+    # Name soll aber erkennbar zum Ziel gehören.
+    tmp = target.with_name(target.name + ".part")
     try:
         with requests.get(pack.url, stream=True, timeout=60) as resp:
             if resp.status_code != 200:
@@ -150,15 +304,37 @@ def download_pack(pack: VoicePackInfo, model: str,
                         continue
                     fh.write(block)
                     done += len(block)
+                    if done > MAX_PAKET_BYTES:
+                        raise NetworkError(
+                            "Das angebotene Originalpaket ist unerwartet "
+                            "groß.",
+                            "Der Download wurde abgebrochen. Ein "
+                            "Sprachpaket wiegt rund zehn Megabyte.")
                     if progress:
                         progress(done, total)
     except requests.exceptions.RequestException as exc:
         tmp.unlink(missing_ok=True)
         raise NetworkError("Der Download des Originalpakets ist abgebrochen.",
                            f"Technische Details: {exc}") from exc
+    except BaseException:
+        # Der Abbruch wegen Überlänge ist ein NetworkError und damit
+        # KEINE RequestException - er lief früher an der Aufräumzeile
+        # vorbei. Bei einem 300-MB-Strom blieben so 240 MB im
+        # Zwischenspeicher liegen, und zwar bei jedem neuen Versuch
+        # erneut. Auch ein Abbruch durch den Nutzer gehört hierher.
+        tmp.unlink(missing_ok=True)
+        raise
 
     actual = md5_of_file(tmp)
-    if pack.md5 and actual != pack.md5:
+    if not pack.md5:
+        # Früher hieß es "if pack.md5 and ..." - eine leere Angabe
+        # im Katalog übersprang die Kontrolle also vollständig.
+        tmp.unlink(missing_ok=True)
+        raise PackError(
+            "Zu diesem Originalpaket nennt Dreame keine Prüfsumme.",
+            "Ohne sie lässt sich nicht feststellen, ob die Datei "
+            "unterwegs verändert wurde. Sie wurde verworfen.")
+    if actual != pack.md5:
         tmp.unlink(missing_ok=True)
         raise PackError(
             "Das heruntergeladene Originalpaket ist beschädigt.",

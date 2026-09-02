@@ -34,7 +34,7 @@ ENDUNG = ".json"
 FORMAT = 1
 
 # Kennungen wie DE oder BAYERN. Der Roboter bekommt sie als Sprachkennung;
-# vier bis acht Grossbuchstaben haben sich bewaehrt.
+# vier bis acht Großbuchstaben haben sich bewährt.
 _KENNUNG_ERLAUBT = re.compile(r"[^A-Z0-9]")
 
 
@@ -66,7 +66,7 @@ def make_lang_id(name: str, vergeben: Optional[List[str]] = None) -> str:
     kennung = (roh[:8] or "EIGEN")
     belegt = {k.upper() for k in (vergeben or [])}
     # Die offiziellen Kennungen von Dreame sind kurz; sicherheitshalber
-    # bleiben wir von den gaengigen weg.
+    # bleiben wir von den gängigen weg.
     belegt |= {"DE", "EN", "ZH", "RU", "FR", "IT", "JA", "KO", "ES", "PL",
                "TR", "SV", "DA", "NB", "PT", "UK", "HE", "VI", "TH", "THA",
                "NL", "FI", "ID", "DK"}

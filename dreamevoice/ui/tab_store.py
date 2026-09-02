@@ -22,11 +22,11 @@ from .widgets import (Card, InfoBanner, LogView, ScrollableList, ScrollablePage,
 
 
 # Die beiden Wege zu eigenen Aufnahmen. Der ZIP-Fall steht zuerst und wird
-# beim Namen genannt: so heissen die Dateien auf der Projektseite.
+# beim Namen genannt: so heißen die Dateien auf der Projektseite.
 WAHL_ARCHIV = "ZIP-Datei oder fertiges Paket (.tar.gz)"
 WAHL_ORDNER = "Ordner mit mp3-, wav- oder ogg-Dateien"
 
-# Was passiert, wenn der gewaehlte Name schon vergeben ist. Das Danebenlegen
+# Was passiert, wenn der gewählte Name schon vergeben ist. Das Danebenlegen
 # steht zuerst und ist die Vorgabe - ein Paket, das Kontingent gekostet hat,
 # soll nicht mit einem Klick verschwinden.
 WAHL_DANEBEN = "Daneben speichern - das vorhandene bleibt"
@@ -614,7 +614,7 @@ class StoreTab(ttk.Frame):
                 self._on_import_error(exc)
                 return
 
-        # Beim naechsten Mal dort weitermachen, wo zuletzt etwas lag.
+        # Beim nächsten Mal dort weitermachen, wo zuletzt etwas lag.
         merken = Path(quelle)
         self.state.config["last_audio_dir"] = str(
             merken if merken.is_dir() else merken.parent)
@@ -664,14 +664,10 @@ class StoreTab(ttk.Frame):
             else:
                 ziel = library.unique_path(build_dir(), sicher)
 
-        kennung = simpledialog.askstring(
-            "Kennung",
-            "Unter welcher Kennung soll der Roboter das Paket führen?\n\n"
-            "CUSTOM ist eine gute Wahl - damit bleibt die mitgelieferte "
-            "deutsche Stimme unangetastet.",
-            initialvalue="CUSTOM", parent=self)
-        if kennung is None:
-            return
+        # Früher wurde hier nach einer Kennung gefragt. Die Antwort
+        # hatte aufs Aufspielen längst keine Wirkung mehr - eine
+        # Frage ohne Folgen ist für Laien nur eine Hürde.
+        kennung = installer.DEFAULT_CUSTOM_LANG_ID
 
         base = self.state.base_pack_path
         ffmpeg = self.state.ffmpeg
@@ -742,7 +738,7 @@ class StoreTab(ttk.Frame):
                   wraplength=420, justify="left").pack(anchor="w")
 
         var = tk.StringVar(value=vorgabe or (optionen[0] if optionen else ""))
-        # Breit genug fuer die laengste Wahl ("Daneben speichern - ...").
+        # Breit genug für die längste Wahl ("Daneben speichern - ...").
         breite = max(40, *(len(o) for o in optionen)) if optionen else 40
         combo = ttk.Combobox(card.content, textvariable=var, state="readonly",
                              values=optionen, width=min(breite + 2, 60))
@@ -988,7 +984,7 @@ class StoreTab(ttk.Frame):
                 if wert and wert != basis.texts.get(sound_id, ""):
                     abweichungen[sound_id] = wert
 
-            # Änderungen ausserhalb der aktuellen Suchansicht behalten
+            # Änderungen außerhalb der aktuellen Suchansicht behalten
             alt = self.state.config.dialect_overrides(pack.key)
             for sound_id, wert in alt.items():
                 if sound_id not in felder:
@@ -1232,7 +1228,7 @@ class StoreTab(ttk.Frame):
         # --- ElevenLabs -------------------------------------------------
         el_row = ttk.Frame(frame, style="Card.TFrame")
         el_row.pack(fill="x", pady=(12, 0))
-        ttk.Radiobutton(el_row, text="ElevenLabs - echter bayerischer Akzent",
+        ttk.Radiobutton(el_row, text="ElevenLabs - echte Dialektaussprache",
                         variable=self.var_engine, value=dialect.ENGINE_ELEVENLABS,
                         command=self._on_engine_changed).pack(side="left")
 
@@ -1347,7 +1343,7 @@ class StoreTab(ttk.Frame):
                   "Einstellungen, die du in ElevenLabs an der Stimme "
                   "hinterlegt hast - so klingt sie wie dort in der Vorschau. "
                   "Ohne den Haken kannst du selbst regeln: weniger Stabilität "
-                  "heisst mehr Schwung, mehr Stabilität heisst gleichförmiger."),
+                  "heißt mehr Schwung, mehr Stabilität heißt gleichförmiger."),
             style="Muted.TLabel", wraplength=800, justify="left").pack(
             anchor="w", pady=(4, 0))
 
@@ -1361,8 +1357,19 @@ class StoreTab(ttk.Frame):
         self._refresh_key_location()
 
         self._eleven_voices: list = []
-        self._refresh_voice_info()
+        #: Die Windows-Stimmen aufzuzählen kostet einen
+        #: PowerShell-Aufruf - gemessen rund 0,4 Sekunden, und zwar
+        #: blockierend. Beim Start wird das nicht gebraucht: Wer nie
+        #: auf diese Seite geht, braucht die Liste nie. Sie entsteht
+        #: deshalb beim ersten Öffnen.
+        self._stimmen_geladen = False
         self._on_engine_changed()
+
+    def beim_zeigen(self) -> None:
+        """Wird aufgerufen, wenn die Seite zum ersten Mal sichtbar wird."""
+        if not self._stimmen_geladen:
+            self._stimmen_geladen = True
+            self._refresh_voice_info()
 
     def _on_win_regler(self) -> None:
         """Beschriftet die Regler der Windows-Stimme."""
@@ -1456,17 +1463,23 @@ class StoreTab(ttk.Frame):
                       "App neu starten."),
                 style="Warning.TLabel")
 
+        # Dasselbe für die ElevenLabs-Stimme: Solange keine Verbindung
+        # steht, ist die Liste leer - der zuletzt benutzte Name soll
+        # trotzdem dastehen, sonst wirkt die Auswahl vergessen.
+        #
+        # Diese drei Zeilen standen bis hierher hinter dem `return` von
+        # _selected_win_voice und liefen deshalb nie.
+        if self.state.config["elevenlabs_voice_name"]:
+            self.combo_elvoice.configure(
+                values=[self.state.config["elevenlabs_voice_name"]])
+            self.combo_elvoice.set(self.state.config["elevenlabs_voice_name"])
+
     def _selected_win_voice(self) -> str:
         """Name der gewählten Windows-Stimme (leer = automatisch)."""
         label = self.combo_winvoice.get()
         voice = next((v for v in getattr(self, "_win_voices", [])
                       if v.label == label), None)
         return voice.name if voice else ""
-
-        if self.state.config["elevenlabs_voice_name"]:
-            self.combo_elvoice.configure(
-                values=[self.state.config["elevenlabs_voice_name"]])
-            self.combo_elvoice.set(self.state.config["elevenlabs_voice_name"])
 
     # ------------------------------------------------------------------
     def _refresh_key_location(self) -> None:
@@ -1552,12 +1565,19 @@ class StoreTab(ttk.Frame):
             self._set_models(models)
             self._refresh_key_location()
 
-            needed = elevenlabs.estimate_characters(
-                dialect.DIALECTS[0].texts) if dialect.DIALECTS else 0
+            # Das GEWAEHLTE Paket, nicht das erste in der Liste. Früher
+            # stand hier DIALECTS[0] - wer Wienerisch erzeugte, las
+            # trotzdem "Für das bayerische Paket". Und mit
+            # _effective_dialect zählen die eigenen Textänderungen
+            # mit, die Zahl stimmt also auch dann noch.
+            gewaehlt = self._effective_dialect()
+            needed = (elevenlabs.estimate_characters(gewaehlt.texts)
+                      if gewaehlt else 0)
+            wofuer = f"das Paket '{gewaehlt.name}'" if gewaehlt else "ein Paket"
             enough = quota.left >= needed
             self.lbl_eleven.configure(
                 text=(f"   Verbunden. Kontingent: {quota.describe()}. "
-                      f"Für das bayerische Paket werden rund {needed} Zeichen "
+                      f"Für {wofuer} werden rund {needed} Zeichen "
                       f"gebraucht - " +
                       ("das reicht." if enough else "das reicht derzeit nicht.")),
                 style="Success.TLabel" if enough else "Warning.TLabel")
@@ -1569,7 +1589,7 @@ class StoreTab(ttk.Frame):
                 zusatz += f", davon {len(eigene)} selbst erzeugt (stehen oben)"
             elif not bavarian:
                 zusatz += (". Keine davon ist als bayerisch ausgewiesen - die "
-                           "Bibliotheksstimmen taugen dafür erfahrungsgemäss wenig. "
+                           "Bibliotheksstimmen taugen dafür erfahrungsgemäß wenig. "
                            "Besser: in ElevenLabs mit Voice Design eine eigene "
                            "bauen und ihre ID unten eintragen.")
             self.lbl_eleven.configure(text=self.lbl_eleven.cget("text") + zusatz)
@@ -1643,8 +1663,8 @@ class StoreTab(ttk.Frame):
                 "20 Zeichen lang.")
             return
 
-        # Vertauschte Felder sind der haeufigste Stolperstein - lieber vorher
-        # erkennen als eine unverstaendliche Serverantwort zeigen.
+        # Vertauschte Felder sind der häufigste Stolperstein - lieber vorher
+        # erkennen als eine unverständliche Serverantwort zeigen.
         if voice_id.startswith("sk_"):
             show_warning(
                 self, self.theme, "Felder vertauscht?",
@@ -1834,7 +1854,7 @@ class StoreTab(ttk.Frame):
                 return
             voice_id = chosen.voice_id
             # Bei selbst erzeugten Stimmen sagen die Merkmale nichts über den
-            # Dialekt aus - da weiss der Nutzer besser Bescheid als die Labels.
+            # Dialekt aus - da weiß der Nutzer besser Bescheid als die Labels.
             if (not chosen.is_bavarian and not chosen.is_own_creation
                     and not messagebox.askyesno(
                         "Keine bayerische Stimme",
@@ -1993,7 +2013,11 @@ class StoreTab(ttk.Frame):
             self.state.last_build = build
             self.state.prebuilt = build
             self.state.prebuilt_name = pack.name
-            self.state.config["custom_lang_id"] = pack.lang_id
+            # Die Kennung kommt nicht mehr vom Paket: Aufgespielt wird
+            # ausnahmslos unter CUSTOM. Stünde hier etwas anderes,
+            # zeigte die Startseite eine Kennung an, die der Roboter
+            # gar nicht führt.
+            self.state.config["custom_lang_id"] = installer.DEFAULT_CUSTOM_LANG_ID
             self.state.save()
             self.state.notify("assignments_changed")
 
@@ -2120,7 +2144,7 @@ class StoreTab(ttk.Frame):
                 f"'{pack.name}' verwenden?",
                 f"Das Paket wird von folgender Quelle geladen:\n\n{pack.url}\n\n"
                 f"Anschließend wird es auf das offizielle Paket deines Modells "
-                f"gelegt. Danach kannst du es im Tab 'Upload & Installation' "
+                f"gelegt. Danach kannst du es unter 'Bauen und Aufspielen' "
                 f"installieren.\n\nFortfahren?",
                 parent=self):
             return
@@ -2163,17 +2187,15 @@ class StoreTab(ttk.Frame):
             for warning in build.warnings:
                 self.log.append(warning, "warn")
 
-            suggestion = pack.key.split("_")[0].upper()[:8] or "CUSTOM"
-            self.state.config["custom_lang_id"] = installer.validate_lang_id(
-                suggestion)[0]
+            self.state.config["custom_lang_id"] = installer.DEFAULT_CUSTOM_LANG_ID
             self.state.save()
 
             messagebox.showinfo(
                 "Paket vorbereitet",
                 f"'{pack.name}' wurde auf dein Modell angepasst.\n\n"
                 f"{covered} von {total} Ansagen bekommen die neue Stimme, der Rest "
-                f"bleibt auf Deutsch.\n\nWechsle jetzt in den Tab "
-                f"'Upload & Installation' und klicke auf "
+                f"bleibt auf Deutsch.\n\nWechsle jetzt zu "
+                f"'Bauen und Aufspielen' und klicke auf "
                 f"'Sprachpaket auf Roboter installieren'.",
                 parent=self)
 

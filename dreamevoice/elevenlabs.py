@@ -7,7 +7,7 @@ Nachgeprüft: die Piper-Stimmen von Rhasspy haben nur Hochdeutsch, das
 Thorsten-Voice-Projekt hat zwar Dialektmodelle, aber nur Hessisch. Der
 einzige offene bayerische Sprachkorpus (Betthupferl) gehört dem
 Bayerischen Rundfunk und ist nicht frei nutzbar. Und Windows bringt
-ausschliesslich Hochdeutsch mit.
+ausschließlich Hochdeutsch mit.
 
 ElevenLabs bietet dagegen ausdrücklich deutschen Sprachausgabe mit
 bayerischem Akzent an, und zwar mit einem kostenlosen Monatskontingent
@@ -17,12 +17,15 @@ rund 4.400 Zeichen - es passt also zweimal in ein Freikontingent.
 Wichtig: Die App legt kein Konto an und verwendet keinen fremden
 Zugangsschlüssel. Der Nutzer trägt seinen eigenen Schlüssel ein; dieser
 wird - wie das Dreame-Passwort - mit der Windows-DPAPI verschlüsselt
-abgelegt. Übertragen werden ausschliesslich die Ansagetexte.
+abgelegt. Übertragen werden ausschließlich die Ansagetexte.
 """
 
 from __future__ import annotations
 
 import logging
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -33,11 +36,43 @@ from .errors import AudioError, NetworkError
 
 _LOG = logging.getLogger(__name__)
 
+
+class Ueberlastet(NetworkError):
+    """ElevenLabs bremst gerade - erneut versuchen, nicht aufgeben.
+
+    Eigener Typ, weil das Gegenteil von "Kontingent aufgebraucht"
+    gemeint ist: Dort hilft nur Warten bis zum nächsten Monat, hier
+    genügen ein paar Sekunden.
+    """
+
+
+#: Wie viele Ansagen die App höchstens gleichzeitig anfordert.
+#:
+#: ElevenLabs begrenzt das je nach Tarif - die Grenze steht nirgends
+#: abrufbar, deshalb wird sie ertastet: Nach einer sauberen Welle eine
+#: mehr, bei einer Drosselung sofort halbieren. Anfangs bewusst
+#: vorsichtig, damit auch ein Freikonto nicht gleich anläuft.
+MAX_GLEICHZEITIG = 8
+START_GLEICHZEITIG = 3
+
+#: So oft wird eine EINZELNE gedrosselte Ansage erneut versucht, wenn
+#: der Dienst nachweislich läuft - also in derselben Welle eine andere
+#: Ansage durchgekommen ist.
+MAX_VERSUCHE = 4
+
+#: So viele Wellen darf der Dienst am Stück ALLES drosseln, bevor die
+#: App aufgibt. Großzügiger als MAX_VERSUCHE, weil hier keinem
+#: einzelnen Auftrag etwas vorzuwerfen ist - der Dienst ist kurz
+#: überlastet und fängt sich meist wieder. Ohne diese Trennung
+#: verbrauchten die ersten Ansagen ihre Versuche während einer
+#: allgemeinen Drosselung, und der Lauf brach mit null Ergebnissen ab.
+MAX_WELLEN_GEDROSSELT = 10
+
 API = "https://api.elevenlabs.io/v1"
 SIGNUP_URL = "https://elevenlabs.io/text-to-speech/german-bavarian-accent"
 LIBRARY_URL = "https://elevenlabs.io/app/voice-library"
-# Direkt zur Seite, auf der der Zugangsschlüssel erzeugt wird. Ueber die
-# Oberflaeche: Profil unten links > Settings > API Keys > Create API Key.
+# Direkt zur Seite, auf der der Zugangsschlüssel erzeugt wird. Über die
+# Oberfläche: Profil unten links > Settings > API Keys > Create API Key.
 API_KEY_URL = "https://elevenlabs.io/app/settings/api-keys"
 
 # Mehrsprachiges Modell - liefert bei deutschem Text eine gute Aussprache.
@@ -119,6 +154,47 @@ class Quota:
         return f"{self.left} von {self.limit} Zeichen übrig"
 
 
+#: Je Thread eine offene Verbindung.
+#:
+#: Bisher baute jede einzelne Ansage eine neue TLS-Verbindung auf -
+#: gemessen 48 ms, über 593 Ansagen rund 30 Sekunden reines Warten.
+#: Eine Sitzung je Thread statt einer gemeinsamen, weil `requests`
+#: Thread-Sicherheit für eine geteilte Sitzung nicht zusichert.
+_oertlich = threading.local()
+
+
+def _sitzung():
+    """Die offene Verbindung dieses Threads.
+
+    Der Schlüssel enthält absichtlich die Kennnummer des
+    `requests`-Moduls: Die Testsuite tauscht `elevenlabs.requests` gegen
+    eine Attrappe aus. Eine einmal gemerkte Sitzung des echten Moduls
+    hätte den Austausch danach umgangen - die nachgestellten Antworten
+    wären wirkungslos geblieben, und die Tests hätten sich gegen den
+    echten Dienst gewandt.
+    """
+    schluessel = id(requests)
+    gemerkt = getattr(_oertlich, "sitzung", None)
+    if gemerkt is not None and gemerkt[0] == schluessel:
+        return gemerkt[1]
+    sitzung = requests.Session()
+    _oertlich.sitzung = (schluessel, sitzung)
+    return sitzung
+
+
+def _http(method: str, url: str, **kwargs):
+    """Der eine Ort, an dem diese Datei wirklich ins Netz geht.
+
+    Absichtlich eine eigene, benannte Funktion: Die Testsuite ersetzt
+    genau sie, um Antworten nachzustellen. Früher wurde dafür
+    `requests.request` ausgetauscht - seit die App eine offene
+    Verbindung benutzt, ginge das daran vorbei. Die Tests hätten sich
+    dann unbemerkt gegen den echten Dienst gewandt, statt gegen die
+    nachgestellten Antworten.
+    """
+    return _sitzung().request(method, url, **kwargs)
+
+
 def _headers(api_key: str) -> Dict[str, str]:
     return {"xi-api-key": api_key, "Accept": "application/json"}
 
@@ -143,8 +219,8 @@ def _request(method: str, path: str, api_key: str, api_version: str = "v1",
     base = API if api_version == "v1" else API.replace("/v1", f"/{api_version}")
     url = f"{base}/{path.lstrip('/')}"
     try:
-        resp = requests.request(method, url, headers=_headers(api_key),
-                                timeout=kwargs.pop("timeout", 30), **kwargs)
+        resp = _http(method, url, headers=_headers(api_key),
+                     timeout=kwargs.pop("timeout", 30), **kwargs)
     except requests.exceptions.RequestException as exc:
         raise NetworkError("ElevenLabs ist nicht erreichbar.",
                            f"Aufruf: {method} {url}\nTechnische Details: {exc}") from exc
@@ -158,10 +234,24 @@ def _request(method: str, path: str, api_key: str, api_version: str = "v1",
             f"Er beginnt mit 'sk_'. Achte darauf, dass beim Kopieren nichts "
             f"abgeschnitten wurde und kein Leerzeichen mitgekommen ist.")
     if resp.status_code == 429:
-        raise NetworkError(
-            "Das Kontingent bei ElevenLabs ist aufgebraucht.",
-            "Das Freikontingent füllt sich jeden Monat wieder auf. Bis dahin "
-            "kannst du das Paket mit der Windows-Stimme erzeugen.")
+        # 429 hat bei ElevenLabs ZWEI Bedeutungen, und sie führen zu
+        # entgegengesetztem Verhalten: "Kontingent leer" heißt aufhören,
+        # "zu viele gleichzeitige Anfragen" heißt kurz warten und erneut
+        # versuchen. Früher galt beides als leeres Kontingent - was
+        # sequenziell meist stimmte, parallel aber fast nie.
+        meldung = (_server_message(resp) or "").lower()
+        if any(w in meldung for w in ("quota", "character_limit", "credit",
+                                      "exceeded", "aufgebraucht")):
+            raise NetworkError(
+                "Das Kontingent bei ElevenLabs ist aufgebraucht.",
+                "Das Freikontingent füllt sich jeden Monat wieder auf. Bis "
+                "dahin kannst du das Paket mit der Windows-Stimme erzeugen.")
+        raise Ueberlastet(
+            "ElevenLabs nimmt gerade keine weitere Anfrage an.",
+            "Der Dienst begrenzt, wie viele Ansagen gleichzeitig gesprochen "
+            "werden dürfen. Die App drosselt sich selbst und versucht es "
+            "erneut - das ist kein Fehler.\n\n"
+            f"Antwort des Dienstes: {_server_message(resp) or '(ohne Angabe)'}")
     return resp
 
 
@@ -194,8 +284,8 @@ def list_voices(api_key: str) -> List[ElevenVoice]:
     """Alle Stimmen im Konto des Nutzers - über alle Seiten hinweg.
 
     Wichtig: die Auflistung läuft über **v2**. Die ältere v1-Liste lässt
-    selbst erzeugte Stimmen (Voice Design, Kategorie "generated") aussen
-    vor - genau die, die man sich mühsam selbst gebaut hat. Ausserdem gibt
+    selbst erzeugte Stimmen (Voice Design, Kategorie "generated") außen
+    vor - genau die, die man sich mühsam selbst gebaut hat. Außerdem gibt
     v2 nur 10 Stimmen zurück, wenn man `page_size` nicht setzt, deshalb
     wird hier geblättert.
     """
@@ -259,6 +349,44 @@ def _is_key_problem(resp) -> bool:
                                    "invalid_api", "authentication"))
 
 
+def _eigene_stimmen(api_key: str) -> Optional[int]:
+    """Wie viele selbst angelegte Stimmen hat das Konto zu diesem Schlüssel?
+
+    `None`, wenn es sich nicht feststellen lässt. Die mitgelieferten
+    Stimmen ("premade") zählen nicht mit - die hat jedes Konto.
+    """
+    try:
+        resp = _request("GET", "voices", api_key, raise_on_auth=False, timeout=15)
+        if resp.status_code != 200:
+            return None
+        return sum(1 for v in resp.json().get("voices", [])
+                   if (v.get("category") or "") != "premade")
+    except Exception:                                  # noqa: BLE001
+        return None
+
+
+def _konto_hinweis(api_key: str) -> str:
+    """Der häufigste Grund für eine nicht gefundene Stimme, in Worten.
+
+    Wer mehrere ElevenLabs-Konten hat - etwa ein Gratiskonto zum
+    Ausprobieren und eines mit den echten Stimmen - trägt hier leicht
+    den Schlüssel des einen und die Stimmen-ID des anderen ein. Von
+    außen sieht das aus wie "ID ungültig", ist aber keine.
+    """
+    anzahl = _eigene_stimmen(api_key)
+    if anzahl is None:
+        return ""
+    if anzahl == 0:
+        return ("Wichtig: In dem Konto, zu dem dieser Zugangsschlüssel "
+                "gehört, gibt es überhaupt keine eigenen Stimmen - nur die "
+                "mitgelieferten. Die gesuchte Stimme wurde also sehr "
+                "wahrscheinlich in einem anderen ElevenLabs-Konto "
+                "angelegt. Trag oben den Schlüssel des Kontos ein, in dem "
+                "die Stimme steht.\n\n")
+    return (f"Zur Einordnung: In dem Konto zu diesem Schlüssel liegen "
+            f"{anzahl} eigene Stimmen - die gesuchte ist nicht darunter.\n\n")
+
+
 def get_voice(api_key: str, voice_id: str) -> ElevenVoice:
     """Holt eine einzelne Stimme über ihre ID.
 
@@ -300,6 +428,7 @@ def get_voice(api_key: str, voice_id: str) -> ElevenVoice:
         raise NetworkError(
             f"Zu der ID '{voice_id}' konnte keine Stimme geladen werden.",
             f"Antwort des Servers (HTTP {resp.status_code}):\n{meldung}\n\n"
+            + _konto_hinweis(api_key) +
             f"Prüfe die ID in deinem ElevenLabs-Konto: bei der Stimme auf die "
             f"drei Punkte klicken und 'Copy Voice ID' wählen. Stimmen aus der "
             f"öffentlichen Bibliothek musst du erst deinem Konto hinzufügen, "
@@ -429,11 +558,12 @@ def synthesize(texts: Dict[int, str],
                allow_partial: bool = True,
                model: str = "",
                voice_settings: Optional[Dict[str, Any]] = None,
-               use_voice_settings: bool = True) -> Dict[int, Path]:
+               use_voice_settings: bool = True,
+               parallel: int = START_GLEICHZEITIG) -> Dict[int, Path]:
     """Spricht alle Texte und legt je eine mp3-Datei ab.
 
     Bereits gesprochene Ansagen werden nicht erneut angefordert - das
-    spart Kontingent und erlaubt es, ein grosses Paket in mehreren
+    spart Kontingent und erlaubt es, ein großes Paket in mehreren
     Anläufen fertigzustellen.
 
     Zum Klang: Ohne eigene Angabe werden die Einstellungen benutzt, die
@@ -464,58 +594,151 @@ def synthesize(texts: Dict[int, str],
     if einstellungen:
         rumpf["voice_settings"] = einstellungen
 
-    for index, (sound_id, text) in enumerate(items, 1):
-        if cancelled():
-            break
+    # --- Was überhaupt noch gesprochen werden muss -------------------
+    # Schon vorhandene Aufnahmen sparen Kontingent und machen ein großes
+    # Paket über mehrere Anläufe hinweg fertigstellbar.
+    offen: List[tuple] = []
+    for sound_id, text in items:
         if not (text or "").strip():
             continue
-
-        target = out_dir / f"{sound_id}.mp3"
-        if target.is_file() and target.stat().st_size > 1024:
-            # Bereits gesprochen - spart Kontingent bei einem zweiten Anlauf.
-            result[sound_id] = target
-            if progress:
-                progress(index, len(items))
+        ziel = out_dir / f"{sound_id}.mp3"
+        if ziel.is_file() and ziel.stat().st_size > 1024:
+            result[sound_id] = ziel
             continue
+        offen.append((sound_id, text, ziel))
 
+    gesamt = len(result) + len(offen)
+    if progress and result:
+        progress(len(result), gesamt)
+    if log and result:
+        log(f"{len(result)} Ansagen liegen schon vor und werden "
+            f"wiederverwendet.")
+
+    def _sprich(auftrag):
+        """Eine einzelne Ansage anfordern. Läuft in einem eigenen Thread.
+
+        Gibt (sound_id, ziel, fehler) zurück - geworfen wird hier
+        nichts, damit eine einzelne Ansage nie die ganze Welle reißt.
+        """
+        sound_id, text, ziel = auftrag
         try:
             resp = _request(
                 "POST", f"text-to-speech/{voice_id}", api_key,
                 params={"output_format": OUTPUT_FORMAT},
                 json={"text": text, **rumpf},
                 timeout=60)
-        except NetworkError as exc:
-            # Kontingent leer: nicht alles verwerfen. Was schon gesprochen
-            # ist, bleibt liegen und wird beim naechsten Anlauf
-            # wiederverwendet - so laesst sich ein grosses Paket ueber zwei
-            # Monate hinweg fertigstellen.
-            if allow_partial and result and "Kontingent" in exc.message:
-                if log:
-                    log(f"Kontingent aufgebraucht nach {len(result)} von "
-                        f"{len(items)} Ansagen.")
-                    log("Das Bisherige bleibt gespeichert. Beim nächsten Versuch "
-                        "macht die App genau hier weiter.")
-                return result
-            raise
-
+        except BaseException as exc:                     # noqa: BLE001
+            return sound_id, None, exc
         if resp.status_code != 200:
-            detail = (resp.text or "")[:300]
+            return sound_id, None, NetworkError(
+                f"Ansage {sound_id} konnte nicht gesprochen werden "
+                f"(HTTP {resp.status_code}).", (resp.text or "")[:300])
+        try:
+            ziel.write_bytes(resp.content)
+        except OSError as exc:
+            return sound_id, None, exc
+        return sound_id, ziel, None
+
+    breite = max(1, min(int(parallel or START_GLEICHZEITIG), MAX_GLEICHZEITIG))
+    versuche: Dict[int, int] = {}
+    #: Wie viele Wellen am Stück komplett gedrosselt wurden.
+    welle_gedrosselt = 0
+    abgebrochen = False
+
+    while offen and not abgebrochen:
+        if cancelled():
+            break
+        welle, offen = offen[:breite], offen[breite:]
+
+        if len(welle) == 1:
+            ergebnisse = [_sprich(welle[0])]
+        else:
+            with ThreadPoolExecutor(max_workers=len(welle)) as pool:
+                ergebnisse = list(pool.map(_sprich, welle))
+
+        gedrosselt: List[tuple] = []
+        # Kam in dieser Welle überhaupt etwas durch? Davon hängt ab,
+        # ob eine Drosselung dem einzelnen Auftrag anzulasten ist oder
+        # dem Dienst.
+        etwas_durch = any(f is None for _, _, f in ergebnisse)
+        if etwas_durch:
+            welle_gedrosselt = 0
+
+        for (sound_id, text, ziel), (_, fertig, fehler) in zip(welle, ergebnisse):
+            if fehler is None:
+                result[sound_id] = fertig
+                continue
+
+            if isinstance(fehler, Ueberlastet):
+                # Eine Drosselung kostet kein Kontingent - erneut
+                # versuchen ist also frei. Angerechnet wird sie dem
+                # Auftrag nur, wenn der Dienst nachweislich läuft.
+                if etwas_durch:
+                    versuche[sound_id] = versuche.get(sound_id, 0) + 1
+                if versuche.get(sound_id, 0) <= MAX_VERSUCHE:
+                    gedrosselt.append((sound_id, text, ziel))
+                    continue
+                fehler = NetworkError(
+                    "ElevenLabs hat mehrfach gebremst.",
+                    f"Ansage {sound_id} ließ sich auch nach "
+                    f"{MAX_VERSUCHE} Versuchen nicht sprechen. Versuche "
+                    f"es später noch einmal - das Bisherige bleibt "
+                    f"gespeichert.")
+
+            if isinstance(fehler, NetworkError) and "Kontingent" in fehler.message:
+                if allow_partial and result:
+                    if log:
+                        log(f"Kontingent aufgebraucht nach {len(result)} von "
+                            f"{gesamt} Ansagen.")
+                        log("Das Bisherige bleibt gespeichert. Beim nächsten "
+                            "Versuch macht die App genau hier weiter.")
+                    return result
+                raise fehler
+
             if allow_partial and result:
                 if log:
-                    log(f"Abbruch bei Ansage {sound_id} "
-                        f"(HTTP {resp.status_code}): {detail[:120]}")
-                    log(f"{len(result)} Ansagen sind fertig und bleiben erhalten.")
+                    log(f"Abbruch bei Ansage {sound_id}: {fehler}")
+                    log(f"{len(result)} Ansagen sind fertig und bleiben "
+                        f"erhalten.")
                 return result
-            raise NetworkError(
-                f"Ansage {sound_id} konnte nicht gesprochen werden "
-                f"(HTTP {resp.status_code}).", detail)
+            raise fehler
 
-        target.write_bytes(resp.content)
-        result[sound_id] = target
+        if gedrosselt:
+            # Der Dienst bremst: Breite halbieren und kurz Luft lassen.
+            # Die gedrosselten Ansagen kommen ganz nach vorn, damit sie
+            # nicht bis zum Schluss liegenbleiben.
+            vorher = breite
+            breite = max(1, breite // 2)
+            offen = gedrosselt + offen
+
+            if not etwas_durch:
+                welle_gedrosselt += 1
+                if welle_gedrosselt > MAX_WELLEN_GEDROSSELT:
+                    fehler = NetworkError(
+                        "ElevenLabs bremst dauerhaft.",
+                        f"Auch nach {MAX_WELLEN_GEDROSSELT} Versuchen mit "
+                        f"immer weniger gleichzeitigen Anfragen kam keine "
+                        f"einzige Ansage durch. Versuche es später noch "
+                        f"einmal - das Bisherige bleibt gespeichert.")
+                    if allow_partial and result:
+                        if log:
+                            log(str(fehler.message))
+                        return result
+                    raise fehler
+
+            if log and breite != vorher:
+                log(f"ElevenLabs bremst - es laufen jetzt {breite} "
+                    f"Ansagen gleichzeitig.")
+            # Schrittweise länger warten, aber nie ewig.
+            time.sleep(min(0.5 * (2 ** min(welle_gedrosselt, 4)), 8.0))
+        elif breite < MAX_GLEICHZEITIG:
+            # Saubere Welle: vorsichtig eine mehr.
+            breite += 1
+
         if progress:
-            progress(index, len(items))
-        if log and index % 20 == 0:
-            log(f"  {index} von {len(items)} Ansagen gesprochen ...")
+            progress(len(result), gesamt)
+        if log and len(result) % 20 < len(welle) and len(result) >= 20:
+            log(f"  {len(result)} von {gesamt} Ansagen gesprochen ...")
 
     if not result:
         raise AudioError("Es wurde keine einzige Ansage erzeugt.")

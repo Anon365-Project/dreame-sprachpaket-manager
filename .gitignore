@@ -33,3 +33,7 @@ ffprobe.exe
 .vscode/
 .idea/
 *.swp
+
+# Hoervergleich-Archiv: 4,7 MB Audio, gehoert in ein Release oder
+# gar nicht ins Projekt.
+Hoertest-*.zip

@@ -1,18 +1,18 @@
-# Versionsangaben fuer die EXE.
+# Versionsangaben für die EXE.
 #
-# Ohne diese Ressource ist die Datei fuer Windows namenlos: Der
+# Ohne diese Ressource ist die Datei für Windows namenlos: Der
 # SmartScreen-Dialog zeigt dann nur den Dateinamen und "Unbekannter
 # Herausgeber", und heuristische Scanner werten eine Programmdatei ohne
-# jede Angabe ueber sich selbst als verdaechtiger.
+# jede Angabe über sich selbst als verdächtiger.
 #
-# Ein Ersatz fuer eine Signatur ist das nicht - aber es kostet nichts.
+# Ein Ersatz für eine Signatur ist das nicht - aber es kostet nichts.
 #
-# Erzeugt fuer PyInstaller (EXE(..., version='version_info.txt')).
+# Erzeugt für PyInstaller (EXE(..., version='version_info.txt')).
 
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 2, 0, 0),
-    prodvers=(1, 2, 0, 0),
+    filevers=(1, 3, 0, 0),
+    prodvers=(1, 3, 0, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -27,14 +27,14 @@ VSVersionInfo(
           '040704B0',
           [StringStruct('CompanyName', 'Maximilian Mangold'),
            StringStruct('FileDescription',
-                        'Dreame Sprachpaket-Manager - eigene Stimmen fuer Saugroboter'),
-           StringStruct('FileVersion', '1.2.0.0'),
+                        'Dreame Sprachpaket-Manager - eigene Stimmen für Saugroboter'),
+           StringStruct('FileVersion', '1.3.0.0'),
            StringStruct('InternalName', 'DreameSprachpaket'),
            StringStruct('LegalCopyright',
-                        'Maximilian Mangold - MIT-Lizenz, ohne Gewaehrleistung'),
+                        'Maximilian Mangold - MIT-Lizenz, ohne Gewährleistung'),
            StringStruct('OriginalFilename', 'DreameSprachpaket.exe'),
            StringStruct('ProductName', 'Dreame Sprachpaket-Manager'),
-           StringStruct('ProductVersion', '1.2.0.0'),
+           StringStruct('ProductVersion', '1.3.0.0'),
            StringStruct('Comments',
                         'Privates Freizeitprojekt. Quellcode: '
                         'github.com/Anon365-Project/dreame-sprachpaket-manager')]

@@ -7,6 +7,7 @@ from datetime import datetime
 from tkinter import ttk
 from typing import Callable, Optional
 
+from .state import spaeter
 from .theme import Theme
 
 
@@ -121,10 +122,10 @@ class LogView(ttk.Frame):
         self.theme = theme
         c = theme.colors
 
-        # Ein feiner Rahmen statt gar keinem: sonst schwimmt die Flaeche
-        # im hellen Design haltlos auf der Karte. Gezeichnet wird er ueber
-        # den Fokusrahmen - relief="solid" laesst sich bei einem Textfeld
-        # nicht einfaerben und bliebe schwarz.
+        # Ein feiner Rahmen statt gar keinem: sonst schwimmt die Fläche
+        # im hellen Design haltlos auf der Karte. Gezeichnet wird er über
+        # den Fokusrahmen - relief="solid" lässt sich bei einem Textfeld
+        # nicht einfärben und bliebe schwarz.
         self.text = tk.Text(
             self, height=height, wrap="word", relief="flat", borderwidth=0,
             background=c["log_bg"], foreground=c["log_text"],
@@ -166,7 +167,7 @@ def autowrap(label: ttk.Label, container: tk.Misc, padding: int = 40) -> None:
     """Lässt einen Text mit der Fensterbreite mitwachsen.
 
     Ohne das bleibt ein Label bei seiner fest eingestellten Zeilenbreite -
-    beim Maximieren entsteht dann rechts eine grosse leere Fläche, und auf
+    beim Maximieren entsteht dann rechts eine große leere Fläche, und auf
     schmalen Fenstern ragt der Text hinaus.
     """
     def on_resize(event) -> None:
@@ -208,7 +209,7 @@ class ScrollablePage(ttk.Frame):
         self.canvas.bind("<Leave>", lambda _e: self._bind_wheel(False))
         self._scroll_visible = False
 
-    # -- Grösse und Sichtbarkeit ------------------------------------------
+    # -- Größe und Sichtbarkeit ------------------------------------------
     def _on_scroll_set(self, first: str, last: str) -> None:
         noetig = not (float(first) <= 0.0 and float(last) >= 1.0)
         if noetig != self._scroll_visible:
@@ -222,7 +223,7 @@ class ScrollablePage(ttk.Frame):
     def _on_content_configure(self, _event=None) -> None:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-    #: Breiter wird der Inhalt nicht. Auf einem grossen Bildschirm zöge
+    #: Breiter wird der Inhalt nicht. Auf einem großen Bildschirm zöge
     #: sich sonst jede Karte über die volle Fensterbreite, und eine Zeile
     #: Text wäre kaum noch am Stück zu lesen.
     MAX_BREITE = 940
@@ -255,6 +256,25 @@ class ScrollablePage(ttk.Frame):
         else:
             delta = -1 if event.delta > 0 else 1
         self.canvas.yview_scroll(delta * 3, "units")
+
+    def scrolle_zu(self, widget) -> None:
+        """Rollt so, dass `widget` oben im Sichtbereich steht.
+
+        Gebraucht, damit ein Sprung auf eine Seite auch dort landet,
+        wo er gemeint ist. Der Knopf "Originalstimme zurück" führte
+        auf die richtige Seite - aber ganz nach oben, wo als
+        auffälligster Knopf "Sprachpaket auf Roboter installieren"
+        steht. Also das Gegenteil dessen, was der Benutzer wollte.
+        """
+        try:
+            self.update_idletasks()
+            gesamt = self.content.winfo_height()
+            oben = widget.winfo_rooty() - self.content.winfo_rooty()
+            if gesamt <= 0:
+                return
+            self.canvas.yview_moveto(max(0.0, (oben - 12) / gesamt))
+        except (tk.TclError, ZeroDivisionError):    # pragma: no cover
+            pass
 
     def body(self) -> ttk.Frame:
         """Innerer Rahmen mit Rand - hier kommt der Seiteninhalt hinein."""
@@ -455,7 +475,7 @@ class MessageDialog(tk.Toplevel):
         self.bind("<Escape>", lambda _e: self.destroy())
         self.bind("<Control-c>", lambda _e: self._kopieren())
         self._zentrieren()
-        self.after(50, self._greifen)
+        spaeter(self, 50, self._greifen)
 
     # ------------------------------------------------------------------
     def _zeilen(self) -> int:
@@ -476,7 +496,8 @@ class MessageDialog(tk.Toplevel):
     def _kopieren(self) -> None:
         copy_to_clipboard(self, self._volltext)
         self.btn_copy.configure(text="Kopiert")
-        self.after(1500, lambda: self.btn_copy.configure(text="Text kopieren"))
+        spaeter(self, 1500,
+                lambda: self.btn_copy.configure(text="Text kopieren"))
 
     def _zentrieren(self) -> None:
         self.update_idletasks()

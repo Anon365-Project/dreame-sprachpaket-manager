@@ -48,7 +48,12 @@ class Eintrag:
     key: str
     label: str
     icon: str
-    seite: ttk.Frame
+    #: Die fertige Seite - oder None, solange sie noch nicht gebaut
+    #: wurde. Vier der sechs Seiten sieht ein Benutzer nie an; sie
+    #: beim Start mitzubauen kostete über eine Sekunde.
+    seite: Optional[ttk.Frame] = None
+    #: Baut die Seite auf Zuruf. Genau einmal.
+    bauen: Optional[Callable[[], ttk.Frame]] = None
     section: str = ""
     enabled: bool = True
     grund: str = ""
@@ -87,26 +92,45 @@ class NavShell(ttk.Frame):
         self.buehne.rowconfigure(0, weight=1)
 
     # ------------------------------------------------------------------
-    def add(self, key: str, label: str, icon: str, seite: ttk.Frame,
-            section: str = "", beim_zeigen: Optional[Callable[[], None]] = None
-            ) -> None:
-        """Nimmt eine fertige Seite auf.
+    def add(self, key: str, label: str, icon: str,
+            seite: Optional[ttk.Frame] = None,
+            section: str = "",
+            beim_zeigen: Optional[Callable[[], None]] = None,
+            bauen: Optional[Callable[[], ttk.Frame]] = None) -> None:
+        """Nimmt eine Seite auf - fertig gebaut oder als Bauplan.
 
-        Die Seite wird sofort in die Bühne gelegt, aber noch nicht
-        angezeigt - so bleibt das Verhalten dasselbe wie früher mit den
-        Reitern, bei denen auch alle vier gleich beim Start entstanden.
+        Mit `bauen` entsteht die Seite erst, wenn sie zum ersten Mal
+        angezeigt wird. Beim Start werden sonst alle sechs Seiten
+        gebaut - gemessen über tausend Bedienelemente, von denen
+        die meisten nie jemand zu Gesicht bekommt.
         """
         if key in self._eintraege:
             raise ValueError(f"Der Eintrag '{key}' ist schon vergeben.")
+        if seite is None and bauen is None:
+            raise ValueError("Es braucht eine Seite oder einen Bauplan.")
 
-        seite.grid(row=0, column=0, sticky="nsew", in_=self.buehne)
-        seite.grid_remove()
+        if seite is not None:
+            seite.grid(row=0, column=0, sticky="nsew", in_=self.buehne)
+            seite.grid_remove()
 
         eintrag = Eintrag(key=key, label=label, icon=icon, seite=seite,
-                          section=section, beim_zeigen=beim_zeigen)
+                          bauen=bauen, section=section,
+                          beim_zeigen=beim_zeigen)
         self._eintraege[key] = eintrag
         self._reihenfolge.append(key)
         self._zeile_bauen(eintrag)
+
+    def seite(self, key: str) -> Optional[ttk.Frame]:
+        """Die Seite zu einem Eintrag - baut sie, falls nötig."""
+        eintrag = self._eintraege.get(key)
+        if eintrag is None:
+            return None
+        if eintrag.seite is None and eintrag.bauen is not None:
+            eintrag.seite = eintrag.bauen()
+            eintrag.seite.grid(row=0, column=0, sticky="nsew",
+                               in_=self.buehne)
+            eintrag.seite.grid_remove()
+        return eintrag.seite
 
     def _zeile_bauen(self, eintrag: Eintrag) -> None:
         if eintrag.section and eintrag.section not in self._abschnitte:
@@ -122,7 +146,7 @@ class NavShell(ttk.Frame):
         zeile.pack(fill="x")
 
         # Der farbige Balken links markiert die aktive Seite. Er ist immer
-        # da, nur meistens in der Hintergrundfarbe - sonst wuerde die
+        # da, nur meistens in der Hintergrundfarbe - sonst würde die
         # Beschriftung beim Wechseln um drei Pixel springen.
         balken = tk.Frame(zeile, bg=self.theme.color("surface_alt"), width=3)
         balken.pack(side="left", fill="y")
@@ -220,12 +244,18 @@ class NavShell(ttk.Frame):
             _LOG.warning("Unbekannte Seite: %s", key)
             return
 
+        seite = self.seite(key)
+        if seite is None:
+            _LOG.warning("Seite %r ließ sich nicht bauen", key)
+            return
+
         vorher = self._eintraege.get(self._aktuell)
-        if vorher is not None and vorher.key != key:
+        if (vorher is not None and vorher.key != key
+                and vorher.seite is not None):
             vorher.seite.grid_remove()
 
         self._aktuell = key
-        eintrag.seite.grid()
+        seite.grid()
 
         for e in self._eintraege.values():
             self._zeile_faerben(e)
@@ -233,7 +263,7 @@ class NavShell(ttk.Frame):
         if eintrag.beim_zeigen is not None:
             try:
                 eintrag.beim_zeigen()
-            except Exception:      # pragma: no cover - eine Seite darf nicht reissen
+            except Exception:      # pragma: no cover - eine Seite darf nicht reißen
                 _LOG.exception("Fehler beim Anzeigen von %r", key)
 
     @property

@@ -1,4 +1,4 @@
-"""Seite 'Bauen und Aufspielen': der ausfuehrliche Weg mit allen Schaltern."""
+"""Seite 'Bauen und Aufspielen': der ausführliche Weg mit allen Schaltern."""
 
 from __future__ import annotations
 
@@ -12,7 +12,8 @@ from typing import Optional
 
 from .. import installer, library, official, packer, server
 from ..paths import build_dir
-from .state import AppState, Task, error_text, run_async, to_main
+from .state import (AppState, Task, error_text, run_async, spaeter,
+                    to_main)
 from .theme import Theme
 from .widgets import (Card, InfoBanner, LogView, ScrollablePage, StatusBadge,
                       labeled_value, show_error, show_info, show_warning)
@@ -27,9 +28,7 @@ APP_HINWEIS = (
     "dein Paket läuft.\n\n"
     "Wähle in der Dreamehome-App jetzt KEINE Sprache aus - damit würde der "
     "Roboter das offizielle Paket nachladen und deines überschreiben.\n\n"
-    "Wenn dein Paket dort auftauchen soll, installiere es unter der Kennung "
-    "'DE'. Dann erscheint es als 'Deutsch' und ist auswählbar - es ersetzt "
-    "dafür die mitgelieferte deutsche Stimme. Zurück geht es jederzeit über "
+    "Zurück zur Originalstimme geht es jederzeit über "
     "'Originalstimme wiederherstellen'."
 )
 
@@ -60,7 +59,7 @@ class InstallTab(ttk.Frame):
 
     # ------------------------------------------------------------------
     def _build(self) -> None:
-        page = ScrollablePage(self, self.theme)
+        self.page = page = ScrollablePage(self, self.theme)
         page.pack(fill="both", expand=True)
         outer = page.body()
 
@@ -124,8 +123,11 @@ class InstallTab(ttk.Frame):
 
         ttk.Label(body, text="Kennung", style="Surface.TLabel").grid(
             row=0, column=0, sticky="w", pady=4, padx=(0, 8))
-        self.var_lang = tk.StringVar(value=self.state.config["custom_lang_id"])
-        ttk.Entry(body, textvariable=self.var_lang, width=12).grid(
+        # Fest, siehe installer.install_pack: Der Roboter legt je Kennung
+        # einen Ordner an, den man über die Cloud nicht mehr löschen
+        # kann. Eine einzige Kennung überschreibt sich selbst.
+        ttk.Label(body, text=installer.DEFAULT_CUSTOM_LANG_ID,
+                  style="Surface.TLabel").grid(
             row=0, column=1, sticky="w", pady=4)
 
         ttk.Label(body, text="PC-Adresse", style="Surface.TLabel").grid(
@@ -182,7 +184,7 @@ class InstallTab(ttk.Frame):
                    command=lambda: open_folder(build_dir())).pack(side="right")
         # Bewusst "Gebautes Paket": unter 'Eigene Stimmen' gibt es einen Knopf zum Einlesen
         # von Aufnahmen, und "Fertiges Paket" hat für beides gepasst.
-        ttk.Button(button_row, text="Gebautes Paket (.tar.gz) wählen ...",
+        ttk.Button(button_row, text="Fertiges Paket wählen ...",
                    style="Small.TButton",
                    command=self._on_pick_pack).pack(side="right", padx=(0, 8))
 
@@ -203,7 +205,8 @@ class InstallTab(ttk.Frame):
         self.log.pack(fill="both", expand=True, pady=(12, 0))
 
         # ---- Wiederherstellen -------------------------------------------
-        restore = Card(outer, self.theme, "Notausgang: Originalstimme zurückholen",
+        self.karte_notausgang = restore = Card(
+            outer, self.theme, "Notausgang: Originalstimme zurückholen",
                        "Installiert das offizielle Dreame-Sprachpaket erneut - der "
                        "Roboter lädt es direkt beim Hersteller, dieser PC ist "
                        "dabei gar nicht beteiligt.")
@@ -270,8 +273,6 @@ class InstallTab(ttk.Frame):
         self.state.prebuilt = build
         self.state.prebuilt_name = info.dialect or info.path.name
         self.state.last_build = build
-        if info.lang_id:
-            self.var_lang.set(info.lang_id)
         self.refresh_summary()
         self.log.append(f"Ausgewählt: {info.path.name}", "ok")
         if info.voice:
@@ -440,12 +441,30 @@ class InstallTab(ttk.Frame):
         self.state.last_build = None
         self.refresh_summary()
 
-    def _busy(self, active: bool) -> None:
+    def zeige_notausgang(self) -> None:
+        """Rollt zum Abschnitt "Originalstimme zurückholen".
+
+        Wer von der Startseite kommt, will genau dorthin - nicht an
+        den Anfang der Seite, wo als größter Knopf "Sprachpaket auf
+        Roboter installieren" steht.
+        """
+        spaeter(self, 60, lambda: self.page.scrolle_zu(self.karte_notausgang))
+
+    def _busy(self, active: bool, abbrechbar: bool = True) -> None:
+        """Knöpfe während eines Vorgangs sperren.
+
+        `abbrechbar` steuert nur den Abbruchknopf. Beim Wiederherstellen
+        der Originalstimme gibt es nichts abzubrechen - der Roboter lädt
+        dabei direkt bei Dreame, ohne dass wir dazwischenstehen. Ein
+        Knopf, der bis zu sieben Minuten lang nichts tut, ist schlimmer
+        als ein grauer Knopf.
+        """
         state = "disabled" if active else "normal"
         self.btn_install.configure(state=state)
         self.btn_build_only.configure(state=state)
         self.btn_restore.configure(state=state)
-        self.btn_cancel.configure(state="normal" if active else "disabled")
+        self.btn_cancel.configure(
+            state="normal" if (active and abbrechbar) else "disabled")
 
     def _log(self, message: str, kind: str = "info") -> None:
         to_main(self, self.log.append, message, kind)
@@ -486,8 +505,8 @@ class InstallTab(ttk.Frame):
         if not self.state.assignments():
             messagebox.showwarning(
                 "Nichts zu tun",
-                "Es ist noch keine einzige Ansage ausgetauscht. Weise im Tab "
-                "'Sprachpaket erstellen' mindestens einer Ansage eine Audiodatei zu "
+                "Es ist noch keine einzige Ansage ausgetauscht. Weise unter "
+                "'Einzelne Ansagen' mindestens einer Ansage eine Audiodatei zu "
                 "- oder hole dir unter 'Eigene Stimmen' ein vorgefertigtes Paket.",
                 parent=self)
             return False
@@ -555,17 +574,7 @@ class InstallTab(ttk.Frame):
         if not self._preflight():
             return
 
-        lang_id = self.var_lang.get().strip().upper() or "CUSTOM"
-        try:
-            lang_id, warning = installer.validate_lang_id(lang_id)
-        except Exception as exc:
-            self._on_error(exc)
-            return
-
-        if warning and not messagebox.askyesno(
-                "Offizielle Kennung", warning + "\n\nTrotzdem fortfahren?",
-                parent=self):
-            return
+        lang_id = installer.DEFAULT_CUSTOM_LANG_ID
 
         try:
             port = int(self.var_port.get().strip() or 0)
@@ -579,7 +588,6 @@ class InstallTab(ttk.Frame):
         self.state.config["host_ip"] = self.var_ip.get().strip()
         self.state.config["serve_port"] = port
         self.state.save()
-        self.var_lang.set(lang_id)
 
         cloud, device = self.state.cloud, self.state.device
         public_url = self.var_url.get().strip()
@@ -600,7 +608,7 @@ class InstallTab(ttk.Frame):
             self._log("", "info")
             self._log("Übertrage auf den Roboter", "step")
             return installer.install_pack(
-                cloud=cloud, device=device, build=build, lang_id=lang_id,
+                cloud=cloud, device=device, build=build,
                 port=port, host_ip=host_ip, public_url=public_url,
                 log=lambda m: self._log(m),
                 step=self._step,
@@ -610,14 +618,24 @@ class InstallTab(ttk.Frame):
         def ok(outcome: installer.InstallOutcome) -> None:
             if outcome.success:
                 self.progress.configure(value=100)
-                self.badge.set("Erfolgreich installiert", "ok")
-                self.log.append(outcome.message, "ok")
+                # Belegt oder nur wahrscheinlich - der Unterschied gehört
+                # in die Plakette und ins Fenster, nicht nur ins Protokoll.
+                if outcome.bestaetigt:
+                    self.badge.set("Erfolgreich installiert", "ok")
+                else:
+                    self.badge.set("Übertragen, nicht bestätigt", "warn")
+                self.log.append(outcome.message,
+                                "ok" if outcome.bestaetigt else "warn")
+                if outcome.hint:
+                    self.log.append(outcome.hint, "warn")
                 self.log.append(APP_HINWEIS, "warn")
                 show_info(
-                    self, self.theme, "Fertig",
+                    self, self.theme,
+                    "Fertig" if outcome.bestaetigt else "Übertragen",
                     outcome.message + "\n\nProbier es aus: lass den Roboter eine "
                     "Reinigung starten - er sollte jetzt anders klingen.",
-                    APP_HINWEIS)
+                    (f"{outcome.hint}\n\n{APP_HINWEIS}" if outcome.hint
+                     else APP_HINWEIS))
             else:
                 self.badge.set(outcome.message, "error")
                 self.log.append(outcome.message, "error")
@@ -661,7 +679,7 @@ class InstallTab(ttk.Frame):
         cloud, device = self.state.cloud, self.state.device
         self.log.clear()
         self.log.append("Stelle Originalstimme wieder her", "step")
-        self._busy(True)
+        self._busy(True, abbrechbar=False)
         self.progress.configure(value=0)
 
         def work(_task):
@@ -670,8 +688,12 @@ class InstallTab(ttk.Frame):
                 log=lambda m: self._log(m), step=self._step)
 
         def ok(outcome: installer.InstallOutcome) -> None:
-            kind = "ok" if outcome.success else "warn"
-            self.badge.set(outcome.message, kind if outcome.success else "warn")
+            # Auch der Notausgang muss zwischen belegt und nur
+            # wahrscheinlich unterscheiden. Er ist der Weg, den jemand
+            # geht, WEIL etwas kaputt ist - ein grünes "wieder aktiv"
+            # ohne Nachweis wäre hier am schädlichsten.
+            kind = "ok" if (outcome.success and outcome.bestaetigt) else "warn"
+            self.badge.set(outcome.message, kind)
             self.log.append(outcome.message, kind)
             if outcome.hint:
                 self.log.append(outcome.hint, "warn")

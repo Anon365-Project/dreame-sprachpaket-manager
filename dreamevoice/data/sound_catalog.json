@@ -1,5 +1,5 @@
 {
- "_comment": "Ansagenkatalog des X50 Ultra Complete. Vereinigung der offiziellen deutschen Pakete von r2532h (558 Ansagen) und r2532v (613 Ansagen). Die deutschen Bezeichnungen sind von Hand vergeben; fuer die Nummern ab 631 stammen sie aus einer Transkription der Originalaufnahmen. Massgeblich bleibt immer die Hoerprobe.",
+ "_comment": "Ansagenkatalog des X50 Ultra Complete. Vereinigung der offiziellen deutschen Pakete von r2532h (558 Ansagen) und r2532v (613 Ansagen). Die deutschen Bezeichnungen sind von Hand vergeben; für die Nummern ab 631 stammen sie aus einer Transkription der Originalaufnahmen. Maßgeblich bleibt immer die Hoerprobe.",
  "source_model": "dreame.vacuum.r2532h + dreame.vacuum.r2532v",
  "count": 616,
  "sounds": [

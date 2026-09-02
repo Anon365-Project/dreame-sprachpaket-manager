@@ -50,6 +50,12 @@ DEFAULTS: Dict[str, Any] = {
     "elevenlabs_use_voice_settings": True,
     "elevenlabs_stability": 0.35,    # nur bei eigenen Einstellungen
     "elevenlabs_style": 0.45,
+    # Aktualisierung. Ausgeschaltet, bis der Benutzer es einschaltet:
+    # Die Abfrage geht an GitHub und verrät dadurch, dass hier jemand
+    # diese App benutzt. Das gehört nicht ungefragt eingeschaltet.
+    "update_pruefen": False,     # beim Start nach neuer Fassung sehen
+    "update_zuletzt": 0,         # Zeitstempel der letzten Abfrage
+    "update_uebersprungen": "",  # diese Fassung nicht mehr anbieten
     # Selbst geänderte Dialekttexte: {"bayerisch": {"7": "eigener Text"}}
     "dialect_overrides": {},
 }
@@ -261,7 +267,7 @@ class Config:
             self._values["remember_password"] = False
 
         # Im Protokoll stehen die IP dieses PCs und die
-        # Installationsauftraege samt Adresse.
+        # Installationsaufträge samt Adresse.
         try:
             pfad = log_file()
             if pfad.is_file() and pfad.stat().st_size:
