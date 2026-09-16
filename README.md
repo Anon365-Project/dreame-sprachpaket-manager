@@ -1,7 +1,7 @@
 # Dreame Sprachpaket-Manager
 
-Gib deinem Saugroboter eine andere Stimme: Bayerisch, Hessisch, Wienerisch
-oder Berlinerisch. Windows-App für Roboter von **Dreame, MOVA und Trouver**.
+Gib deinem Saugroboter eine andere Stimme: Bayerisch, Hessisch, Wienerisch,
+Berlinerisch oder die mechanische Stimme Maschinenkult. Windows-App für Roboter von **Dreame, MOVA und Trouver**.
 Ohne Rooting, ohne Installation, eine einzige Datei.
 
 ```
@@ -11,7 +11,7 @@ Ohne Rooting, ohne Installation, eine einzige Datei.
     "Na denn los. Ick fang an zu sauje."                 Berlinerisch
 ```
 
-**Download: [DreameSprachpaket.exe](../../releases/latest)** — rund 97 MB
+**Download: [DreameSprachpaket.exe](../../releases/latest)** — rund 108 MB
 
 1. Doppelklick. Windows meldet „Computer geschützt", weil die Datei nicht
    signiert ist: *Weitere Informationen → Trotzdem ausführen*.
@@ -20,8 +20,8 @@ Ohne Rooting, ohne Installation, eine einzige Datei.
    Roboters holt die App danach von selbst.
 3. Unter **Fertige Stimmen** eine aussuchen, *Anhören*, *Aufspielen*.
 
-Das ist der ganze Weg. Die Stimmen stecken in der Programmdatei, es wird
-nichts nachgeladen. Gefällt es nicht: *Originalstimme wiederherstellen*.
+Das ist der ganze Weg. Die eingebauten Stimmen stecken in der Programmdatei,
+es wird nichts nachgeladen. Gefällt es nicht: *Originalstimme wiederherstellen*.
 
 **Funktioniert das mit meinem Roboter?** Wenn du in der Dreamehome-App unter
 *Sprachton* eine Sprache auswählen kannst, funktioniert es. 402 Modelle
@@ -37,9 +37,17 @@ geprüft — [wie ich das geprüft habe](docs/Modelle.md).
 
 ## Was die App kann
 
-**Fünf fertige Stimmen** sind eingebaut und sofort einsatzbereit: Bayerisch
-männlich und weiblich, Hessisch, Wienerisch und Berlinerisch. Sie sprechen
-echten Dialekt, auch in der Aussprache — nicht nur in der Wortwahl.
+**Sechs fertige Stimmen** sind eingebaut und sofort einsatzbereit: Bayerisch
+männlich und weiblich, Hessisch, Wienerisch und Berlinerisch sprechen echten
+Dialekt, auch in der Aussprache — nicht nur in der Wortwahl. Dazu kommt
+**Maschinenkult**, eine männliche, mechanische Stimme: ein Community-Pack von
+**Carnimo**, in dem die Station Schrein und das WLAN Funkkommunion heißt.
+
+Unter *Fertige Stimmen* stehen alle in einer Liste, geordnet nach *In der App
+enthalten*, *Eigene* und *Freie Stimmen aus dem Netz* (etwa GLaDOS). Jede lässt
+sich vor dem Aufspielen anhören, auch die freien — die lädt die App dafür
+kurz herunter. Aufgespielt wird immer unter der Kennung CUSTOM, damit auf dem
+Roboter keine alten Pakete liegen bleiben.
 
 Darüber hinaus, wenn man mag: **eigene Texte** schreiben und sprechen lassen,
 **eigene Aufnahmen** einlesen, **einzelne Ansagen** austauschen. Drei weitere

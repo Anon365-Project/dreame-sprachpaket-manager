@@ -32,7 +32,7 @@ wenn er durchläuft. Es weigert sich außerdem, solange die App noch
 läuft — dann bitte schließen, nicht abschießen: Eine laufende
 ElevenLabs-Erzeugung würde sonst bezahltes Kontingent verlieren.
 
-Ergebnis: `dist\DreameSprachpaket.exe`, rund 97 MB.
+Ergebnis: `dist\DreameSprachpaket.exe`, rund 108 MB.
 
 ## 3. Prüfsumme eintragen
 
@@ -48,7 +48,9 @@ Selbsttest vergleicht danach beides und meldet eine Abweichung.
 Die gebaute EXE starten und einmal durchgehen:
 
 * Anmelden, Roboter erscheint in der Liste
-* **Fertige Stimmen** → *Anhören* spielt vier Ansagen ab
+* **Fertige Stimmen** → *Anhören* spielt vier Ansagen ab, auch bei
+  einer freien Stimme wie GLaDOS (die wird dafür kurz geladen)
+* Maschinenkult zeigt „Community-Pack von Carnimo“
 * **Aktualisierung** oben rechts öffnet sich
 * **Hilfe** → *Ausführlich nachlesen* öffnet eine Anleitung
 
@@ -56,7 +58,7 @@ Danach die App wieder schließen.
 
 ## 5. Release anlegen
 
-Tag: `v` + Version aus `dreamevoice/__init__.py`, also z. B. `v1.3.0`.
+Tag: `v` + Version aus `dreamevoice/__init__.py`, also z. B. `v1.4.0`.
 
 Als Beschreibung den Inhalt von `RELEASE.md` einfügen. Die
 vollständige Liste der Änderungen steht in `CHANGELOG.md`.
@@ -65,12 +67,13 @@ vollständige Liste der Änderungen steht in `CHANGELOG.md`.
 
 | Datei | Größe | woher |
 |---|---|---|
-| `DreameSprachpaket.exe` | ~97 MB | `dist\` |
+| `DreameSprachpaket.exe` | ~108 MB | `dist\` |
 | `Bayerisch-Aufnahmen.zip` | 9,0 MB | `Fertige Pakete\` |
 | `Bayerisch-Weiblich-Aufnahmen.zip` | 9,0 MB | `Fertige Pakete\` |
 | `Hessisch-Aufnahmen.zip` | 9,1 MB | `Fertige Pakete\` |
 | `Wienerisch-Aufnahmen.zip` | 9,1 MB | `Fertige Pakete\` |
 | `Berlinerisch-Aufnahmen.zip` | 8,4 MB | `Fertige Pakete\` |
+| `Maschinenkult-Aufnahmen.zip` | 10,6 MB | `Fertige Pakete\` |
 
 **Bayerisch-Weiblich fehlte im Release v1.2.0.** Die Stimme steckt zwar
 in der EXE, aber der Knopf „neuere Fassung holen" lief für sie in einen

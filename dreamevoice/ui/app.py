@@ -685,10 +685,19 @@ zwei Seiten:
    spricht.
 
 2. Fertige Stimmen
-   Bayerisch, Hessisch, Wienerisch oder Berlinerisch aussuchen, mit
-   "Anhören" vier typische Ansagen probehören, dann "Aufspielen". Die
-   Dialektstimmen stecken in der Programmdatei - es wird nichts
-   heruntergeladen.
+   Eine Stimme aus der Liste aussuchen, mit "Anhören" vier typische
+   Ansagen probehören, dann "Aufspielen". Die Liste hat drei Gruppen:
+
+   - In der App enthalten: Bayerisch (männlich und weiblich),
+     Hessisch, Wienerisch, Berlinerisch und Maschinenkult, ein
+     Community-Pack von Carnimo. Sie stecken in der Programmdatei, es
+     wird nichts heruntergeladen.
+   - Eigene: was du unter "Eigene Stimmen" selbst gebaut hast.
+   - Freie Stimmen aus dem Netz: geprüfte Bastelprojekte wie GLaDOS.
+     Sie werden erst beim Anhören oder Aufspielen geladen; wie viel,
+     steht auf dem Knopf.
+
+   Aufgespielt wird immer unter der Kennung CUSTOM.
 
 Das war es. Alles andere steht unter "Erweitert" und wird nur gebraucht,
 wenn man mehr will:

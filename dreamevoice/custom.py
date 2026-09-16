@@ -33,8 +33,9 @@ ORDNER = "Eigene Pakete"
 ENDUNG = ".json"
 FORMAT = 1
 
-# Kennungen wie DE oder BAYERN. Der Roboter bekommt sie als Sprachkennung;
-# vier bis acht Großbuchstaben haben sich bewährt.
+# Kennungen wie BAYERN. Sie dienen nur noch der Unterscheidung in der
+# App - der Roboter bekommt jedes Paket unter CUSTOM, siehe
+# installer.install_pack. Vier bis acht Großbuchstaben haben sich bewährt.
 _KENNUNG_ERLAUBT = re.compile(r"[^A-Z0-9]")
 
 

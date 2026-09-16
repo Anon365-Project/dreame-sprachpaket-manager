@@ -5,6 +5,63 @@ geschriebene Fassung steht in [RELEASE.md](RELEASE.md).
 
 ---
 
+## v1.4.0 — seit v1.3.0
+
+### Neue Funktionen
+
+- **Maschinenkult** — sechste eingebaute Stimme, männlich und mechanisch,
+  590 Ansagen. Ein Community-Pack von **Carnimo**, mit ElevenLabs erzeugt
+  und von ihm auf einem X50 Ultra Complete getestet. Name und Herkunft
+  stehen in der App direkt in der Liste („Community-Pack von Carnimo“),
+  in der Beschreibung und in der LIESMICH des Archivs. Neues Feld
+  `urheber` in `FertigerDialekt`.
+  - Das eingereichte Paket hatte 620 Tondateien; 30 davon waren Dreames
+    eigene Aufnahmen (Startton, Signaltöne, nicht neu gesprochene
+    Ansagen). Sie sind nicht im Archiv — die App nimmt sie beim
+    Aufspielen aus dem Originalpaket des jeweiligen Roboters. Bestimmt
+    über Länge und Hüllkurve, nicht über den Dateinamen.
+  - Der Name ist neutral gehalten; der ursprüngliche nannte ein
+    geschütztes Spieleuniversum.
+- **Eine Liste für alle Stimmen.** *Fertige Stimmen* zeigt eingebaute,
+  eigene und freie Stimmen gleich groß in einer Liste mit drei Gruppen:
+  *In der App enthalten*, *Eigene*, *Freie Stimmen aus dem Netz*. Vorher
+  standen die freien Stimmen als große Karten auf *Eigene Stimmen*, alle
+  anderen klein in einer Klappliste.
+- **Freie Stimmen vorher anhören.** GLaDOS und Co. mussten erst geladen
+  und gebaut werden, bevor man sie hören konnte. Jetzt lädt *Anhören* sie
+  kurz herunter (der Knopf nennt die Größe), und *Aufspielen* erledigt
+  Laden, Anpassen und Aufspielen in einem Zug. Der Download lässt sich
+  abbrechen.
+
+### Geändert
+
+- **Alles geht unter CUSTOM auf den Roboter** — auch selbst erstellte
+  Pakete. Die Oberfläche zeigt keine eigene Kennung je Dialekt mehr an,
+  und in die Paketbeschreibung wird `CUSTOM` geschrieben. Der Selbsttest
+  prüft, dass nur zwei Stellen ein Paket aufspielen: das eigene Paket
+  fest unter CUSTOM, der Rückweg unter der Kennung des Originalpakets.
+- **Keine Doppel mehr unter „Eigene“.** Pakete, die die App nur zum
+  Aufspielen baut, liegen jetzt in `Meine Pakete\_zum_aufspielen` und
+  überschreiben sich je Stimme. Die bis 1.3.0 angesammelten
+  (`Bayerisch_fertig.tar.gz`, `community_glados_….tar.gz`) werden in der
+  Liste ausgeblendet, aber nicht gelöscht.
+- *Eigene Stimmen* hat keine Karten freier Stimmen und keinen
+  „Store“-Hinweis mehr; Statusanzeige und Protokoll stehen in einer
+  eigenen Karte *Fortschritt*.
+- Fehlt das Originalpaket, verweist die Meldung auf die Startseite statt
+  auf *Einzelne Ansagen*.
+- In allen Beipackzetteln der Stimmen-Archive stand `OHNE GEWAEHR` — jetzt
+  mit Umlaut. Der Umlaut-Test prüft auch Großschreibung und die
+  Textdateien in den Archiven.
+
+### Selbsttest
+
+Neuer Abschnitt 47 „Eine Liste für alle Stimmen“: Zwischenpakete,
+Zielordner des Packers, Abbruch eines Downloads ohne Reste, nur CUSTOM
+als Kennung, Aufbau und Inhalt des Maschinenkult-Archivs.
+
+---
+
 ## v1.3.0 — seit v1.2.0
 
 28 Quelldateien geändert, 3 neue Module, rund 5.000 Zeilen dazu.

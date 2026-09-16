@@ -47,7 +47,7 @@ GESEHEN: list = []
 #: ffmpeg, der Windows-Tresor oder Tkinter, entfallen ganze Blöcke -
 #: und am Ende steht trotzdem "Fehlgeschlagen: 0". Wer der Zahl
 #: vertraut, hört auf, selbst hinzusehen.
-ABSCHNITTE_ERWARTET = 49
+ABSCHNITTE_ERWARTET = 50
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -1608,6 +1608,7 @@ def _alle_pruefungen() -> None:
             # eine leere Auswahl wäre der peinlichste aller Fehler.
             _stimmen = _fenster.page_voice._auswahl
             from dreamevoice import dialektpakete as _dpk  # noqa: E402
+            from dreamevoice import community as _com_liste  # noqa: E402
             _erwartet = len(_dpk.verfuegbar())
             if _erwartet == 0:
                 uebersprungen("die Stimmenseite findet die Dialekte",
@@ -1615,11 +1616,17 @@ def _alle_pruefungen() -> None:
                               "EXE noch im Projektordner)")
             else:
                 check("die Stimmenseite findet die Dialekte",
-                      len(_stimmen) >= _erwartet,
+                      sum(1 for a in _stimmen if a.dialekt is not None)
+                      == _erwartet,
                       f"{len(_stimmen)} von {_erwartet} gefunden")
-            check("und jede lässt sich auflösen",
+            # Freie Stimmen zählen hier nicht: Die lädt die Seite erst,
+            # wenn jemand sie anhört - der Aufbau allein lädt nichts.
+            check("und jede eingebaute lässt sich auflösen",
                   all(_fenster.page_voice._quelle_holen(a) is not None
-                      for a in _stimmen))
+                      for a in _stimmen if a.frei is None))
+            check("die freien Stimmen stehen mit in der Liste",
+                  sum(1 for a in _stimmen if a.frei is not None)
+                  == len(_com_liste.PACKS))
         finally:
             if _fenster is not None:
                 try:
@@ -1634,12 +1641,12 @@ def _alle_pruefungen() -> None:
     # nicht auf Vorhandensein geprüft: Wer frisch installiert hat - oder
     # gerade "Persönliche Daten entfernen" benutzt hat - hat zu Recht
     # keine, und dafür darf der Selbsttest nicht rot werden. Was er
-    # verhindern muss, ist die VERAENDERUNG.
+    # verhindern muss, ist die VERÄNDERUNG.
     def _fingerabdruck(ziel):
         """Erkennungsmerkmal eines Tresoreintrags, ohne ihn preiszugeben.
 
         Auf Vorhandensein zu prüfen genügt nicht: Würde der
-        Selbsttest den echten Schlüssel UEBERSCHREIBEN statt ihn zu
+        Selbsttest den echten Schlüssel ÜBERSCHREIBEN statt ihn zu
         löschen, bliebe exists() wahr und die Prüfung grün - der
         bezahlte Schlüssel wäre trotzdem weg. Verglichen wird
         deshalb ein Hashwert, nie der Wert selbst.
@@ -2545,8 +2552,10 @@ def _alle_pruefungen() -> None:
     # beiden Einträge in der Liste nicht auseinanderzuhalten - und die
     # Auswahl greift über den Namen zu.
     _namen = [e.anzeigename for e in _dp.KATALOG]
+    # "(männlich, mechanisch)" zählt mit - das Geschlecht steht vorn.
+    import re as _re33
     check("jeder Eintrag trägt sein Geschlecht im Namen",
-          all("(" in n and (n.endswith("(männlich)") or n.endswith("(weiblich)"))
+          all(_re33.search(r"\((männlich|weiblich)(, [a-zäöüß]+)?\)$", n)
               for n in _namen), f"{_namen}")
     check("keine zwei Einträge heißen gleich",
           len(set(_namen)) == len(_namen), f"{_namen}")
@@ -3225,7 +3234,7 @@ def _alle_pruefungen() -> None:
     _stimmen = len(_dp.KATALOG)
     check("die README nennt die Stimmen nicht als 'vier Dialekte'",
           "vier Dialekte" not in _texte.get("README.md", ""))
-    check(f"der Katalog führt {_stimmen} Stimmen", _stimmen == 5, f"{_stimmen}")
+    check(f"der Katalog führt {_stimmen} Stimmen", _stimmen == 6, f"{_stimmen}")
 
     # d) Der Release-Text muss zur Version passen. Sonst steht auf der
     #    Projektseite eine andere Zahl als im Programmfenster.
@@ -4037,8 +4046,8 @@ def _alle_pruefungen() -> None:
         _zeilen = _re.findall(
             r"^\|\s*`([A-Za-z0-9_.\-]+\.(?:zip|exe))`\s*\|\s*~?([\d,]+)\s*MB",
             _vm.read_text(encoding="utf-8"), _re.M)
-        check("die Packliste nennt die EXE und fünf Archive",
-              len(_zeilen) == 6, f"{[n for n, _ in _zeilen]}")
+        check("die Packliste nennt die EXE und sechs Archive",
+              len(_zeilen) == 7, f"{[n for n, _ in _zeilen]}")
         for _name2, _mb in _zeilen:
             _quelle = (Path(__file__).resolve().parent / "dist" / _name2
                        if _name2.endswith(".exe") else _pakete2 / _name2)
@@ -4541,8 +4550,10 @@ def _alle_pruefungen() -> None:
         r"|zurueck|Zurueck|waehl|Waehl|gewaehlt|oeffn|Oeffn|bestaetig"
         r"|unberuehrt|vollstaendig|verfuegbar|uebernomm|uebersprungen"
         r"|spaeter|naechst|Geraet|geraet|haeufig|ausfuehrlich|Schluessel"
-        r"|Lautstaerke|anhoer|Anhoer|gehoert|erklaer|Erklaer|pruef|Pruef)"
-        r"[a-zäöüß]*")
+        r"|Lautstaerke|anhoer|Anhoer|gehoert|erklaer|Erklaer|pruef|Pruef"
+        r"|GEWAEHR|VERAENDER|UEBER|FUER|PRUEF|ZURUECK|LOESCH|GROESS"
+        r"|MUESS|KOENN|OEFFN|WAEHL|AENDER)"
+        r"[a-zäöüßA-ZÄÖÜ]*")
     _fs_mitte = getattr(_tk, "FSTRING_MIDDLE", -1)
     _namen4: set = set()
     _stellen4 = []
@@ -4584,6 +4595,17 @@ def _alle_pruefungen() -> None:
                             _zeile)
             for _m in _falsch.finditer(_ohne):
                 _roh.append(f"{_p.name}:{_z}: {_m.group(0)}")
+    # Die Beipackzettel in den Stimmen-Archiven liest man genauso.
+    import zipfile as _zf4
+    # Nur, was ins Release geht; die alten Hörproben tragen den
+    # Dateinamen "Anhoeren" und bleiben draußen.
+    for _a4 in sorted((_wurzel3 / "Fertige Pakete").glob("*-Aufnahmen.zip")):
+        with _zf4.ZipFile(_a4) as _z4:
+            for _n4 in _z4.namelist():
+                if _n4.endswith(".txt") and not _n4.endswith("-Texte.txt"):
+                    _t4 = _z4.read(_n4).decode("utf-8-sig", "replace")
+                    for _m in _falsch.finditer(_t4):
+                        _roh.append(f"{_a4.name}/{_n4}: {_m.group(0)}")
     check("Umlaute stehen in allen angezeigten Texten als Umlaute da",
           not _roh, f"{_roh[:4]}")
 
@@ -4766,6 +4788,185 @@ def _alle_pruefungen() -> None:
         check(f"429 mit '{_status}' gilt als "
               f"{'Drosselung' if _erwartet else 'leeres Kontingent'}",
               _ist is _erwartet, f"{_ist}")
+
+
+    # ==================================================================
+    section("47. Eine Liste für alle Stimmen")
+    # ==================================================================
+    # 1.4.0: Eingebaute, eigene und freie Stimmen stehen in einer Liste.
+    # Freie Stimmen lassen sich vor dem Aufspielen anhören, Zwischen-
+    # pakete tauchen nicht mehr als "eigene Stimme" auf, und alles geht
+    # unter CUSTOM auf den Roboter.
+    from dreamevoice import library as _lib47, community as _com47
+    from dreamevoice import packer as _pk47, dialektpakete as _dp47
+    _w47 = Path(__file__).resolve().parent
+
+    # a) Zwischenpakete erkennen - die alten Namen bis 1.3.0 und der neue
+    #    Unterordner. Echte eigene Pakete bleiben sichtbar.
+    for _n47, _soll in (("Bayerisch_fertig.tar.gz", True),
+                        ("Bayerisch_(maennlich)_fertig.tar.gz", True),
+                        ("Hessisch_fertig_3.tar.gz", True),
+                        ("community_glados_zigerschlitz.tar.gz", True),
+                        ("_zum_aufspielen/wienerisch.tar.gz", True),
+                        ("community_mein_eigenes.tar.gz", False),
+                        ("Mein_fertiges_Paket.tar.gz", False),
+                        ("dialekt_Bayerisch_Windows.tar.gz", False),
+                        ("fertig.tar.gz", False)):
+        check(f"'{_n47}' gilt {'als' if _soll else 'nicht als'} Zwischenpaket",
+              _lib47.ist_zwischenstand(Path("Meine Pakete") / _n47) is _soll)
+
+    _ord47 = arbeitsordner()
+    for _n47 in ("Bayerisch_fertig.tar.gz", "dialekt_Eigen.tar.gz"):
+        (_ord47 / _n47).write_bytes(b"")
+    _lib47.zwischenstand_ordner(_ord47).mkdir()
+    (_lib47.zwischenstand_ordner(_ord47) / "hessisch.tar.gz").write_bytes(b"")
+    try:
+        _gel = [p.path.name for p in _lib47.list_packs(_ord47)]
+    except Exception as exc:                          # noqa: BLE001
+        _gel = [f"Fehler: {exc}"]
+    check("die Liste eigener Pakete zeigt nur das eigene",
+          _gel == ["dialekt_Eigen.tar.gz"], f"{_gel}")
+
+    # b) Der Zielordner des Packers - ohne Angabe wie bisher.
+    _z47 = _pk47._ausgabe(_ord47 / "neu", "x.tar.gz")
+    check("der Packer legt Zwischenpakete in den genannten Ordner",
+          _z47 == _ord47 / "neu" / "x.tar.gz" and _z47.parent.is_dir())
+    check("und ohne Angabe nach 'Meine Pakete'",
+          _pk47._ausgabe(None, "y.tar.gz").parent == _pk47.build_dir())
+
+    # c) Ein Download lässt sich abbrechen und hinterlässt nichts.
+    class _Antwort47:
+        status_code = 200
+        headers = {"Content-Length": "300000"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_a):
+            return False
+
+        def iter_content(self, chunk_size=0):
+            for _ in range(3):
+                yield b"x" * 100000
+
+    _pack47 = _com47.CommunityPack(
+        key="selbsttest_abbruch", name="Test", description="", language="",
+        url="https://github.com/beispiel/beispiel/releases/download/1/a.tar.gz",
+        project_url="https://github.com/beispiel/beispiel", author="",
+        license="", approx_sounds=1)
+    _alt_dd, _alt_get = _com47.data_dir, _com47.requests.get
+    _com47.data_dir = lambda: _ord47
+    _com47.requests.get = lambda *a, **k: _Antwort47()
+    _bloecke: list = []
+    try:
+        check("vor dem Download gilt das Paket als nicht geladen",
+              _com47.ist_geladen(_pack47) is False)
+        try:
+            _com47.download(_pack47, progress=lambda d, t: _bloecke.append(d),
+                            cancelled=lambda: len(_bloecke) >= 1)
+            _abbruch = False
+        except _com47.Abgebrochen:
+            _abbruch = True
+        check("der Abbruch greift mitten im Download",
+              _abbruch and len(_bloecke) == 1, f"{_bloecke}")
+        _reste = list((_ord47 / "Community-Pakete").glob("*"))
+        check("und lässt keine halbe Datei liegen", not _reste, f"{_reste}")
+        _com47.download(_pack47)
+        check("ohne Abbruch liegt das Paket danach bereit",
+              _com47.ist_geladen(_pack47))
+    finally:
+        _com47.data_dir, _com47.requests.get = _alt_dd, _alt_get
+
+    # d) Aufgespielt wird nur unter CUSTOM - oder zurück zum Original.
+    #    Jede weitere Kennung legt auf dem Roboter einen Ordner an, den
+    #    niemand mehr löschen kann.
+    _aufrufe = []
+    for _p47 in sorted((_w47 / "dreamevoice").rglob("*.py")):
+        for _zeile in _p47.read_text(encoding="utf-8-sig").splitlines():
+            if ".install_voice_pack(" in _zeile:
+                _aufrufe.append((_p47.name, _zeile.strip()))
+    check("nur zwei Stellen spielen ein Sprachpaket auf",
+          sorted(n for n, _ in _aufrufe) == ["installer.py", "installer.py"],
+          f"{_aufrufe}")
+    _inst47 = (_w47 / "dreamevoice" / "installer.py").read_text(encoding="utf-8")
+    _kopf = _inst47[_inst47.index("def install_pack("):]
+    _kopf = _kopf[:_kopf.index("\ndef ", 1)]
+    check("das eigene Paket geht fest unter CUSTOM raus",
+          "lang_id = DEFAULT_CUSTOM_LANG_ID" in _kopf
+          and "install_voice_pack(device, lang_id," in _kopf)
+    _rueck = _inst47[_inst47.index("def restore_official("):]
+    check("der Rückweg nutzt die Kennung des Originalpakets",
+          "install_voice_pack(device, pack.id," in _rueck)
+    # Geprüft wird, was als Kennung abgelegt wird - nicht jede Variable,
+    # die zufällig "kennung" heißt (in state.py ist es eine Timer-ID).
+    for _p47 in sorted((_w47 / "dreamevoice" / "ui").glob("*.py")):
+        _q47 = _p47.read_text(encoding="utf-8")
+        _werte = set(_re.findall(r"\blang_id=([\w.]+)", _q47))
+        _werte |= set(_re.findall(r"\[\"custom_lang_id\"\] = ([\w.]+)", _q47))
+        if "lang_id=kennung" in _q47 or '["custom_lang_id"] = kennung' in _q47:
+            _werte |= set(_re.findall(r"^\s*kennung = ([\w.]+)\s*$",
+                                      _q47, _re.M))
+        _fremd = _werte - {"kennung", "lang_id",
+                           "installer.DEFAULT_CUSTOM_LANG_ID"}
+        check(f"{_p47.name} legt keine andere Kennung als CUSTOM ab",
+              not _fremd, f"{sorted(_fremd)}")
+        check(f"{_p47.name} zeigt keine Paketkennung an",
+              "Kennung {pack.lang_id}" not in _q47
+              and "Kennung {neu.lang_id}" not in _q47)
+
+    # e) Die freien Stimmen sind umgezogen.
+    _st47 = (_w47 / "dreamevoice" / "ui" / "tab_store.py").read_text(encoding="utf-8")
+    check("'Eigene Stimmen' führt keine Karten freier Stimmen mehr",
+          "PackCard" not in _st47 and "def use_pack" not in _st47
+          and "community." not in _st47)
+    _pv47 = (_w47 / "dreamevoice" / "ui" / "page_voice.py").read_text(encoding="utf-8")
+    check("die Stimmenliste hat drei Gruppen",
+          all(g in _pv47 for g in ('"In der App enthalten"', '"Eigene"',
+                                   '"Freie Stimmen aus dem Netz"')))
+    check("Zwischenpakete landen nicht bei den eigenen",
+          _pv47.count("out_dir=zwischen") == 2,
+          str(_pv47.count("out_dir=zwischen")))
+
+    # f) Das Community-Pack: Urheber sichtbar, männlich, ohne Dreame-Originale.
+    _mk = _dp47.get("maschinenkult")
+    check("Maschinenkult steht im Katalog", _mk is not None)
+    if _mk is not None:
+        check("mit Urheber Carnimo als Community-Pack",
+              _mk.ist_community and _mk.urheber == "Carnimo"
+              and _mk.herkunft == "Community-Pack von Carnimo", _mk.herkunft)
+        check("als männliche, mechanische Stimme",
+              "männlich" in _mk.anzeigename and "mechanisch" in _mk.anzeigename,
+              _mk.anzeigename)
+        check("und die übrigen Stimmen nennen keinen fremden Urheber",
+              all(not d.ist_community for d in _dp47.KATALOG if d is not _mk))
+    _zip47 = _w47 / "Fertige Pakete" / "Maschinenkult-Aufnahmen.zip"
+    if not _zip47.is_file():
+        uebersprungen("das Maschinenkult-Archiv stimmt", "Archiv fehlt")
+    else:
+        import zipfile as _zf47
+        _o47 = "Maschinenkult-Aufnahmen/"
+        with _zf47.ZipFile(_zip47) as _z:
+            _namen47 = _z.namelist()
+            _lies = _z.read(_o47 + "LIESMICH.txt").decode("utf-8-sig")
+            _liz = _z.read(_o47 + "LIZENZ-AUDIO.txt").decode("utf-8-sig")
+            _txt = _z.read(_o47 + "Maschinenkult-Texte.txt").decode("utf-8-sig")
+        _ogg47 = [n for n in _namen47 if n.endswith(".ogg")]
+        check("das Archiv hat die 590 Aufnahmen des Autors",
+              len(_ogg47) == 590 and (_mk is None or _mk.ansagen == 590),
+              str(len(_ogg47)))
+        check("alle liegen im Ordner Maschinenkult-Aufnahmen",
+              all(n.startswith(_o47) for n in _namen47))
+        check("die LIESMICH nennt Carnimo und Community-Pack",
+              "Carnimo" in _lies and "COMMUNITY-PACK" in _lies
+              and "männliche, mechanische Stimme" in _lies)
+        check("die Lizenz nennt den Urheber und keine MIT-Freigabe",
+              "Carnimo" in _liz and "NICHT unter der MIT-Lizenz" in _liz)
+        _alles47 = (_lies + _liz + _txt[:600]).lower()
+        check("Name und Kopf nennen keine fremde Marke",
+              not any(w in _alles47 for w in
+                      ("mechanicus", "servitor", "adeptus", "warhammer")))
+        check("die Texte stehen mit Umlauten und Windows-Zeilenenden da",
+              "GEWÄHR" in _liz and "\r\n" in _liz)
 
 
 def main() -> int:

@@ -10,14 +10,13 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Optional
 
-from .. import (community, custom, dialect, elevenlabs, importer, installer,
-                library, packer, textfiles, tts)
-from ..community import CommunityPack
+from .. import (custom, dialect, elevenlabs, importer, installer, library,
+                packer, textfiles, tts)
 from ..paths import build_dir
 from .state import AppState, error_text, run_async, to_main
 from .tab_builder import open_with_default_player
 from .theme import Theme
-from .widgets import (Card, InfoBanner, LogView, ScrollableList, ScrollablePage,
+from .widgets import (Card, LogView, ScrollableList, ScrollablePage,
                       StatusBadge, show_error, show_info, show_warning)
 
 
@@ -31,56 +30,6 @@ WAHL_ORDNER = "Ordner mit mp3-, wav- oder ogg-Dateien"
 # soll nicht mit einem Klick verschwinden.
 WAHL_DANEBEN = "Daneben speichern - das vorhandene bleibt"
 WAHL_ERSETZEN = "Das vorhandene ersetzen"
-
-
-class PackCard(ttk.Frame):
-    """Ein Community-Paket als Kachel."""
-
-    def __init__(self, master, theme: Theme, tab: "StoreTab",
-                 pack: CommunityPack) -> None:
-        super().__init__(master, style="Card.TFrame")
-        self.theme = theme
-        self.tab = tab
-        self.pack_info = pack
-
-        self.columnconfigure(0, weight=1)
-
-        head = ttk.Frame(self, style="Card.TFrame")
-        head.grid(row=0, column=0, sticky="ew")
-        ttk.Label(head, text=pack.name, style="Heading.TLabel").pack(side="left")
-
-        meta = f"{pack.language}  ·  ca. {pack.approx_sounds} Ansagen"
-        if pack.size_mb:
-            meta += f"  ·  {pack.size_mb:.1f} MB"
-        ttk.Label(head, text=meta, style="Muted.TLabel").pack(side="left", padx=(12, 0))
-
-        ttk.Label(self, text=pack.description, style="Surface.TLabel",
-                  wraplength=700, justify="left").grid(row=1, column=0, sticky="ew",
-                                                       pady=(4, 0))
-
-        source = f"Quelle: {pack.author}  ·  Lizenz: {pack.license}"
-        ttk.Label(self, text=source, style="Muted.TLabel").grid(
-            row=2, column=0, sticky="w", pady=(4, 0))
-
-        if pack.notes:
-            ttk.Label(self, text=pack.notes, style="Warning.TLabel",
-                      wraplength=700, justify="left").grid(row=3, column=0,
-                                                           sticky="ew", pady=(4, 0))
-
-        buttons = ttk.Frame(self, style="Card.TFrame")
-        buttons.grid(row=4, column=0, sticky="w", pady=(10, 0))
-
-        self.btn_use = ttk.Button(buttons, text="Herunterladen und anpassen",
-                                  style="Accent.TButton",
-                                  command=lambda: tab.use_pack(pack))
-        self.btn_use.pack(side="left")
-
-        ttk.Button(buttons, text="Projektseite ansehen", style="Small.TButton",
-                   command=lambda: webbrowser.open(pack.project_url)).pack(
-            side="left", padx=(8, 0))
-
-        ttk.Frame(self, style="Separator.TFrame", height=1).grid(
-            row=5, column=0, sticky="ew", pady=(14, 12))
 
 
 class StoreTab(ttk.Frame):
@@ -97,28 +46,14 @@ class StoreTab(ttk.Frame):
         self.page.pack(fill="both", expand=True)
         outer = self.page.body()
 
-        InfoBanner(
-            outer, self.theme,
-            "Ehrlich gesagt: einen richtigen Store gibt es nicht. Was hier steht, "
-            "sind die wenigen frei verfügbaren Bastelprojekte, die tatsächlich "
-            "existieren und deren Dateien geprüft wurden. Jedes Paket wird beim "
-            "Herunterladen gegen seine Prüfsumme geprüft und anschließend auf "
-            "das offizielle Paket deines Modells gelegt - alles, was das "
-            "Fremdpaket nicht abdeckt, bleibt auf der deutschen Originalstimme.",
-        ).pack(fill="x", pady=(0, 14))
-
         self._build_dialect_card(outer)
 
-        listing = Card(outer, self.theme, "Verfügbare Pakete")
+        # Die freien Stimmen aus dem Netz standen bis 1.3.0 hier als
+        # Karten. Seit 1.4.0 stehen sie mit allen anderen fertigen Stimmen
+        # unter "Fertige Stimmen" - anhören und aufspielen in einem Zug.
+        # Statusanzeige und Protokoll gehören der ganzen Seite.
+        listing = Card(outer, self.theme, "Fortschritt")
         listing.pack(fill="both", expand=True, pady=(14, 0))
-
-        # Der ganze Tab scrollt bereits - hier kein zweiter Bildlaufbereich.
-        self.list_frame = ttk.Frame(listing.content, style="Card.TFrame")
-        self.list_frame.pack(fill="both", expand=True)
-
-        for pack in community.PACKS:
-            card = PackCard(self.list_frame, self.theme, self, pack)
-            card.pack(fill="x", padx=4)
 
         status = ttk.Frame(listing.content, style="Card.TFrame")
         status.pack(fill="x", pady=(10, 0))
@@ -358,7 +293,8 @@ class StoreTab(ttk.Frame):
         eigene = len(dialect.changed_ids(
             pack, self.state.config.dialect_overrides(pack.key)))
 
-        meta = f"{aktuell.count} Ansagen  ·  Kennung {pack.lang_id}"
+        # Keine Kennung mehr: Aufgespielt wird jedes Paket unter CUSTOM.
+        meta = f"{aktuell.count} Ansagen"
         if eigene:
             meta += f"  ·  {eigene} selbst geändert"
         self.lbl_dialect_meta.configure(text=meta)
@@ -508,12 +444,12 @@ class StoreTab(ttk.Frame):
             return
 
         self.log.append(f"Eigenes Paket '{neu.name}' angelegt "
-                        f"({neu.count} Ansagen, Kennung {neu.lang_id}).", "ok")
+                        f"({neu.count} Ansagen).", "ok")
         self._refill_dialect_picker(self._label_for(neu))
         show_info(
             self, self.theme, "Paket angelegt",
             f"'{neu.name}' steht jetzt in der Auswahl.",
-            f"{neu.count} Ansagen als Vorlage, Kennung {neu.lang_id}.\n\n"
+            f"{neu.count} Ansagen als Vorlage.\n\n"
             f"Mit 'Texte ansehen und ändern' schreibst du sie um - oder du "
             f"gibst die Datei\n{custom.path_for(neu.key).name}\naus dem Ordner "
             f"'{custom.ORDNER}' einer Sprach-KI. Danach wie gewohnt auf "
@@ -689,13 +625,13 @@ class StoreTab(ttk.Frame):
             library.write_info(build.path, dialect=name.strip() or ziel.stem,
                                engine="Eigene Aufnahmen",
                                voice=Path(quelle).name,
-                               lang_id=(kennung or "CUSTOM").strip().upper(),
+                               lang_id=kennung,
                                replaced=len(build.replaced),
                                total=len(zuordnung))
             self.state.prebuilt = build
             self.state.prebuilt_name = name.strip() or ziel.stem
             self.state.last_build = build
-            self.state.config["custom_lang_id"] = (kennung or "CUSTOM").strip().upper()
+            self.state.config["custom_lang_id"] = kennung
             self.state.save()
             self.state.notify("assignments_changed")
             self.badge.set(f"Fertig - {len(build.replaced)} Ansagen", "ok")
@@ -1565,7 +1501,7 @@ class StoreTab(ttk.Frame):
             self._set_models(models)
             self._refresh_key_location()
 
-            # Das GEWAEHLTE Paket, nicht das erste in der Liste. Früher
+            # Das GEWÄHLTE Paket, nicht das erste in der Liste. Früher
             # stand hier DIALECTS[0] - wer Wienerisch erzeugte, las
             # trotzdem "Für das bayerische Paket". Und mit
             # _effective_dialect zählen die eigenen Textänderungen
@@ -2027,7 +1963,8 @@ class StoreTab(ttk.Frame):
                 build.path, dialect=pack.name, engine=(
                     "ElevenLabs" if engine == dialect.ENGINE_ELEVENLABS
                     else "Windows-Sprachausgabe"),
-                voice=stimmen_label, lang_id=pack.lang_id,
+                voice=stimmen_label,
+                lang_id=installer.DEFAULT_CUSTOM_LANG_ID,
                 replaced=len(build.replaced), total=pack.count)
 
             vollstaendig = len(build.replaced) >= pack.count
@@ -2111,9 +2048,6 @@ class StoreTab(ttk.Frame):
         Knopf, der nichts tut, ist schlimmer als keiner.
         """
         state = "disabled" if active else "normal"
-        for child in self.list_frame.winfo_children():
-            if isinstance(child, PackCard):
-                child.btn_use.configure(state=state)
         for button in self._dialect_buttons:
             button.configure(state=state)
         self.btn_abbrechen.configure(
@@ -2128,85 +2062,3 @@ class StoreTab(ttk.Frame):
 
     def _log(self, message: str, kind: str = "info") -> None:
         to_main(self, self.log.append, message, kind)
-
-    # ------------------------------------------------------------------
-    def use_pack(self, pack: CommunityPack) -> None:
-        if not self.state.has_base_pack:
-            messagebox.showwarning(
-                "Originalpaket fehlt",
-                "Lade zuerst unter 'Einzelne Ansagen' das offizielle "
-                "Sprachpaket deines Roboters herunter. Erst damit kann ein "
-                "Fremdpaket sicher auf dein Modell angepasst werden.",
-                parent=self)
-            return
-
-        if not messagebox.askyesno(
-                f"'{pack.name}' verwenden?",
-                f"Das Paket wird von folgender Quelle geladen:\n\n{pack.url}\n\n"
-                f"Anschließend wird es auf das offizielle Paket deines Modells "
-                f"gelegt. Danach kannst du es unter 'Bauen und Aufspielen' "
-                f"installieren.\n\nFortfahren?",
-                parent=self):
-            return
-
-        base = self.state.base_pack_path
-        self.log.clear()
-        self.log.append(f"Lade '{pack.name}' von {pack.project_url}", "step")
-        self._busy(True)
-        self.badge.set("Lade herunter ...", "muted")
-
-        def report(done: int, total: int) -> None:
-            percent = (done / total * 100) if total else 0
-            to_main(self, self.progress.configure, {"value": percent})
-
-        def work(_task):
-            archive = community.download(pack, progress=report)
-            self._log(f"Heruntergeladen: {archive.name}", "ok")
-            self._log("Passe das Paket auf dein Modell an ...", "step")
-            return packer.overlay_pack(
-                base_pack=base,
-                overlay_pack_path=archive,
-                out_name=f"community_{pack.key}.tar.gz",
-                mapping=self.state.voice_mapping(),
-                log=lambda m: self._log(m),
-                progress=lambda d, t: to_main(
-                    self, self.progress.configure,
-                    {"value": (d / t * 100) if t else 0}),
-            )
-
-        def ok(build: packer.BuildResult) -> None:
-            self.state.last_build = build
-            self.state.prebuilt = build
-            self.state.prebuilt_name = pack.name
-            self.state.notify("assignments_changed")
-
-            covered = len(build.replaced)
-            total = build.total_members or covered
-            self.badge.set(f"Bereit - {covered} von {total} Ansagen ersetzt", "ok")
-            self.log.append(build.summary(), "ok")
-            for warning in build.warnings:
-                self.log.append(warning, "warn")
-
-            self.state.config["custom_lang_id"] = installer.DEFAULT_CUSTOM_LANG_ID
-            self.state.save()
-
-            messagebox.showinfo(
-                "Paket vorbereitet",
-                f"'{pack.name}' wurde auf dein Modell angepasst.\n\n"
-                f"{covered} von {total} Ansagen bekommen die neue Stimme, der Rest "
-                f"bleibt auf Deutsch.\n\nWechsle jetzt zu "
-                f"'Bauen und Aufspielen' und klicke auf "
-                f"'Sprachpaket auf Roboter installieren'.",
-                parent=self)
-
-        def fail(exc: Exception) -> None:
-            message, hint = error_text(exc)
-            self.badge.set("Fehlgeschlagen", "error")
-            self.log.append(message, "error")
-            if hint:
-                self.log.append(hint, "warn")
-            show_error(self, self.theme, "Fehler",
-                       message + (f"\n\n{hint}" if hint else ""))
-
-        run_async(self, work, on_success=ok, on_error=fail,
-                  on_finally=lambda: self._busy(False))

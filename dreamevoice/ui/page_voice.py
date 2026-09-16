@@ -5,28 +5,39 @@ aus, in Tab 3 spielte man ihn auf. Dass beides zusammengehört, stand
 nirgends - und weil beide Reiter einen fast gleich benannten Knopf für
 "fertiges Paket" hatten, landete man leicht im falschen.
 
-Hier ist es eine Handlung: Liste, Probe, Knopf. Was zur Auswahl steht,
-kommt aus drei Quellen und ist als solche gekennzeichnet:
+Seit 1.4.0 stehen hier ALLE fertigen Stimmen, gleich groß und nach
+Herkunft geordnet:
 
-* **mitgeliefert** - die Dialektstimmen aus der EXE (dialektpakete.py)
-* **gebaut** - was in dieser App schon entstanden ist (library.py)
-* **selbst erzeugen** - Verweis auf die Seite für eigene Stimmen
+* **In der App enthalten** - die Aufnahmen aus der EXE (dialektpakete.py),
+  darunter Community-Packs mit dem Namen ihres Urhebers
+* **Eigene** - was unter "Eigene Stimmen" gebaut wurde (library.py)
+* **Freie Stimmen aus dem Netz** - geprüfte Bastelprojekte von GitHub
+  (community.py)
 
-Aufgespielt wird über dieselben Bausteine wie bisher: `packer.build_pack`
-baut das Paket auf das eigene Modell, `installer.install_pack` schickt es
-weg. Der Roboter lädt es dabei vom PC über das lokale Netz.
+Vorher standen die freien Stimmen als große Karten auf einer anderen
+Seite, ließen sich nicht anhören, und nach dem Herunterladen hieß es
+"wechsle jetzt zu Bauen und Aufspielen". Jetzt ist es für jede Stimme
+dasselbe: auswählen, anhören, aufspielen. Eine freie Stimme wird beim
+ersten Anhören geladen und dann für das Aufspielen wiederverwendet.
+
+Aufgespielt wird über dieselben Bausteine wie bisher: `packer` baut das
+Paket auf das eigene Modell, `installer.install_pack` schickt es weg -
+immer unter der Kennung CUSTOM. Pakete, die dabei nur als Zwischenschritt
+entstehen, landen in einem eigenen Unterordner und tauchen nicht unter
+"Eigene" auf (siehe library.ist_zwischenstand).
 """
 
 from __future__ import annotations
 
 import logging
-import tkinter as tk
+import webbrowser
+from dataclasses import dataclass
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
-from .. import (dialektpakete, embedded, importer, installer, library,
-                packer, vorhoeren)
+from .. import (community, dialektpakete, embedded, importer, installer,
+                library, packer, vorhoeren)
 from ..paths import build_dir
 from .state import AppState, Task, error_text, run_async, to_main
 from .theme import Theme
@@ -35,28 +46,50 @@ from .widgets import (Card, LogView, ScrollablePage, StatusBadge, show_error,
 
 _LOG = logging.getLogger(__name__)
 
-QUELLE_MITGELIEFERT = "Dialekt"
-QUELLE_GEBAUT = "Eigenes"
+GRUPPE_ENTHALTEN = "In der App enthalten"
+GRUPPE_EIGEN = "Eigene"
+GRUPPE_FREI = "Freie Stimmen aus dem Netz"
+GRUPPEN = (GRUPPE_ENTHALTEN, GRUPPE_EIGEN, GRUPPE_FREI)
+
+#: Kennzeichen der Zeilen, die keine Stimme sind.
+_KOPF = "kopf:"
+_LEER = "leer:"
 
 
+@dataclass
 class Auswahl:
-    """Ein Eintrag in der Stimmenliste."""
+    """Eine Stimme in der Liste - gleich, woher sie kommt."""
 
-    def __init__(self, key: str, name: str, art: str, beschreibung: str,
-                 dialekt=None, paket: Optional[Path] = None) -> None:
-        self.key = key
-        self.name = name
-        self.art = art
-        self.beschreibung = beschreibung
-        # Eine Kennung führt der Eintrag nicht mehr mit: Aufgespielt
-        # wird grundsätzlich unter CUSTOM, damit sich die Pakete auf
-        # dem Roboter nicht ansammeln. Siehe installer.install_pack.
-        self.dialekt = dialekt          # FertigerDialekt oder None
-        self.paket = paket              # fertiges .tar.gz oder None
+    key: str
+    name: str
+    gruppe: str
+    #: Rechte Spalte der Liste: Herkunft und Umfang auf einen Blick.
+    details: str
+    beschreibung: str
+    dialekt: Optional[dialektpakete.FertigerDialekt] = None
+    paket: Optional[Path] = None
+    frei: Optional[community.CommunityPack] = None
+    #: Etwas, das man vor dem Aufspielen wissen sollte (R2-D2 spricht nicht).
+    hinweis: str = ""
+
+    # Eine Kennung führt der Eintrag nicht mit: Aufgespielt wird
+    # grundsätzlich unter CUSTOM, damit sich die Pakete auf dem Roboter
+    # nicht ansammeln. Siehe installer.install_pack.
 
     @property
     def label(self) -> str:
-        return f"{self.art} · {self.name}"
+        return self.name
+
+    @property
+    def muss_laden(self) -> bool:
+        """Wird beim Anhören oder Aufspielen erst etwas geladen?"""
+        return self.frei is not None and not community.ist_geladen(self.frei)
+
+
+def _groesse(pack: community.CommunityPack) -> str:
+    if not pack.size_mb:
+        return ""
+    return f"{pack.size_mb:.1f} MB".replace(".", ",")
 
 
 class VoicePage(ttk.Frame):
@@ -70,6 +103,11 @@ class VoicePage(ttk.Frame):
         self.gehe_zu = gehe_zu or (lambda _key: None)
 
         self._auswahl: List[Auswahl] = []
+        self._nach_key: Dict[str, Auswahl] = {}
+        self._gewaehlt_key: str = ""
+        #: Richtung der letzten Bewegung in der Liste - damit das
+        #: Überspringen einer Überschrift in die richtige Richtung geht.
+        self._letzter_index = 0
         self._task: Optional[Task] = None
         #: Läuft gerade eine Probe? Dann ist der Anhören-Knopf der
         #: Stopp-Knopf.
@@ -78,11 +116,11 @@ class VoicePage(ttk.Frame):
         #: spart Auspacken und ffmpeg.
         self._probe_puffer: Dict[str, Dict[int, Path]] = {}
 
-        self.var_stimme = tk.StringVar()
-
         self._build()
         self.refresh()
 
+        # Neu gebaute eigene Stimmen erscheinen trotzdem sofort: Die
+        # Seitenleiste ruft refresh() bei jedem Anzeigen auf.
         self.state.subscribe("base_pack_changed", self.refresh)
 
     # ------------------------------------------------------------------
@@ -95,8 +133,9 @@ class VoicePage(ttk.Frame):
                   ).pack(anchor="w")
         ttk.Label(
             outer,
-            text=("Aussuchen, anhören, aufspielen. Die Stimmen sind in der "
-                  "App enthalten - es wird nichts heruntergeladen."),
+            text=("Aussuchen, anhören, aufspielen - für jede Stimme gleich. "
+                  "Jede landet an derselben Stelle im Roboter und ersetzt "
+                  "die vorige."),
             style="MutedBg.TLabel", wraplength=760, justify="left"
         ).pack(anchor="w", pady=(3, 16))
 
@@ -104,47 +143,61 @@ class VoicePage(ttk.Frame):
         card = Card(outer, self.theme, "Welche Stimme?")
         card.pack(fill="x")
 
-        reihe = ttk.Frame(card.content, style="Card.TFrame")
-        reihe.pack(fill="x")
-        self.combo = ttk.Combobox(reihe, textvariable=self.var_stimme,
-                                  state="readonly", width=52)
-        self.combo.pack(side="left")
-        self.combo.bind("<<ComboboxSelected>>", self._on_pick)
+        liste = ttk.Frame(card.content, style="Card.TFrame")
+        liste.pack(fill="x")
+        self.tree = ttk.Treeview(liste, columns=("details",), show="tree",
+                                 selectmode="browse", height=12)
+        self.tree.column("#0", width=300, minwidth=220, stretch=True)
+        self.tree.column("details", width=360, minwidth=200, stretch=True)
+        self.tree.tag_configure("kopf", font=self.theme.font_bold,
+                                foreground=self.theme.color("muted"))
+        self.tree.tag_configure("leer", foreground=self.theme.color("muted"),
+                                font=self.theme.font_small)
+        self.tree.tag_configure("community",
+                                foreground=self.theme.color("accent"))
+        rollen = ttk.Scrollbar(liste, orient="vertical",
+                               command=self.tree.yview)
+        self.tree.configure(yscrollcommand=rollen.set)
+        self.tree.pack(side="left", fill="x", expand=True)
+        rollen.pack(side="right", fill="y")
+        self.tree.bind("<<TreeviewSelect>>", self._on_pick)
+        # Ein Doppelklick heißt fast immer "das will ich hören".
+        self.tree.bind("<Double-1>", lambda _e: self._on_probe())
+        self.tree.bind("<Return>", lambda _e: self._on_probe())
 
+        # -- Was ist das für eine Stimme? -------------------------------
+        info = ttk.Frame(card.content, style="Card.TFrame")
+        info.pack(fill="x", pady=(14, 0))
+        self.lbl_name = ttk.Label(info, text="", style="Heading.TLabel")
+        self.lbl_name.pack(anchor="w")
+        self.lbl_herkunft = ttk.Label(info, text="", style="Muted.TLabel",
+                                      wraplength=700, justify="left")
+        self.lbl_herkunft.pack(anchor="w", pady=(2, 0))
+        self.lbl_beschreibung = ttk.Label(info, text="", style="Surface.TLabel",
+                                          wraplength=700, justify="left")
+        self.lbl_beschreibung.pack(anchor="w", pady=(6, 0))
+        self.lbl_hinweis = ttk.Label(info, text="", style="Warning.TLabel",
+                                     wraplength=700, justify="left")
+        self.lbl_hinweis.pack(anchor="w", pady=(4, 0))
+
+        reihe = ttk.Frame(card.content, style="Card.TFrame")
+        reihe.pack(fill="x", pady=(12, 0))
         self.btn_probe = ttk.Button(reihe, text="▶ Anhören",
                                     command=self._on_probe)
-        self.btn_probe.pack(side="left", padx=(10, 0))
-
-        self.lbl_beschreibung = ttk.Label(card.content, text="",
-                                          style="Muted.TLabel",
-                                          wraplength=700, justify="left")
-        self.lbl_beschreibung.pack(anchor="w", pady=(10, 0))
-
-        self.lbl_probe = ttk.Label(card.content, text="", style="Surface.TLabel",
-                                   wraplength=700, justify="left")
-        self.lbl_probe.pack(anchor="w", pady=(6, 0))
+        self.btn_probe.pack(side="left")
+        self.btn_projekt = ttk.Button(reihe, text="Projektseite",
+                                      style="Small.TButton",
+                                      command=self._on_projektseite)
+        self.lbl_probe = ttk.Label(reihe, text="", style="Surface.TLabel",
+                                   wraplength=520, justify="left")
+        self.lbl_probe.pack(side="left", padx=(12, 0))
 
         # -- Aufspielen ------------------------------------------------
         card2 = Card(outer, self.theme, "Auf den Roboter bringen")
         card2.pack(fill="x", pady=(14, 0))
 
-        kennung = ttk.Frame(card2.content, style="Card.TFrame")
-        kennung.pack(fill="x")
-        ttk.Label(kennung, text="Kennung", style="Surface.TLabel",
-                  width=11, anchor="w").pack(side="left")
-        ttk.Label(kennung, text=installer.DEFAULT_CUSTOM_LANG_ID,
-                  style="Surface.TLabel").pack(side="left")
-        ttk.Label(kennung,
-                  text=("Fest, und das mit Absicht: Jede Stimme landet an "
-                        "derselben Stelle im Roboter und überschreibt die "
-                        "vorige. Sonst sammeln sie sich dort an, und löschen "
-                        "kann man sie nicht. Die deutsche Originalstimme "
-                        "bleibt davon unberührt."),
-                  style="Muted.TLabel", wraplength=440, justify="left"
-                  ).pack(side="left", padx=(10, 0))
-
         knoepfe = ttk.Frame(card2.content, style="Card.TFrame")
-        knoepfe.pack(fill="x", pady=(14, 0))
+        knoepfe.pack(fill="x")
         self.btn_los = ttk.Button(knoepfe, text="Aufspielen",
                                   style="Accent.TButton", command=self._on_install)
         self.btn_los.pack(side="left")
@@ -153,6 +206,17 @@ class VoicePage(ttk.Frame):
         self.btn_abbruch.pack(side="left", padx=(8, 0))
         self.badge = StatusBadge(knoepfe, self.theme, "Bereit")
         self.badge.pack(side="left", padx=(12, 0))
+
+        ttk.Label(
+            card2.content,
+            text=(f"Kennung {installer.DEFAULT_CUSTOM_LANG_ID} - für jede "
+                  f"Stimme dieselbe, mit Absicht: Der Roboter legt je Kennung "
+                  f"einen Ordner an, den man über die Cloud nicht löschen "
+                  f"kann. So überschreibt jede Stimme die vorige, statt sich "
+                  f"anzusammeln. Die deutsche Originalstimme bleibt davon "
+                  f"unberührt."),
+            style="Muted.TLabel", wraplength=720, justify="left"
+        ).pack(anchor="w", pady=(10, 0))
 
         self.progress = ttk.Progressbar(card2.content, mode="determinate",
                                         maximum=100)
@@ -175,18 +239,44 @@ class VoicePage(ttk.Frame):
     # ------------------------------------------------------------------
     def refresh(self) -> None:
         """Liest zusammen, was gerade zur Auswahl steht."""
-        vorher = self.var_stimme.get()
+        vorher = self._gewaehlt_key
         self._auswahl = self._sammeln()
-        beschriftungen = [a.label for a in self._auswahl]
-        self.combo.configure(values=beschriftungen)
+        self._nach_key = {a.key: a for a in self._auswahl}
 
-        if vorher in beschriftungen:
-            self.var_stimme.set(vorher)
-        elif beschriftungen:
-            self.var_stimme.set(beschriftungen[0])
-        else:
-            self.var_stimme.set("")
-        self._on_pick()
+        self.tree.delete(*self.tree.get_children())
+        for gruppe in GRUPPEN:
+            eintraege = [a for a in self._auswahl if a.gruppe == gruppe]
+            self.tree.insert("", "end", iid=_KOPF + gruppe,
+                             text=gruppe.upper(), values=("",),
+                             tags=("kopf",))
+            if not eintraege:
+                self.tree.insert("", "end", iid=_LEER + gruppe,
+                                 text="    noch keine",
+                                 values=(self._leer_text(gruppe),),
+                                 tags=("leer",))
+                continue
+            for a in eintraege:
+                marken = ("community",) if (a.dialekt is not None
+                                            and a.dialekt.ist_community) else ()
+                self.tree.insert("", "end", iid=a.key,
+                                 text="    " + a.name,
+                                 values=(a.details,), tags=marken)
+
+        zeilen = len(self.tree.get_children())
+        self.tree.configure(height=max(6, min(zeilen, 18)))
+
+        ziel = vorher if vorher in self._nach_key else (
+            self._auswahl[0].key if self._auswahl else "")
+        if ziel:
+            self.tree.selection_set(ziel)
+            self.tree.see(ziel)
+        self._zeige(self._nach_key.get(ziel))
+
+    @staticmethod
+    def _leer_text(gruppe: str) -> str:
+        if gruppe == GRUPPE_EIGEN:
+            return "entstehen unter „Eigene Stimmen“"
+        return ""
 
     def _sammeln(self) -> List[Auswahl]:
         eintraege: List[Auswahl] = []
@@ -200,44 +290,156 @@ class VoicePage(ttk.Frame):
                 dialektpakete.QUELLE_GELADEN: "heruntergeladene Fassung",
                 dialektpakete.QUELLE_PROJEKTORDNER: "aus dem Projektordner",
             }.get(quelle, "")
+            if d.ist_community:
+                details = f"{d.herkunft}  ·  {d.ansagen} Ansagen"
+            else:
+                details = f"Deutsch  ·  {d.ansagen} Ansagen"
+            beschreibung = d.beschreibung
+            if d.ist_community:
+                beschreibung += (f"\n\nEin Community-Pack: Text und Stimme "
+                                 f"stammen von {d.urheber}, nicht aus diesem "
+                                 f"Projekt.")
+            beschreibung += f"\n\n{d.ansagen} Ansagen, {d.stimme}, {woher}."
             eintraege.append(Auswahl(
                 key=f"dialekt:{d.key}", name=d.anzeigename,
-                art=QUELLE_MITGELIEFERT,
-                beschreibung=f"{d.beschreibung}  ({d.ansagen} Ansagen, "
-                             f"{d.stimme}, {woher})",
+                gruppe=GRUPPE_ENTHALTEN, details=details,
+                beschreibung=beschreibung,
                 dialekt=d))
 
         for info in library.list_packs(build_dir()):
+            teile = []
+            if info.voice:
+                teile.append(info.voice)
+            elif info.engine:
+                teile.append(info.engine)
+            if info.replaced:
+                teile.append(f"{info.replaced} Ansagen")
+            if info.created:
+                teile.append(info.created[:10])
             eintraege.append(Auswahl(
                 key=f"paket:{info.path.name}",
                 name=info.dialect or info.path.stem,
-                art=QUELLE_GEBAUT,
-                beschreibung=info.label,
+                gruppe=GRUPPE_EIGEN,
+                details="  ·  ".join(teile) or f"{info.size_mb:.1f} MB",
+                beschreibung=(f"Selbst gebaut, liegt als {info.path.name} "
+                              f"unter „Meine Pakete“."),
                 paket=info.path))
+
+        for pack in community.PACKS:
+            teile = [pack.language, f"ca. {pack.approx_sounds} Ansagen"]
+            if pack.size_mb:
+                teile.append(_groesse(pack))
+            eintraege.append(Auswahl(
+                key=f"frei:{pack.key}", name=pack.name,
+                gruppe=GRUPPE_FREI, details="  ·  ".join(teile),
+                beschreibung=(
+                    f"{pack.description}\n\nEin Bastelprojekt von "
+                    f"{pack.author} auf GitHub (Lizenz: {pack.license}). "
+                    f"Es bringt etwa {pack.approx_sounds} Ansagen mit - "
+                    f"alles andere bleibt auf der deutschen Originalstimme "
+                    f"deines Roboters."),
+                frei=pack, hinweis=pack.notes))
 
         return eintraege
 
     def _gewaehlt(self) -> Optional[Auswahl]:
-        label = self.var_stimme.get()
-        return next((a for a in self._auswahl if a.label == label), None)
+        return self._nach_key.get(self._gewaehlt_key)
 
     def _on_pick(self, _event=None) -> None:
-        wahl = self._gewaehlt()
-        self.lbl_probe.configure(text="")
+        auswahl = self.tree.selection()
+        if not auswahl:
+            return
+        iid = auswahl[0]
+        if iid.startswith((_KOPF, _LEER)):
+            # Überschriften und Platzhalter sind keine Stimmen - weiter
+            # zur nächsten echten Zeile, in Bewegungsrichtung.
+            zeilen = list(self.tree.get_children())
+            jetzt = zeilen.index(iid)
+            schritt = -1 if jetzt < self._letzter_index else 1
+            i = jetzt
+            while 0 <= i < len(zeilen) and zeilen[i] not in self._nach_key:
+                i += schritt
+            if not 0 <= i < len(zeilen):
+                i = jetzt
+                while 0 <= i < len(zeilen) and zeilen[i] not in self._nach_key:
+                    i -= schritt
+            if 0 <= i < len(zeilen) and zeilen[i] in self._nach_key:
+                self.tree.selection_set(zeilen[i])
+                self.tree.see(zeilen[i])
+            elif self._gewaehlt_key:
+                self.tree.selection_set(self._gewaehlt_key)
+            return
+        self._letzter_index = list(self.tree.get_children()).index(iid)
+        if iid != self._gewaehlt_key:
+            self.lbl_probe.configure(text="")
+        self._zeige(self._nach_key.get(iid))
+
+    def _zeige(self, wahl: Optional[Auswahl]) -> None:
+        self._gewaehlt_key = wahl.key if wahl else ""
         if wahl is None:
+            self.lbl_name.configure(text="Keine Stimme gewählt")
+            self.lbl_herkunft.configure(text="")
             self.lbl_beschreibung.configure(
                 text="Es steht noch keine fertige Stimme bereit.")
+            self.lbl_hinweis.configure(text="")
+            self.btn_projekt.pack_forget()
             return
+        self.lbl_name.configure(text=wahl.name)
+        self.lbl_herkunft.configure(text=wahl.details)
         self.lbl_beschreibung.configure(text=wahl.beschreibung)
+        self.lbl_hinweis.configure(text=wahl.hinweis)
+        if wahl.frei is not None:
+            self.btn_projekt.pack(side="left", padx=(8, 0),
+                                  before=self.lbl_probe)
+        else:
+            self.btn_projekt.pack_forget()
+        self._probe_beschriften()
+
+    def _probe_beschriften(self) -> None:
+        if self._probe_laeuft is not None:
+            return
+        wahl = self._gewaehlt()
+        text = "▶ Anhören"
+        if wahl is not None and wahl.muss_laden:
+            groesse = _groesse(wahl.frei)
+            text = (f"▶ Anhören (lädt {groesse})" if groesse
+                    else "▶ Anhören (wird geladen)")
+        self.btn_probe.configure(text=text)
+
+    def _on_projektseite(self) -> None:
+        wahl = self._gewaehlt()
+        if wahl is not None and wahl.frei is not None:
+            webbrowser.open(wahl.frei.project_url)
 
     # -- Anhören --------------------------------------------------------
-    def _quelle_holen(self, wahl: Auswahl) -> Optional[Path]:
-        """Der Pfad zu den Aufnahmen bzw. zum fertigen Paket."""
+    def _quelle_holen(self, wahl: Auswahl, laden: bool = False,
+                      task: Optional[Task] = None) -> Optional[Path]:
+        """Der Pfad zu den Aufnahmen bzw. zum fertigen Paket.
+
+        Eine freie Stimme wird nur mit `laden=True` aus dem Netz geholt -
+        vorher liefert sie nur, was schon hier liegt.
+        """
         if wahl.paket is not None:
             return wahl.paket
         if wahl.dialekt is not None:
             return dialektpakete.beschaffen(wahl.dialekt,
                                             log=lambda m: self._log(m))
+        if wahl.frei is not None:
+            if not laden:
+                return (wahl.frei.local_path()
+                        if community.ist_geladen(wahl.frei) else None)
+
+            def melde(fertig: int, gesamt: int) -> None:
+                if not gesamt:
+                    return
+                anteil = fertig / gesamt
+                to_main(self, self.lbl_probe.configure,
+                        {"text": f"Lade {wahl.name} ... {anteil:.0%}"})
+                to_main(self, self.progress.configure, {"value": anteil * 100})
+
+            return community.download(
+                wahl.frei, progress=melde,
+                cancelled=(lambda: task.cancelled) if task else None)
         return None
 
     def _on_probe(self) -> None:
@@ -246,6 +448,8 @@ class VoicePage(ttk.Frame):
         # wäre die unfreundlichste Art, eine Vorschau anzubieten.
         if self._probe_laeuft is not None:
             self._probe_laeuft.cancel()
+            return
+        if self._task is not None:
             return
 
         wahl = self._gewaehlt()
@@ -257,8 +461,13 @@ class VoicePage(ttk.Frame):
         # Einmal umgewandelte Ansagen werden gemerkt: Beim zweiten Klick
         # auf dieselbe Stimme entfällt Auspacken und ffmpeg.
         gemerkt = self._probe_puffer.get(wahl.key)
-        self.lbl_probe.configure(
-            text="Spiele ab ..." if gemerkt else "Bereite die Probe vor ...")
+        if gemerkt:
+            vorab = "Spiele ab ..."
+        elif wahl.muss_laden:
+            vorab = f"Lade {wahl.name} ..."
+        else:
+            vorab = "Bereite die Probe vor ..."
+        self.lbl_probe.configure(text=vorab)
         self.btn_probe.configure(text="■ Stopp")
         aufgabe = Task()
         self._probe_laeuft = aufgabe
@@ -281,9 +490,16 @@ class VoicePage(ttk.Frame):
                     except OSError as exc:
                         _LOG.warning("ffmpeg ließ sich nicht auspacken: %s",
                                      exc)
-                quelle = self._quelle_holen(wahl)
+                try:
+                    quelle = self._quelle_holen(wahl, laden=True, task=task)
+                except community.Abgebrochen:
+                    return {}
                 if quelle is None:
                     return None
+                if task.cancelled:
+                    return {}
+                to_main(self, self.lbl_probe.configure,
+                        {"text": "Bereite die Probe vor ..."})
                 proben = vorhoeren.probe_vorbereiten(quelle, ffmpeg,
                                                      log=lambda m: self._log(m))
                 if not proben:
@@ -305,6 +521,7 @@ class VoicePage(ttk.Frame):
             return proben
 
         def ok(proben) -> None:
+            self.progress.configure(value=0)
             if proben is None:
                 self.lbl_probe.configure(text="")
                 show_warning(
@@ -312,6 +529,9 @@ class VoicePage(ttk.Frame):
                     f"Die Aufnahmen für {wahl.name} ließen sich nicht öffnen.")
                 return
             if not proben:
+                if aufgabe.cancelled:
+                    self.lbl_probe.configure(text="Abgebrochen.")
+                    return
                 self.lbl_probe.configure(text="")
                 show_warning(
                     self, self.theme, "Keine Probe möglich",
@@ -328,13 +548,14 @@ class VoicePage(ttk.Frame):
                          f"Klingt gut? Dann unten aufspielen.")
 
         def fail(exc: Exception) -> None:
+            self.progress.configure(value=0)
             self.lbl_probe.configure(text="")
             nachricht, hinweis = error_text(exc)
             show_error(self, self.theme, "Probe fehlgeschlagen", nachricht, hinweis)
 
         def fertig() -> None:
             self._probe_laeuft = None
-            self.btn_probe.configure(text="▶ Anhören")
+            self._probe_beschriften()
 
         run_async(self, work, on_success=ok, on_error=fail, on_finally=fertig,
                   task=aufgabe)
@@ -353,11 +574,33 @@ class VoicePage(ttk.Frame):
         self.btn_los.configure(state="disabled" if aktiv else "normal")
         self.btn_probe.configure(state="disabled" if aktiv else "normal")
         self.btn_abbruch.configure(state="normal" if aktiv else "disabled")
+        self.tree.state(["disabled"] if aktiv else ["!disabled"])
 
     def _on_cancel(self) -> None:
         if self._task:
             self._task.cancel()
             self.log.append("Abbruch angefordert ...", "warn")
+
+    def _frage_text(self, wahl: Auswahl, kennung: str) -> str:
+        ziel = self.state.device.name or self.state.model
+        teile = [f"'{wahl.name}' auf {ziel} aufspielen?"]
+        if wahl.frei is not None:
+            teile.append(
+                f"Die Stimme bringt etwa {wahl.frei.approx_sounds} Ansagen "
+                f"mit. Alle übrigen bleiben auf der deutschen "
+                f"Originalstimme.")
+            if wahl.muss_laden:
+                groesse = _groesse(wahl.frei)
+                teile.append(
+                    "Sie wird dafür zuerst von GitHub geladen"
+                    + (f" ({groesse})" if groesse else "")
+                    + " und gegen ihre Prüfsumme geprüft.")
+        if wahl.hinweis:
+            teile.append(wahl.hinweis)
+        teile.append(f"Kennung: {kennung} - eine schon dort liegende eigene "
+                     f"Stimme wird dabei überschrieben.")
+        teile.append("Der Rückweg zur Originalstimme bleibt jederzeit offen.")
+        return "\n\n".join(teile)
 
     def _on_install(self) -> None:
         wahl = self._gewaehlt()
@@ -375,16 +618,14 @@ class VoicePage(ttk.Frame):
                          "Das offizielle Sprachpaket deines Roboters wird auf "
                          "der Startseite einmalig geholt.")
             return
+        if self._probe_laeuft is not None:
+            self._probe_laeuft.cancel()
 
         kennung = installer.DEFAULT_CUSTOM_LANG_ID
 
-        if not messagebox.askyesno(
-                "Aufspielen?",
-                f"'{wahl.name}' auf {self.state.device.name or self.state.model} "
-                f"aufspielen?\n\nKennung: {kennung} - eine schon dort liegende "
-                f"eigene Stimme wird dabei überschrieben.\n\n"
-                f"Der Rückweg zur Originalstimme bleibt jederzeit offen.",
-                parent=self):
+        if not messagebox.askyesno("Aufspielen?",
+                                   self._frage_text(wahl, kennung),
+                                   parent=self):
             return
 
         cloud, geraet = self.state.cloud, self.state.device
@@ -394,6 +635,7 @@ class VoicePage(ttk.Frame):
         bekannt = self.state.catalog.ids() if self.state.catalog else None
         port = int(self.state.config["serve_port"] or 0)
         host = self.state.config["host_ip"] or ""
+        zwischen = library.zwischenstand_ordner(build_dir())
 
         self.log.clear()
         self.progress.configure(value=0)
@@ -404,6 +646,27 @@ class VoicePage(ttk.Frame):
             if wahl.paket is not None:
                 self._log(f"Verwende das fertige Paket {wahl.paket.name}.", "info")
                 build = packer.load_existing(wahl.paket)
+
+            elif wahl.frei is not None:
+                self._log(f"Hole {wahl.name} ...", "step")
+                try:
+                    archiv = self._quelle_holen(wahl, laden=True, task=task)
+                except community.Abgebrochen:
+                    raise RuntimeError("Vom Benutzer abgebrochen.") from None
+                if task.cancelled:
+                    raise RuntimeError("Vom Benutzer abgebrochen.")
+                self._log("Lege die Stimme auf das Paket deines Modells ...",
+                          "step")
+                build = packer.overlay_pack(
+                    base_pack=Path(basis), overlay_pack_path=archiv,
+                    out_name=f"frei_{wahl.frei.key}.tar.gz", out_dir=zwischen,
+                    mapping=mapping, log=lambda m: self._log(m),
+                    progress=lambda d, t: to_main(
+                        self, self.progress.configure,
+                        {"value": (d / t * 100) if t else 0}))
+                for warnung in build.warnings:
+                    self._log(warnung, "warn")
+
             else:
                 self._log(f"Hole die Aufnahmen für {wahl.name} ...", "step")
                 quelle = self._quelle_holen(wahl)
@@ -419,21 +682,17 @@ class VoicePage(ttk.Frame):
                 if task.cancelled:
                     raise RuntimeError("Vom Benutzer abgebrochen.")
 
-                ziel = library.unique_path(
-                    build_dir(), library.safe_name(f"{wahl.name}_fertig"))
+                # Ein fester Name je Stimme: Das Paket ist nur ein
+                # Zwischenschritt und wird beim nächsten Mal ersetzt,
+                # statt sich neben die eigenen Stimmen zu legen.
                 self._log(f"Baue das Paket für dein Modell "
                           f"({len(gefunden.assigned)} Ansagen) ...", "step")
                 build = packer.build_pack(
                     base_pack=Path(basis), assignments=gefunden.assigned,
-                    out_name=ziel.name, ffmpeg=ffmpeg,
+                    out_name=f"{wahl.dialekt.key}.tar.gz", out_dir=zwischen,
+                    ffmpeg=ffmpeg,
                     work_dir=build_dir() / "_stimme_arbeit",
                     mapping=mapping, log=lambda m: self._log(m))
-                library.write_info(build.path, dialect=wahl.name,
-                                   engine="Mitgeliefert",
-                                   voice=wahl.dialekt.stimme if wahl.dialekt else "",
-                                   lang_id=kennung,
-                                   replaced=len(build.replaced),
-                                   total=len(gefunden.assigned))
 
             if task.cancelled:
                 raise RuntimeError("Vom Benutzer abgebrochen.")
@@ -497,5 +756,12 @@ class VoicePage(ttk.Frame):
                 self.log.append(hinweis, "warn")
             show_error(self, self.theme, "Nicht aufgespielt", nachricht, hinweis)
 
+        def zum_schluss() -> None:
+            self._task = None
+            self._busy(False)
+            # Eine eben geladene freie Stimme muss nicht mehr "lädt"
+            # auf dem Knopf stehen haben.
+            self._probe_beschriften()
+
         self._task = run_async(self, work, on_success=ok, on_error=fail,
-                               on_finally=lambda: self._busy(False))
+                               on_finally=zum_schluss)

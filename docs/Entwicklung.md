@@ -78,15 +78,15 @@ EXE bauen:
 powershell -ExecutionPolicy Bypass -File build_exe.ps1
 ```
 
-Ergebnis: `dist/DreameSprachpaket.exe`, rund 97 MB, ohne Installation
+Ergebnis: `dist/DreameSprachpaket.exe`, rund 108 MB, ohne Installation
 lauffähig. Der Großteil davon sind die eingebauten Stimmen und ffmpeg —
-gemessen am Bau von 1.3.0:
+gemessen am Bau von 1.4.0:
 
 | Teil | Größe |
 |---|---|
 | Programm samt Python und Tk | 13 MB |
 | ffmpeg, LZMA-komprimiert angehängt | 39 MB |
-| fünf fertige Stimmen, angehängt | 45 MB |
+| sechs fertige Stimmen, angehängt | 55 MB |
 
 Liegt eine `ffmpeg.exe` im Projektordner, wird sie automatisch mit
 eingepackt; ohne sie bleiben die 39 MB weg, und die App lädt ffmpeg bei

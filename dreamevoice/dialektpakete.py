@@ -61,10 +61,26 @@ class FertigerDialekt:
     ansagen: int
     stimme: str
     beschreibung: str
-    #: "männlich" oder "weiblich". Steht im angezeigten Namen, weil es
-    #: das erste ist, wonach man auswählt - vorher stand es klein
-    #: hinten in der Klammer und ging unter.
+    #: "männlich" oder "weiblich", bei Kunststimmen mit Zusatz. Steht
+    #: im angezeigten Namen, weil es das erste ist, wonach man auswählt -
+    #: vorher stand es klein hinten in der Klammer und ging unter.
     geschlecht: str = "männlich"
+    #: Name des Urhebers, wenn die Stimme ein Beitrag aus der Community
+    #: ist. Steht sichtbar in der Liste: Das Urheberrecht gibt ihm das
+    #: Recht, genannt zu werden, und der Nutzer soll auf einen Blick
+    #: sehen, dass die Stimme nicht aus diesem Projekt stammt.
+    urheber: str = ""
+
+    @property
+    def ist_community(self) -> bool:
+        return bool(self.urheber)
+
+    @property
+    def herkunft(self) -> str:
+        """Kurz, für die Liste: woher die Stimme kommt."""
+        if self.urheber:
+            return f"Community-Pack von {self.urheber}"
+        return "von diesem Projekt"
 
     @property
     def url(self) -> str:
@@ -87,10 +103,11 @@ class FertigerDialekt:
         return f"{self.anzeigename}  ({self.ansagen} Ansagen, {self.stimme})"
 
 
-# Die Stimmen, für die es fertige Aufnahmen gibt - vier Dialekte, davon
-# Bayerisch in zwei Stimmen. Die übrigen drei Dialekte (Schwäbisch,
-# Sächsisch, Kölsch) stecken als Texte im Programm und werden unter
-# "Eigene Stimmen" selbst erzeugt.
+# Die Stimmen, für die es fertige Aufnahmen gibt: vier Dialekte, davon
+# Bayerisch in zwei Stimmen, und seit 1.4.0 eine Stimme aus der
+# Community. Die übrigen drei Dialekte (Schwäbisch, Sächsisch, Kölsch)
+# stecken als Texte im Programm und werden unter "Eigene Stimmen"
+# selbst erzeugt.
 KATALOG: List[FertigerDialekt] = [
     FertigerDialekt(
         key="bayerisch", name="Bayerisch",
@@ -117,6 +134,16 @@ KATALOG: List[FertigerDialekt] = [
         datei="Berlinerisch-Aufnahmen.zip", ansagen=593,
         stimme="ElevenLabs",
         beschreibung="Berliner Schnauze, mit dem harten j statt g."),
+    # Aus der Community. Der Name ist bewusst neutral gehalten; die
+    # Herkunft des Materials steht in der LIESMICH des Archivs.
+    FertigerDialekt(
+        key="maschinenkult", name="Maschinenkult",
+        datei="Maschinenkult-Aufnahmen.zip", ansagen=590,
+        stimme="ElevenLabs", geschlecht="männlich, mechanisch",
+        urheber="Carnimo",
+        beschreibung=("Düster und feierlich: Die Station heißt Schrein, das "
+                      "WLAN Funkkommunion, das Wasser heiliges "
+                      "Reinigungsfluid.")),
 ]
 
 

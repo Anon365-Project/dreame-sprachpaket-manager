@@ -175,14 +175,54 @@ def read_info(pack_path: Path) -> PackInfo:
     return info
 
 
+#: Unterordner von "Meine Pakete" für Pakete, die die App nur zum
+#: Aufspielen einer fertigen oder freien Stimme baut. Einer je Stimme,
+#: bei jedem Aufspielen überschrieben.
+ZWISCHENSTAND = "_zum_aufspielen"
+
+
+def zwischenstand_ordner(folder: Optional[Path] = None) -> Path:
+    return (Path(folder) if folder else build_dir()) / ZWISCHENSTAND
+
+
+def ist_zwischenstand(pfad: Path) -> bool:
+    """Hat die App dieses Paket nur als Zwischenschritt gebaut?
+
+    Bis 1.3.0 lagen solche Pakete direkt in "Meine Pakete" - mit
+    fortlaufendem Namen, also bei jedem Aufspielen ein weiteres:
+    `Bayerisch_fertig.tar.gz`, `Bayerisch_(maennlich)_fertig.tar.gz`,
+    `community_glados_zigerschlitz.tar.gz`. In der Liste standen sie
+    als "eigene Stimme" und verdeckten die echten.
+    """
+    pfad = Path(pfad)
+    if ZWISCHENSTAND in pfad.parts:
+        return True
+    stamm = pfad.name.rsplit(".tar", 1)[0]
+    # Genau die beiden Muster der alten Fassung - nicht alles, was
+    # zufällig "fertig" enthält. "Mein_fertiges_Paket" ist eine
+    # eigene Stimme und bleibt in der Liste.
+    if _ALT_FERTIG.fullmatch(stamm):
+        return True
+    if stamm.startswith("community_"):
+        from . import community
+        return community.get(stamm[len("community_"):]) is not None
+    return False
+
+
+_ALT_FERTIG = re.compile(r".+_fertig(?:_\d+)?")
+
+
 def list_packs(folder: Optional[Path] = None) -> List[PackInfo]:
-    """Alle gebauten Pakete, neueste zuerst."""
+    """Alle selbst gebauten Pakete, neueste zuerst.
+
+    Zwischenpakete der App zählen nicht dazu - siehe `ist_zwischenstand`.
+    """
     folder = Path(folder) if folder else build_dir()
     if not folder.is_dir():
         return []
     treffer = []
     for pfad in folder.glob("*.tar.gz"):
-        if pfad.name.endswith(".part"):
+        if pfad.name.endswith(".part") or ist_zwischenstand(pfad):
             continue
         treffer.append(read_info(pfad))
     treffer.sort(key=lambda i: i.path.stat().st_mtime if i.path.exists() else 0,

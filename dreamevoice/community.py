@@ -243,9 +243,31 @@ def get(key: str) -> Optional[CommunityPack]:
     return None
 
 
+class Abgebrochen(Exception):
+    """Der Benutzer hat den Download abgebrochen - kein Fehler."""
+
+
+def ist_geladen(pack: CommunityPack) -> bool:
+    """Liegt das Paket schon hier? Ohne es anzufassen oder zu prüfen.
+
+    Dient nur der Anzeige ("lädt 4,1 MB"); geprüft wird beim
+    eigentlichen Zugriff in `download`.
+    """
+    try:
+        return pack.local_path().is_file()
+    except OSError:
+        return False
+
+
 def download(pack: CommunityPack, progress: Optional[ProgressFn] = None,
-             force: bool = False) -> Path:
-    """Lädt ein Community-Paket herunter und prüft es, soweit möglich."""
+             force: bool = False,
+             cancelled: Optional[Callable[[], bool]] = None) -> Path:
+    """Lädt ein Community-Paket herunter und prüft es, soweit möglich.
+
+    Schon Geladenes wird wiederverwendet, sofern die Prüfsumme stimmt -
+    Anhören und Aufspielen laden dasselbe Paket also nur einmal.
+    """
+    cancelled = cancelled or (lambda: False)
     target = pack.local_path()
 
     if target.exists() and not force:
@@ -274,6 +296,8 @@ def download(pack: CommunityPack, progress: Optional[ProgressFn] = None,
             done = 0
             with tmp.open("wb") as fh:
                 for block in resp.iter_content(chunk_size=1 << 16):
+                    if cancelled():
+                        raise Abgebrochen()
                     if not block:
                         continue
                     fh.write(block)

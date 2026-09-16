@@ -5,6 +5,22 @@
 
 ## Fertige Stimmen
 
+Unter *Fertige Stimmen* steht alles in einer Liste:
+
+* **In der App enthalten** — Bayerisch (männlich und weiblich), Hessisch,
+  Wienerisch, Berlinerisch und **Maschinenkult**, eine männliche, mechanische
+  Stimme. Maschinenkult ist ein Community-Pack von **Carnimo**; das steht in
+  der App direkt neben dem Namen.
+* **Eigene** — was du unter *Eigene Stimmen* gebaut hast.
+* **Freie Stimmen aus dem Netz** — die Bastelprojekte unten. Sie werden erst
+  geladen, wenn du sie anhörst oder aufspielst.
+
+Aufgespielt wird immer unter der Kennung CUSTOM. Der Roboter legt je Kennung
+einen eigenen Ordner an, den man über die Cloud nicht mehr löschen kann — mit
+einer einzigen Kennung bleiben keine Reste liegen.
+
+### Freie Stimmen aus dem Netz
+
 Einen echten Store gibt es nicht. Was existiert, sind einige Bastelprojekte auf
 GitHub — geprüft und aufgenommen wurden:
 

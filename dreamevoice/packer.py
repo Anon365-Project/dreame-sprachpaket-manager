@@ -76,6 +76,19 @@ def _md5_and_size(path: Path) -> tuple[str, int]:
     return h.hexdigest(), size
 
 
+def _ausgabe(out_dir: Optional[Path], out_name: str) -> Path:
+    """Wohin das fertige Paket kommt.
+
+    Ohne Angabe nach "Meine Pakete" - dort stehen die selbst gebauten
+    Stimmen. Pakete, die die App nur als Zwischenschritt zum Aufspielen
+    baut, gehören nicht dorthin: Sie tauchten sonst als "eigene Stimme"
+    in der Liste auf, und zwar bei jedem Aufspielen ein weiteres Mal.
+    """
+    ziel = Path(out_dir) if out_dir is not None else build_dir()
+    ziel.mkdir(parents=True, exist_ok=True)
+    return ziel / out_name
+
+
 def _tarinfo(name: str, size: int) -> tarfile.TarInfo:
     """Eintrag exakt so, wie Dreame ihn auch schreibt."""
     info = tarfile.TarInfo(name=name)
@@ -126,7 +139,8 @@ def build_pack(base_pack: Path,
                work_dir: Optional[Path] = None,
                mapping: Optional[Dict[int, int]] = None,
                log: LogFn = _noop_log,
-               progress: Optional[ProgressFn] = None) -> BuildResult:
+               progress: Optional[ProgressFn] = None,
+               out_dir: Optional[Path] = None) -> BuildResult:
     """Baut ein Paket aus `base_pack` mit den Ersetzungen aus `assignments`.
 
     `assignments` bildet Ansage-Nummer auf eine lokale Audiodatei ab. Die
@@ -153,7 +167,7 @@ def build_pack(base_pack: Path,
 
     work_dir = work_dir or (build_dir() / "_arbeit")
     work_dir.mkdir(parents=True, exist_ok=True)
-    out_path = build_dir() / out_name
+    out_path = _ausgabe(out_dir, out_name)
 
     # ---- Schritt 1: Audiodateien vorbereiten ---------------------------
     log("Bereite Audiodateien vor ...")
@@ -367,7 +381,8 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
                  out_name: str = "fremdpaket_angepasst.tar.gz",
                  mapping: Optional[Dict[int, int]] = None,
                  log: LogFn = _noop_log,
-                 progress: Optional[ProgressFn] = None) -> BuildResult:
+                 progress: Optional[ProgressFn] = None,
+                 out_dir: Optional[Path] = None) -> BuildResult:
     """Legt ein fremdes Sprachpaket auf das Originalpaket des eigenen Modells.
 
     Community-Pakete sind meist für ein anderes Modell gebaut und
@@ -377,7 +392,8 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
     """
     if not base_pack.is_file():
         raise PackError("Das Originalpaket deines Modells fehlt.",
-                        "Lade es unter 'Einzelne Ansagen' herunter.")
+                        "Die App holt es nach der Anmeldung auf der "
+                        "Startseite von selbst.")
 
     log("Lese Fremdpaket ...")
     overlay = _read_ogg_archive(Path(overlay_pack_path))
@@ -396,7 +412,7 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
             elif ziel in als_pfade and quelle not in als_pfade:
                 overlay[f"{quelle}.ogg"] = overlay[als_pfade[ziel]]
 
-    out_path = build_dir() / out_name
+    out_path = _ausgabe(out_dir, out_name)
     tmp_path = out_path.with_suffix(".part")
     replaced: List[int] = []
     total_members = 0
