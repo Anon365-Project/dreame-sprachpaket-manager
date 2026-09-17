@@ -30,6 +30,7 @@ offiziellen deutschen Stimme.
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -259,14 +260,44 @@ def ist_geladen(pack: CommunityPack) -> bool:
         return False
 
 
+#: Je Paket ein Riegel. Anhören und Aufspielen laufen in eigenen
+#: Threads; ohne Riegel schrieben beide in dieselbe .part-Datei, sobald
+#: man während einer ladenden Probe auf "Aufspielen" klickt - und der
+#: abgebrochene Download löschte dem anderen die halbe Datei weg.
+_RIEGEL: dict = {}
+_RIEGEL_SELBST = threading.Lock()
+
+
+def _riegel(pack: CommunityPack) -> threading.Lock:
+    with _RIEGEL_SELBST:
+        return _RIEGEL.setdefault(pack.key, threading.Lock())
+
+
 def download(pack: CommunityPack, progress: Optional[ProgressFn] = None,
              force: bool = False,
              cancelled: Optional[Callable[[], bool]] = None) -> Path:
     """Lädt ein Community-Paket herunter und prüft es, soweit möglich.
 
     Schon Geladenes wird wiederverwendet, sofern die Prüfsumme stimmt -
-    Anhören und Aufspielen laden dasselbe Paket also nur einmal.
+    Anhören und Aufspielen laden dasselbe Paket also nur einmal. Wer
+    gleichzeitig dasselbe Paket will, wartet, bis der erste fertig ist.
     """
+    with _riegel(pack):
+        return _download(pack, progress, force, cancelled)
+
+
+def verwerfen(pack: CommunityPack) -> None:
+    """Entfernt die geladene Datei, damit der nächste Zugriff neu lädt."""
+    with _riegel(pack):
+        try:
+            pack.local_path().unlink(missing_ok=True)
+        except OSError as exc:
+            _LOG.warning("%s ließ sich nicht verwerfen: %s", pack.key, exc)
+
+
+def _download(pack: CommunityPack, progress: Optional[ProgressFn],
+              force: bool,
+              cancelled: Optional[Callable[[], bool]]) -> Path:
     cancelled = cancelled or (lambda: False)
     target = pack.local_path()
 

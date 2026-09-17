@@ -297,7 +297,7 @@ class DreameCloud:
             try:
                 self.login(email, password, region)
                 return region
-            except LoginError as exc:
+            except LoginError:
                 # Abgelehnte Zugangsdaten sind überall abgelehnt.
                 raise
             except NetworkError as exc:

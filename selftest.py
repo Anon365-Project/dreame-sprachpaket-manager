@@ -2279,7 +2279,6 @@ def _alle_pruefungen() -> None:
     class _MitDownload(_Falscher):
         pass
 
-    _alt_los = _inst._Beobachter.los
     _r = _MitDownload(paket="CUSTOM", verlauf=[_fertig])
     _alt = _inst.time
     try:
@@ -4876,6 +4875,101 @@ def _alle_pruefungen() -> None:
               _com47.ist_geladen(_pack47))
     finally:
         _com47.data_dir, _com47.requests.get = _alt_dd, _alt_get
+
+
+    # g) Anhören und Aufspielen laden dasselbe Paket nie gleichzeitig.
+    #    Vorher schrieben beide Threads in dieselbe .part-Datei.
+    import threading as _th47
+    _ord47b = arbeitsordner()
+    _laeuft = []
+    _gleichzeitig = []
+
+    class _Langsam47(_Antwort47):
+        def iter_content(self, chunk_size=0):
+            _laeuft.append(1)
+            if len(_laeuft) > 1:
+                _gleichzeitig.append(len(_laeuft))
+            try:
+                for _ in range(3):
+                    time.sleep(0.05)
+                    yield b"x" * 100000
+            finally:
+                _laeuft.pop()
+
+    _alt_dd, _alt_get = _com47.data_dir, _com47.requests.get
+    _com47.data_dir = lambda: _ord47b
+    _com47.requests.get = lambda *a, **k: _Langsam47()
+    _ergebnisse47 = []
+    try:
+        _faeden = [_th47.Thread(target=lambda: _ergebnisse47.append(
+            _com47.download(_pack47))) for _ in range(2)]
+        for _f in _faeden:
+            _f.start()
+        for _f in _faeden:
+            _f.join(10)
+    finally:
+        _com47.data_dir, _com47.requests.get = _alt_dd, _alt_get
+    check("zwei gleichzeitige Downloads laufen nacheinander",
+          not _gleichzeitig and len(_ergebnisse47) == 2, f"{_gleichzeitig}")
+    check("und liefern dieselbe vollständige Datei",
+          len(set(_ergebnisse47)) == 1
+          and _ergebnisse47[0].stat().st_size == 300000)
+    _com47.data_dir = lambda: _ord47b
+    try:
+        _com47.verwerfen(_pack47)
+        check("verwerfen entfernt die geladene Datei",
+              not _com47.ist_geladen(_pack47))
+    finally:
+        _com47.data_dir = _alt_dd
+
+    # h) Ein Fremdarchiv, das sich entpackt aufbläht, wird abgelehnt,
+    #    bevor es den Arbeitsspeicher füllt.
+    import zipfile as _zf47b
+    _bombe = arbeitsordner() / "bombe.zip"
+    with _zf47b.ZipFile(_bombe, "w", _zf47b.ZIP_DEFLATED) as _z:
+        _z.writestr("7.ogg", b"\0" * (3 * 1024 * 1024))
+    _alt_max = _pk47.MAX_FREMD_ENTPACKT
+    _pk47.MAX_FREMD_ENTPACKT = 1024 * 1024
+    try:
+        _pk47._read_ogg_archive(_bombe)
+        _abgelehnt = False
+    except PackError:
+        _abgelehnt = True
+    finally:
+        _pk47.MAX_FREMD_ENTPACKT = _alt_max
+    check("ein aufgeblähtes Fremdarchiv wird abgelehnt", _abgelehnt)
+
+    # i) Der Roboter bekommt eine neue Adresse, sobald sich der Inhalt
+    #    ändert - auch wenn die Datei denselben Namen trägt.
+    from dreamevoice import installer as _in47
+    _b1 = _pk47.BuildResult(path=Path("x/bayerisch.tar.gz"), md5="ab" * 16,
+                            size=1, replaced=[])
+    _b2 = _pk47.BuildResult(path=Path("x/bayerisch.tar.gz"), md5="cd" * 16,
+                            size=1, replaced=[])
+    check("der Abholname trägt die Prüfsumme",
+          _in47.abholname(_b1) == "bayerisch_abababab.tar.gz",
+          _in47.abholname(_b1))
+    check("und ändert sich mit dem Inhalt",
+          _in47.abholname(_b1) != _in47.abholname(_b2))
+    _sv47 = arbeitsordner() / "bayerisch.tar.gz"
+    _sv47.write_bytes(b"y" * 1000)
+    _srv47 = server.PackServer(_sv47, host_ip="127.0.0.1",
+                               url_name="bayerisch_abababab.tar.gz")
+    _u47 = _srv47.start()
+    try:
+        with urllib.request.urlopen(_u47, timeout=10) as _r:
+            _n47 = len(_r.read())
+        check("der Server liefert unter dem Abholnamen aus",
+              _u47.endswith("/bayerisch_abababab.tar.gz") and _n47 == 1000)
+        try:
+            urllib.request.urlopen(_u47.rsplit("/", 1)[0] + "/bayerisch.tar.gz",
+                                   timeout=10)
+            _nur_einer = False
+        except urllib.error.HTTPError:
+            _nur_einer = True
+        check("und nur unter diesem", _nur_einer)
+    finally:
+        _srv47.stop()
 
     # d) Aufgespielt wird nur unter CUSTOM - oder zurück zum Original.
     #    Jede weitere Kennung legt auf dem Roboter einen Ordner an, den

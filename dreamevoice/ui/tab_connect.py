@@ -6,15 +6,14 @@ import tkinter as tk
 import webbrowser
 from tkinter import messagebox, ttk
 
-from .. import aktualisierung
 from .. import __version__
 from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
                      DreameCloud, regionen_fuer)
 from ..errors import NoDeviceError
-from .state import AppState, error_text, run_async, to_main
+from .state import AppState, error_text, run_async
 from .theme import Theme
-from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge, autowrap,
-                      labeled_value, show_error, show_info, show_warning)
+from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge,
+                      labeled_value, show_error, show_info)
 
 DREAMEHOME_HELP = "https://www.dreametech.com/pages/support"
 

@@ -20,9 +20,7 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from pathlib import Path
-from tkinter import messagebox, ttk
-from typing import Optional
+from tkinter import ttk
 
 from .. import official
 from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
@@ -30,8 +28,8 @@ from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
 from ..paths import preview_dir
 from .state import AppState, error_text, run_async, spaeter, to_main
 from .theme import Theme
-from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge,
-                      show_error, show_info, show_warning)
+from .widgets import (Card, ScrollablePage, StatusBadge, show_error,
+                      show_warning)
 
 _LOG = logging.getLogger(__name__)
 

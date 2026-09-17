@@ -38,6 +38,7 @@ from typing import Dict, List, Optional
 
 from .. import (community, dialektpakete, embedded, importer, installer,
                 library, packer, vorhoeren)
+from ..errors import PackError
 from ..paths import build_dir
 from .state import AppState, Task, error_text, run_async, to_main
 from .theme import Theme
@@ -500,6 +501,10 @@ class VoicePage(ttk.Frame):
                     return {}
                 to_main(self, self.lbl_probe.configure,
                         {"text": "Bereite die Probe vor ..."})
+                if not vorhoeren.verfuegbare_ids(quelle):
+                    # Kein Ton im Paket ist etwas anderes als ein
+                    # fehlendes ffmpeg - und verdient eine andere Antwort.
+                    return None
                 proben = vorhoeren.probe_vorbereiten(quelle, ffmpeg,
                                                      log=lambda m: self._log(m))
                 if not proben:
@@ -525,8 +530,11 @@ class VoicePage(ttk.Frame):
             if proben is None:
                 self.lbl_probe.configure(text="")
                 show_warning(
-                    self, self.theme, "Aufnahmen nicht gefunden",
-                    f"Die Aufnahmen für {wahl.name} ließen sich nicht öffnen.")
+                    self, self.theme, "Nichts zum Anhören",
+                    f"In den Aufnahmen für {wahl.name} steckt keine Ansage, "
+                    f"die sich vorspielen ließe.",
+                    "Die Datei fehlt, ist beschädigt oder enthält keine "
+                    "Tondateien mit Ansage-Nummer im Namen.")
                 return
             if not proben:
                 if aufgabe.cancelled:
@@ -657,13 +665,23 @@ class VoicePage(ttk.Frame):
                     raise RuntimeError("Vom Benutzer abgebrochen.")
                 self._log("Lege die Stimme auf das Paket deines Modells ...",
                           "step")
-                build = packer.overlay_pack(
-                    base_pack=Path(basis), overlay_pack_path=archiv,
-                    out_name=f"frei_{wahl.frei.key}.tar.gz", out_dir=zwischen,
-                    mapping=mapping, log=lambda m: self._log(m),
-                    progress=lambda d, t: to_main(
-                        self, self.progress.configure,
-                        {"value": (d / t * 100) if t else 0}))
+                try:
+                    build = packer.overlay_pack(
+                        base_pack=Path(basis), overlay_pack_path=archiv,
+                        out_name=f"frei_{wahl.frei.key}.tar.gz",
+                        out_dir=zwischen,
+                        mapping=mapping, log=lambda m: self._log(m),
+                        progress=lambda d, t: to_main(
+                            self, self.progress.configure,
+                            {"value": (d / t * 100) if t else 0}))
+                except PackError:
+                    # Ein Paket ohne feste Prüfsumme (das X40-Projekt-
+                    # archiv) würde sonst für immer als "geladen" gelten,
+                    # auch wenn es unbrauchbar ist. Weg damit - der
+                    # nächste Versuch lädt neu.
+                    if not wahl.frei.expected_md5:
+                        community.verwerfen(wahl.frei)
+                    raise
                 for warnung in build.warnings:
                     self._log(warnung, "warn")
 

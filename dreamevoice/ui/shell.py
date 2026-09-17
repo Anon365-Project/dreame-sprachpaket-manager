@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from tkinter import ttk
 from typing import Callable, Dict, List, Optional
 

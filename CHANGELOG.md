@@ -76,6 +76,30 @@ vorspielt.
   mit Umlaut. Der Umlaut-Test prüft auch Großschreibung und die
   Textdateien in den Archiven.
 
+### Aus der Durchsicht vor dem Release
+
+- **Anhören und Aufspielen gleichzeitig:** Lief eine Probe noch, während
+  man auf *Aufspielen* klickte, luden beide Threads dieselbe freie Stimme
+  in dieselbe `.part`-Datei. Jetzt wartet der zweite, bis der erste fertig
+  oder abgebrochen ist (`community.download` mit einem Riegel je Paket).
+- **Neue Adresse bei neuem Inhalt:** Seit die Zwischenpakete feste Namen
+  tragen, hätte der Roboter nach einer neueren Fassung derselben Stimme
+  dieselbe URL bekommen. Der Abholname trägt jetzt die ersten Stellen der
+  MD5 (`bayerisch_1a2b3c4d.tar.gz`), wie vorher schon jedes Paket eine
+  eigene Adresse hatte.
+- **Aufgeblähte Fremdarchive:** Freie Stimmen werden im Arbeitsspeicher
+  zusammengesetzt; ein Archiv, das sich auf über 400 MB entpackt, wird
+  jetzt abgelehnt statt eingelesen.
+- **Unbrauchbares X40-Archiv:** Das Projektarchiv ohne feste Prüfsumme
+  galt nach einem Fehlschlag für immer als geladen. Es wird jetzt
+  verworfen und beim nächsten Versuch neu geholt.
+- **Probe ohne Ton:** Enthielt eine Stimme nichts Vorspielbares, hieß es,
+  ffmpeg fehle. Jetzt steht da, was wirklich los ist.
+- Tote Importe und ungenutzte Variablen entfernt (pyflakes).
+- Mit echten Dateien geprüft: Maschinenkult einlesen, anhören und bauen
+  (590 von 620 Ansagen, Dateiliste identisch mit dem Original); GLaDOS,
+  R2-D2 und ein nachgebautes GitHub-Projektarchiv anhören und überlagern.
+
 ### Selbsttest
 
 Neue Abschnitte 47 „Eine Liste für alle Stimmen“ und 48 „Alte Fassungen

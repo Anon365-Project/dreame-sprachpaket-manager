@@ -454,6 +454,20 @@ NEUSTART_HINWEIS = (
 )
 
 
+def abholname(build: BuildResult) -> str:
+    """Der Name, unter dem der Roboter das Paket abholt.
+
+    Seit 1.4.0 heißen die Pakete fertiger Stimmen immer gleich
+    (`bayerisch.tar.gz`) und werden überschrieben. Ändert sich der
+    Inhalt - etwa nach einer neueren Fassung der Aufnahmen -, soll der
+    Roboter trotzdem eine neue Adresse sehen, wie bisher auch. Die
+    ersten Stellen der Prüfsumme leisten genau das.
+    """
+    name = Path(build.path).name
+    stamm = name[:-len(".tar.gz")] if name.endswith(".tar.gz") else Path(name).stem
+    return f"{stamm}_{(build.md5 or '')[:8]}.tar.gz"
+
+
 def install_pack(cloud: DreameCloud,
                  device: Device,
                  build: BuildResult,
@@ -491,7 +505,8 @@ def install_pack(cloud: DreameCloud,
             step("Eigene URL wird verwendet", 0.15)
         else:
             step("Webserver wird gestartet", 0.05)
-            server = PackServer(build.path, port=port, host_ip=host_ip, log=log)
+            server = PackServer(build.path, port=port, host_ip=host_ip,
+                                log=log, url_name=abholname(build))
             url = server.start()
             step("Webserver läuft", 0.15)
 

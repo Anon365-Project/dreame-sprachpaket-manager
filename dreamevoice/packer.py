@@ -329,6 +329,10 @@ METADATA_HINT = {"voice_mapping.json", "tts.json", "dmr_audio.json",
                  "first_audio.json", "mini_broad.json"}
 
 
+#: Obergrenze für den entpackten Inhalt eines Fremdpakets.
+MAX_FREMD_ENTPACKT = 400 * 1024 * 1024
+
+
 def _read_ogg_archive(path: Path) -> Dict[str, bytes]:
     """Holt alle `<nummer>.ogg` aus einem tar.gz- oder zip-Archiv.
 
@@ -341,6 +345,22 @@ def _read_ogg_archive(path: Path) -> Dict[str, bytes]:
     import zipfile
 
     result: Dict[str, bytes] = {}
+    # Alles landet im Arbeitsspeicher. Ein Sprachpaket entpackt sich auf
+    # einige zehn Megabyte; ein Archiv, das zehnmal so viel verspricht,
+    # ist kein Sprachpaket. Der Download ist zwar begrenzt - gepackt
+    # sagt das über die entpackte Größe aber nichts.
+    grenze = MAX_FREMD_ENTPACKT
+    summe = 0
+
+    def zaehle(groesse: int) -> None:
+        nonlocal summe
+        summe += max(0, int(groesse))
+        if summe > grenze:
+            raise PackError(
+                "Das Fremdpaket ist entpackt unerwartet groß.",
+                f"Es würde über {grenze // (1024 * 1024)} MB belegen. Ein "
+                f"Sprachpaket braucht einen Bruchteil davon; es wurde "
+                f"nicht verwendet.")
 
     def keep(raw_name: str) -> Optional[str]:
         name = raw_name.replace("\\", "/").rsplit("/", 1)[-1]
@@ -354,6 +374,7 @@ def _read_ogg_archive(path: Path) -> Dict[str, bytes]:
                         continue
                     name = keep(info.filename)
                     if name and name not in result:
+                        zaehle(info.file_size)
                         result[name] = zf.read(info)
         except (zipfile.BadZipFile, OSError) as exc:
             raise PackError("Das Fremdpaket ist kein lesbares zip-Archiv.",
@@ -367,6 +388,7 @@ def _read_ogg_archive(path: Path) -> Dict[str, bytes]:
                     continue
                 name = keep(member.name)
                 if name and name not in result:
+                    zaehle(member.size)
                     extracted = tf.extractfile(member)
                     if extracted is not None:
                         result[name] = extracted.read()

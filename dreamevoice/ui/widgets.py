@@ -5,7 +5,6 @@ from __future__ import annotations
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
-from typing import Callable, Optional
 
 from .state import spaeter
 from .theme import Theme

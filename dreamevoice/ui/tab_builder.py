@@ -8,10 +8,9 @@ import sys
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from .. import audio, embedded, ffmpeg_setup, importer, official
-from ..errors import DreameError
 from ..paths import data_dir, preview_dir
 from ..sounds import Sound
 from .state import AppState, error_text, run_async, spaeter, to_main

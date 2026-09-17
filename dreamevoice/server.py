@@ -144,14 +144,17 @@ class PackServer:
     """
 
     def __init__(self, file_path: Path, port: int = 0,
-                 host_ip: str = "", log: Optional[LogFn] = None) -> None:
+                 host_ip: str = "", log: Optional[LogFn] = None,
+                 url_name: str = "") -> None:
         self.file_path = Path(file_path)
         if not self.file_path.is_file():
             raise InstallError(f"Die Paketdatei fehlt:\n{self.file_path}")
 
         self.port = port or free_port()
         self.host_ip = host_ip or local_ip_for_internet()
-        self.url_name = self.file_path.name
+        # Unter welchem Namen die Datei abgeholt wird. Standard ist der
+        # Dateiname; installer.install_pack hängt die Prüfsumme an.
+        self.url_name = url_name or self.file_path.name
         self._log = log or (lambda _: None)
         self._server: Optional[ThreadingHTTPServer] = None
         self._thread: Optional[threading.Thread] = None
