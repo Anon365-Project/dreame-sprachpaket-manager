@@ -32,7 +32,7 @@ wenn er durchläuft. Es weigert sich außerdem, solange die App noch
 läuft — dann bitte schließen, nicht abschießen: Eine laufende
 ElevenLabs-Erzeugung würde sonst bezahltes Kontingent verlieren.
 
-Ergebnis: `dist\DreameSprachpaket.exe`, rund 108 MB.
+Ergebnis: `dist\DreameSprachpaket.exe`, rund 106 MB.
 
 ## 3. Prüfsumme eintragen
 
@@ -50,7 +50,7 @@ Die gebaute EXE starten und einmal durchgehen:
 * Anmelden, Roboter erscheint in der Liste
 * **Fertige Stimmen** → *Anhören* spielt vier Ansagen ab, auch bei
   einer freien Stimme wie GLaDOS (die wird dafür kurz geladen)
-* Maschinenkult zeigt „Community-Pack von Carnimo“
+* Servitor zeigt „Community-Pack von Carnimo“
 * **Aktualisierung** oben rechts öffnet sich
 * **Hilfe** → *Ausführlich nachlesen* öffnet eine Anleitung
 
@@ -67,13 +67,13 @@ vollständige Liste der Änderungen steht in `CHANGELOG.md`.
 
 | Datei | Größe | woher |
 |---|---|---|
-| `DreameSprachpaket.exe` | ~108 MB | `dist\` |
+| `DreameSprachpaket.exe` | ~106 MB | `dist\` |
 | `Bayerisch-Aufnahmen.zip` | 9,0 MB | `Fertige Pakete\` |
 | `Bayerisch-Weiblich-Aufnahmen.zip` | 9,0 MB | `Fertige Pakete\` |
 | `Hessisch-Aufnahmen.zip` | 9,1 MB | `Fertige Pakete\` |
 | `Wienerisch-Aufnahmen.zip` | 9,1 MB | `Fertige Pakete\` |
 | `Berlinerisch-Aufnahmen.zip` | 8,4 MB | `Fertige Pakete\` |
-| `Maschinenkult-Aufnahmen.zip` | 10,6 MB | `Fertige Pakete\` |
+| `Servitor-Aufnahmen.zip` | 10,6 MB | `Fertige Pakete\` |
 
 **Bayerisch-Weiblich fehlte im Release v1.2.0.** Die Stimme steckt zwar
 in der EXE, aber der Knopf „neuere Fassung holen" lief für sie in einen

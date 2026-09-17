@@ -19,7 +19,6 @@ from .page_start import StartPage
 from .page_voice import VoicePage
 from .shell import NavShell
 from .state import AppState, run_async, spaeter
-from .tab_builder import BuilderTab
 from .tab_connect import ConnectTab
 from .tab_install import InstallTab
 from .tab_store import StoreTab
@@ -268,10 +267,6 @@ class MainWindow(tk.Tk):
                        bauen=lambda: StoreTab(buehne, self.theme,
                                               self.state_obj),
                        section="Erweitert", beim_zeigen=self._beim_eigene)
-        self.shell.add("ansagen", "Einzelne Ansagen", "🧩",
-                       bauen=lambda: BuilderTab(buehne, self.theme,
-                                                self.state_obj),
-                       section="Erweitert", beim_zeigen=self._beim_ansagen)
         self.shell.add("aufspielen", "Bauen und Aufspielen", "⬆",
                        bauen=lambda: InstallTab(buehne, self.theme,
                                                 self.state_obj),
@@ -323,10 +318,6 @@ class MainWindow(tk.Tk):
     @property
     def tab_store(self):
         return self.shell.seite("eigene")
-
-    @property
-    def tab_builder(self):
-        return self.shell.seite("ansagen")
 
     @property
     def tab_install(self):
@@ -393,10 +384,6 @@ class MainWindow(tk.Tk):
             return
         self._show_update(neuerung)
 
-    def _beim_ansagen(self) -> None:
-        self.tab_builder.refresh_rows()
-        self.tab_builder.refresh_counter()
-
     def _beim_eigene(self) -> None:
         if hasattr(self.tab_store, "beim_zeigen"):
             self.tab_store.beim_zeigen()
@@ -419,7 +406,7 @@ class MainWindow(tk.Tk):
         ohne_basis = ("Dafür fehlt noch das offizielle Sprachpaket deines "
                       "Roboters. Es wird auf der Startseite einmalig geholt.")
 
-        for key in ("stimme", "eigene", "ansagen", "aufspielen"):
+        for key in ("stimme", "eigene", "aufspielen"):
             self.shell.set_enabled(key, verbunden and basis,
                                    ohne_anmeldung if not verbunden else ohne_basis)
 
@@ -689,7 +676,7 @@ zwei Seiten:
    Ansagen probehören, dann "Aufspielen". Die Liste hat drei Gruppen:
 
    - In der App enthalten: Bayerisch (männlich und weiblich),
-     Hessisch, Wienerisch, Berlinerisch und Maschinenkult, ein
+     Hessisch, Wienerisch, Berlinerisch und Servitor, ein
      Community-Pack von Carnimo. Sie stecken in der Programmdatei, es
      wird nichts heruntergeladen.
    - Eigene: was du unter "Eigene Stimmen" selbst gebaut hast.
@@ -703,8 +690,8 @@ Das war es. Alles andere steht unter "Erweitert" und wird nur gebraucht,
 wenn man mehr will:
 
 - Eigene Stimmen: eigene Texte, andere Dialekte, Sprachsynthese über
-  Windows oder ElevenLabs
-- Einzelne Ansagen: Ansage für Ansage eine eigene Datei zuweisen
+  Windows oder ElevenLabs, eigene Aufnahmen einlesen und einzelne
+  Ansagen austauschen
 - Bauen und Aufspielen: der ausführliche Weg mit allen Schaltern,
   Netzwerkeinstellungen und dem Rückweg zur Originalstimme
 - Verbindung: Konto oder Region wechseln

@@ -11,7 +11,7 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Optional
 
 from .. import installer, library, official, packer, server
-from ..paths import build_dir
+from ..paths import build_dir, preview_dir
 from .state import (AppState, Task, error_text, run_async, spaeter,
                     to_main)
 from .theme import Theme
@@ -130,6 +130,26 @@ class InstallTab(ttk.Frame):
                   style="Surface.TLabel").grid(
             row=0, column=1, sticky="w", pady=4)
 
+        # Grundlage: Normalerweise das deutsche Paket, das die Startseite
+        # von selbst holt. Wer ein anderes offizielles Paket als Grundlage
+        # will (etwa das englische), stellt es hier um - bis 1.3.0 stand
+        # diese Wahl auf der Seite "Einzelne Ansagen".
+        ttk.Label(body, text="Grundlage", style="Surface.TLabel").grid(
+            row=6, column=0, sticky="w", pady=(10, 4), padx=(0, 8))
+        grundlage = ttk.Frame(body, style="Card.TFrame")
+        grundlage.grid(row=6, column=1, sticky="ew", pady=(10, 4))
+        self.var_basis = tk.StringVar()
+        self.combo_basis = ttk.Combobox(grundlage, textvariable=self.var_basis,
+                                        state="readonly", width=22, values=[])
+        self.combo_basis.pack(side="left")
+        self.btn_basis = ttk.Button(grundlage, text="neu laden",
+                                    style="Small.TButton",
+                                    command=self._on_grundlage_laden)
+        self.btn_basis.pack(side="left", padx=(6, 0))
+        self.lbl_basis = ttk.Label(body, text="", style="Muted.TLabel",
+                                   wraplength=230, justify="left")
+        self.lbl_basis.grid(row=7, column=1, sticky="w")
+
         ttk.Label(body, text="PC-Adresse", style="Surface.TLabel").grid(
             row=1, column=0, sticky="w", pady=4, padx=(0, 8))
         self.var_ip = tk.StringVar(value=self.state.config["host_ip"])
@@ -241,7 +261,7 @@ class InstallTab(ttk.Frame):
             self.var_saved.set("")
             self.lbl_saved.configure(
                 text=("Noch keine Pakete gebaut. Unter 'Eigene Stimmen' entsteht ein "
-                      "Dialektpaket, unter 'Einzelne Ansagen' ein eigenes."))
+                      "Dialektpaket oder ein eigenes aus deinen Aufnahmen."))
             self.combo_saved.configure(state="disabled")
             return
 
@@ -279,6 +299,7 @@ class InstallTab(ttk.Frame):
             self.log.append(f"Stimme: {info.voice}", "muted")
 
     def refresh_summary(self) -> None:
+        self._grundlage_fuellen()
         self.refresh_saved_packs()
         device = self.state.device
         self.val_device.configure(
@@ -492,9 +513,9 @@ class InstallTab(ttk.Frame):
         if not self.state.has_base_pack:
             messagebox.showwarning(
                 "Originalpaket fehlt",
-                "Lade unter 'Einzelne Ansagen' zuerst das offizielle "
-                "Sprachpaket deines Roboters herunter. Es ist die Grundlage "
-                "deines eigenen Pakets.",
+                "Das offizielle Sprachpaket deines Roboters wird auf der "
+                "Startseite einmalig geholt. Es ist die Grundlage deines "
+                "eigenen Pakets.",
                 parent=self)
             return False
 
@@ -506,7 +527,7 @@ class InstallTab(ttk.Frame):
             messagebox.showwarning(
                 "Nichts zu tun",
                 "Es ist noch keine einzige Ansage ausgetauscht. Weise unter "
-                "'Einzelne Ansagen' mindestens einer Ansage eine Audiodatei zu "
+                "'Eigene Stimmen' mindestens einer Ansage eine Audiodatei zu "
                 "- oder hole dir unter 'Eigene Stimmen' ein vorgefertigtes Paket.",
                 parent=self)
             return False
@@ -523,6 +544,79 @@ class InstallTab(ttk.Frame):
                     parent=self):
                 return False
         return True
+
+    # ------------------------------------------------------------------
+    def _grundlage_fuellen(self) -> None:
+        """Füllt die Liste der offiziellen Pakete, sobald sie bekannt ist."""
+        pakete = self.state.official_packs
+        beschriftungen = [p.label for p in pakete]
+        if list(self.combo_basis.cget("values")) != beschriftungen:
+            self.combo_basis.configure(values=beschriftungen)
+        jetzt = self.state.base_pack_info
+        if jetzt is not None and jetzt.label in beschriftungen:
+            self.var_basis.set(jetzt.label)
+        elif beschriftungen and not self.var_basis.get():
+            self.var_basis.set(beschriftungen[0])
+        self.lbl_basis.configure(
+            text=("Dein eigenes Paket entsteht als Kopie davon. Ohne Grund "
+                  "bleibt es beim deutschen."))
+
+    def _on_grundlage_laden(self) -> None:
+        """Lädt das gewählte offizielle Paket als neue Grundlage."""
+        modell = self.state.model
+        if not modell:
+            show_warning(self, self.theme, "Kein Roboter gewählt",
+                         "Melde dich auf der Startseite an und wähle deinen "
+                         "Roboter.")
+            return
+        gewaehlt = next((p for p in self.state.official_packs
+                         if p.label == self.var_basis.get()), None)
+        if gewaehlt is None:
+            show_warning(self, self.theme, "Keine Sprache gewählt",
+                         "Die Liste der offiziellen Pakete ist noch leer.",
+                         "Sie kommt von Dreame, sobald der Roboter bekannt "
+                         "ist - einen Moment warten und erneut versuchen.")
+            return
+
+        self.btn_basis.configure(state="disabled")
+        self.lbl_basis.configure(text=f"Lade {gewaehlt.label} ...")
+
+        def melde(fertig: int, gesamt: int) -> None:
+            anteil = (fertig / gesamt * 100) if gesamt else 0
+            to_main(self, self.progress.configure, {"value": anteil})
+
+        def work(_task):
+            pfad = official.download_pack(gewaehlt, modell, progress=melde)
+            proben = official.extract_previews(
+                pfad, preview_dir() / f"{modell}_{gewaehlt.id}")
+            return pfad, proben
+
+        def ok(ergebnis) -> None:
+            pfad, proben = ergebnis
+            self.state.base_pack_path = pfad
+            self.state.base_pack_info = gewaehlt
+            self.state.previews = proben
+            self.state.config["base_language"] = gewaehlt.id
+            self.state.save()
+            nummern = sorted(proben)
+            if nummern:
+                self.state.catalog = self.state.catalog.restrict_to(nummern)
+            self.state.notify("base_pack_changed")
+            self.lbl_basis.configure(
+                text=f"Grundlage: {gewaehlt.label}, {len(proben)} Ansagen.")
+
+        def fail(exc: Exception) -> None:
+            nachricht, hinweis = error_text(exc)
+            self.lbl_basis.configure(text="Nicht geladen.")
+            show_error(self, self.theme, "Originalpaket nicht geladen",
+                       nachricht, hinweis)
+
+        def zum_schluss() -> None:
+            self.btn_basis.configure(state="normal")
+            self.progress.configure(value=0)
+
+        run_async(self, work, on_success=ok, on_error=fail,
+                  on_finally=zum_schluss)
 
     def _build_pack(self, task: Task):
         prebuilt = self.state.prebuilt

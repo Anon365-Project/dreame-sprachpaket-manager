@@ -137,8 +137,8 @@ KATALOG: List[FertigerDialekt] = [
     # Aus der Community. Der Name ist bewusst neutral gehalten; die
     # Herkunft des Materials steht in der LIESMICH des Archivs.
     FertigerDialekt(
-        key="maschinenkult", name="Maschinenkult",
-        datei="Maschinenkult-Aufnahmen.zip", ansagen=590,
+        key="servitor", name="Servitor",
+        datei="Servitor-Aufnahmen.zip", ansagen=590,
         stimme="ElevenLabs", geschlecht="männlich, mechanisch",
         urheber="Carnimo",
         beschreibung=("Düster und feierlich: Die Station heißt Schrein, das "

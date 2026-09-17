@@ -44,7 +44,7 @@ es eine einzige portable Datei und der Start unverändert schnell (gemessen:
 3,2 s).
 
 Beim Start aus dem Quellcode gibt es diesen Anhang nicht. Dann entweder
-`ffmpeg.exe` neben die App legen oder unter *Einzelne Ansagen* auf *ffmpeg automatisch
+`ffmpeg.exe` neben die App legen oder unter *Eigene Stimmen* auf *ffmpeg automatisch
 einrichten* klicken — die App zeigt vorher Quelladresse und Größe an, lädt nur
 nach Bestätigung und entnimmt dem Archiv gezielt nur `ffmpeg.exe` und
 `ffprobe.exe`.
@@ -74,7 +74,7 @@ werden nur neu erhoben, wenn sich das Paket ändert.
 
 ### Viele Dateien auf einmal übernehmen
 
-Hunderte Ansagen einzeln zuzuweisen macht keine Freude. *Einzelne Ansagen* bietet deshalb:
+Hunderte Ansagen einzeln zuzuweisen macht keine Freude. *Eigene Stimmen* bietet deshalb:
 
 * **Ganzen Ordner importieren** — durchsucht einen Ordner samt Unterordnern und
   ordnet alles zu.

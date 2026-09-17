@@ -8,8 +8,8 @@
 Unter *Fertige Stimmen* steht alles in einer Liste:
 
 * **In der App enthalten** — Bayerisch (männlich und weiblich), Hessisch,
-  Wienerisch, Berlinerisch und **Maschinenkult**, eine männliche, mechanische
-  Stimme. Maschinenkult ist ein Community-Pack von **Carnimo**; das steht in
+  Wienerisch, Berlinerisch und **Servitor**, eine männliche, mechanische
+  Stimme. Servitor ist ein Community-Pack von **Carnimo**; das steht in
   der App direkt neben dem Namen.
 * **Eigene** — was du unter *Eigene Stimmen* gebaut hast.
 * **Freie Stimmen aus dem Netz** — die Bastelprojekte unten. Sie werden erst
@@ -113,7 +113,8 @@ Derselbe Knopf nimmt fertig gesprochenes Material entgegen:
 Die Dateien müssen die Ansage-Nummer im Namen tragen (`7.wav`, `7.mp3`,
 `7.ogg`). Ordner im Archiv und Beipackzettel wie `LIESMICH.txt` stören
 nicht — es werden nur Audiodateien mit Nummer übernommen. Einen passend
-benannten Vorlagenordner legt *Einzelne Ansagen* an — Originale
+benannten Vorlagenordner legt *Eigene Stimmen* → *Ansagen einzeln
+austauschen* an — Originale
 anhören, unter demselben Namen neu einsprechen, Ordner einlesen.
 
 Alles wird ins Roboterformat umgewandelt, auf die Lautstärke der
@@ -146,7 +147,8 @@ Tierlaute.
 Der Wortlaut von 90 Ansagen steht in keiner Textdatei des Pakets. Er wurde
 aus den deutschen Originalaufnahmen transkribiert (Windows-Spracherkennung)
 und danach von Hand geglättet: sinngemäß richtig, im Wortlaut sinnvoll
-gekürzt. Wer es genauer will, hört sich die Originalansage unter *Einzelne Ansagen* an und
+gekürzt. Wer es genauer will, hört sich die Originalansage unter *Eigene Stimmen* →
+*Ansagen einzeln austauschen* an und
 ändert den Text im Editor.
 
 | Dialekt | Kostprobe (Ansage 7) |
@@ -290,7 +292,7 @@ einen Cent zu zahlen.
 Die Stimme einer real existierenden Person nachbilden — etwa aus
 YouTube-Aufnahmen oder fremden Sprachpaketen. Das berührt das
 Persönlichkeitsrecht, bei Schauspielern kommen Verwertungsrechte dazu. Wer eine
-echte, eigene Dialektstimme will: die Ansagen selbst einsprechen und unter *Einzelne Ansagen*
+echte, eigene Dialektstimme will: die Ansagen selbst einsprechen und unter *Eigene Stimmen*
 zuweisen — die Textlisten sind dafür eine fertige Vorlage.
 
 ---

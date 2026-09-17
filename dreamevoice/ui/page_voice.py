@@ -37,7 +37,7 @@ from tkinter import messagebox, ttk
 from typing import Dict, List, Optional
 
 from .. import (community, dialektpakete, embedded, importer, installer,
-                library, packer, vorhoeren)
+                library, packer, pruefung, vorhoeren)
 from ..errors import PackError
 from ..paths import build_dir
 from .state import AppState, Task, error_text, run_async, to_main
@@ -674,6 +674,27 @@ class VoicePage(ttk.Frame):
                   task=aufgabe)
 
     # -- Aufspielen -----------------------------------------------------
+    def _pruefen(self, quelle: Path, name: str) -> None:
+        """Sieht in die Aufnahmen hinein, bevor daraus ein Paket wird.
+
+        Auf dem Roboter läuft Linux; ein Windows-Virenscanner sieht
+        darin nichts. Geprüft wird gegen ein Sollbild - Tondateien und
+        Steuerdateien. Was gefährlich aussieht, hält den Vorgang an,
+        bevor irgendetwas entpackt oder gebaut wird.
+        """
+        befund = pruefung.pruefe_quelle(quelle)
+        for fund in befund.funde:
+            self._log(f"Prüfung: {fund.was} - {fund.bedeutung}",
+                      "error" if fund.stufe >= pruefung.Stufe.GEFAHR else "warn")
+        if befund.luecke:
+            self._log(f"Prüfung unvollständig: {befund.luecke}", "warn")
+        if befund.stufe >= pruefung.Stufe.GEFAHR:
+            raise PackError(
+                f"In den Aufnahmen für {name} steckt etwas, das in einem "
+                f"Sprachpaket nichts zu suchen hat.",
+                befund.text() + "\n\nEs wurde nichts entpackt, nichts "
+                "gebaut und nichts an den Roboter geschickt.")
+
     def _log(self, nachricht: str, art: str = "info") -> None:
         to_main(self, self.log.append, nachricht, art)
 
@@ -783,6 +804,7 @@ class VoicePage(ttk.Frame):
                     raise RuntimeError("Vom Benutzer abgebrochen.") from None
                 if task.cancelled:
                     raise RuntimeError("Vom Benutzer abgebrochen.")
+                self._pruefen(archiv, wahl.name)
                 self._log("Lege die Stimme auf das Paket deines Modells ...",
                           "step")
                 try:
@@ -812,6 +834,7 @@ class VoicePage(ttk.Frame):
                 if quelle is None:
                     raise RuntimeError(
                         f"Die Aufnahmen für {wahl.name} sind nicht auffindbar.")
+                self._pruefen(quelle, wahl.name)
                 gefunden = importer.import_archive(
                     quelle, build_dir() / "_stimme",
                     known_ids=bekannt, log=lambda m: self._log(m))

@@ -51,7 +51,7 @@ dreamevoice/
     page_start.py            *Start* - Anmeldung, Originalpaket, Zustand
     page_voice.py            *Fertige Stimmen* - wählen, anhören, aufspielen
     tab_store.py             *Eigene Stimmen*
-    tab_builder.py           *Einzelne Ansagen*
+    ansagen.py               Fenster *Ansagen einzeln austauschen*
     tab_install.py           *Bauen und Aufspielen*
     tab_connect.py           *Verbindung*
 ```
@@ -78,7 +78,7 @@ EXE bauen:
 powershell -ExecutionPolicy Bypass -File build_exe.ps1
 ```
 
-Ergebnis: `dist/DreameSprachpaket.exe`, rund 108 MB, ohne Installation
+Ergebnis: `dist/DreameSprachpaket.exe`, rund 106 MB, ohne Installation
 lauffähig. Der Großteil davon sind die eingebauten Stimmen und ffmpeg —
 gemessen am Bau von 1.4.0:
 

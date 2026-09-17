@@ -1,4 +1,4 @@
-## v1.4.0 — Maschinenkult und eine Liste für alle Stimmen
+## v1.4.0 — Servitor und eine Liste für alle Stimmen
 
 Gib deinem Dreame, MOVA oder Trouver eine eigene Stimme — **ohne Rooting**,
 ohne Valetudo, mit einer einzigen portablen EXE.
@@ -10,7 +10,7 @@ ohne Valetudo, mit einer einzigen portablen EXE.
     "Na denn los. Ick fang an zu sauje."                 Berlinerisch
 ```
 
-### Neu: Maschinenkult, ein Community-Pack von Carnimo
+### Neu: Servitor, ein Community-Pack von Carnimo
 
 Die erste Stimme, die nicht aus diesem Projekt stammt: **Carnimo** hat ein
 komplettes Sprachpaket geschrieben, mit ElevenLabs vertont und auf seinem
@@ -45,6 +45,26 @@ Stimme dafür kurz herunter, und der Knopf sagt vorher, wie viel. Gefällt
 sie, erledigt **Aufspielen** den Rest in einem Zug. Ein Schritt und eine
 ganze Seite weniger.
 
+### Eine Seite weniger, nichts verloren
+
+*Einzelne Ansagen* gibt es nicht mehr als eigene Seite. Was dort ging, geht
+jetzt unter **Eigene Stimmen**: ein Knopf öffnet die Liste aller Ansagen,
+jede kann eine eigene Audiodatei bekommen — und **derselbe Knopf baut daraus
+das Paket**. Vorher standen dieselben Schaltflächen auf zwei Seiten, und
+gebaut wurde auf einer dritten.
+
+### Fremde Pakete werden vorher geprüft
+
+Wer ein Sprachpaket aus dem Netz einliest, bekommt es jetzt zuerst
+angesehen: Steckt Programmcode zwischen den Ansagen? Bricht ein Eintrag
+beim Auspacken aus seinem Ordner aus? Versteckt sich ein Archiv im Archiv?
+Auffälliges wird gemeldet, Gefährliches gar nicht erst eingelesen.
+
+Das ist kein Virenscanner und ersetzt keinen. Es schließt die Lücke, die
+ein Virenscanner hier hat: **Dein Roboter läuft unter Linux.** Ein
+Linux-Programm zwischen den Ansagen ist für Windows eine unauffällige
+Datei — für den Roboter wäre es ausführbarer Code.
+
 ### Alles unter CUSTOM, auch Eigenes
 
 Der Roboter legt je Kennung einen eigenen Ordner an, und löschen kann man
@@ -74,6 +94,13 @@ Releases bis Version 10.0: Jede Fassung ab 1.3.0 findet die jeweils neueste
 und spielt sie ein. **1.2.0 kennt noch keine Aktualisierung** — wer die
 hat, lädt 1.4.0 einmal von Hand herunter.
 
+### Freie Stimmen klingen jetzt so laut wie die Originalansagen
+
+GLaDOS und die anderen Stimmen aus dem Netz kamen bisher unverändert auf
+den Roboter und waren im Schnitt gut ein Dezibel leiser als die deutschen
+Ansagen. Jetzt bekommt jede übernommene Ansage die Lautheit der Ansage,
+die sie ersetzt — dieselbe Angleichung, die eigene Pakete schon hatten.
+
 ### Kleinere Korrekturen
 
 * In den Beipackzetteln aller Stimmen-Archive stand **`OHNE GEWAEHR`** —
@@ -93,7 +120,7 @@ das nicht mag, baut sie sich aus dem Quellcode selbst.
 ### Was drin ist
 
 * **Sechs fertige Stimmen**: Bayerisch männlich und weiblich, Hessisch,
-  Wienerisch, Berlinerisch und Maschinenkult — sofort einsatzbereit,
+  Wienerisch, Berlinerisch und Servitor — sofort einsatzbereit,
   nichts nachzuladen
 * **Freie Stimmen aus dem Netz** wie GLaDOS, vor dem Aufspielen anhörbar
 * **Sieben Dialekte** als Text, auch Schwäbisch, Sächsisch und Kölsch — in
@@ -122,7 +149,7 @@ offiziellen Pakets, sodass keine Ansage verlorengeht; der Roboter prüft es
 selbst gegen MD5 und Größe. Vor dem Senden fragt die App, ob dein Gerät den
 Sprachpaket-Dienst überhaupt kennt — wenn nicht, wird gar nichts geschrieben.
 
-Geprüft für diese Fassung: **1001 Selbsttests** in 51 Abschnitten, darunter
+Geprüft für diese Fassung: **1048 Selbsttests** in 54 Abschnitten, darunter
 nachgestellte Angriffe mit Archivbomben, Pfadausbrüchen, untergeschobenen
 Programmen und manipulierten Katalogantworten. Eine der Prüfungen fragt den
 echten Dreame-Katalog ab und schlägt an, wenn sich dort etwas ändert.
@@ -138,10 +165,10 @@ eigenen Bedingungen (privat nutzen und unverändert weitergeben: ja; als
 Trainingsmaterial oder eigenständiges Produkt: nein) — siehe
 `LICENSE-AUDIO.md`.
 
-Maschinenkult ist ein Beitrag von Carnimo und steht unter seinen
+Servitor ist ein Beitrag von Carnimo und steht unter seinen
 Bedingungen: ein inoffizielles, nicht kommerzielles Fan-Sprachpaket, privat
 nutzbar und unverändert kostenlos weiterzugeben. Details in
-`LIZENZ-AUDIO.txt` im Archiv `Maschinenkult-Aufnahmen.zip`.
+`LIZENZ-AUDIO.txt` im Archiv `Servitor-Aufnahmen.zip`.
 
 ### Trinkgeld
 
@@ -187,10 +214,10 @@ Dann fragt Windows gar nicht erst.
 Zur Kontrolle die SHA-256-Prüfsumme dieser EXE:
 
 ```
-3e21951c3bd4009bb10241fddaf149341ef94378130925a9236b4ee3b7831b58
+7466ffc580464033890a0cddd9344d27ca91e1033a25034becf05400c35fcd85
 ```
 
-Größe: 112.779.587 Byte (107,6 MB), Dateiversion 1.4.0.0.
+Größe: 111.194.102 Byte (106,0 MB), Dateiversion 1.4.0.0.
 
 Nachrechnen unter Windows:
 `certutil -hashfile DreameSprachpaket.exe SHA256`

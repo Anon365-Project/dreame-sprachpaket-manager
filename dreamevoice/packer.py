@@ -156,8 +156,8 @@ def build_pack(base_pack: Path,
     if not base_pack.is_file():
         raise PackError(
             "Das Originalpaket fehlt.",
-            "Lade unter 'Einzelne Ansagen' zuerst das offizielle Paket "
-            "deines Roboters herunter - es dient als sichere Grundlage.",
+            "Die App holt es nach der Anmeldung auf der Startseite von "
+            "selbst - es dient als sichere Grundlage.",
         )
     if not assignments:
         raise PackError(

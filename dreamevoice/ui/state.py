@@ -82,6 +82,21 @@ class AppState:
     def subscribe(self, event: str, callback: Callable[[], None]) -> None:
         self._listeners.setdefault(event, []).append(callback)
 
+    def unsubscribe(self, event: str, callback: Callable[[], None]) -> None:
+        """Meldet einen Empfänger wieder ab.
+
+        Nötig für alles, was wieder verschwindet - ein Fenster etwa.
+        Bliebe es angemeldet, liefe die Meldung später in ein zerstörtes
+        Widget; Tk antwortet darauf mit "invalid command name".
+        """
+        empfaenger = self._listeners.get(event)
+        if not empfaenger:
+            return
+        try:
+            empfaenger.remove(callback)
+        except ValueError:
+            pass
+
     def notify(self, event: str) -> None:
         # Beim Roboterwechsel gehört alles verworfen, was zum alten
         # Modell gehört - und zwar HIER, nicht in einer Seite.

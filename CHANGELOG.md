@@ -9,131 +9,78 @@ geschriebene Fassung steht in [RELEASE.md](RELEASE.md).
 
 ### Neue Funktionen
 
-- **Maschinenkult** — sechste eingebaute Stimme, männlich und mechanisch,
+- **Servitor** — sechste eingebaute Stimme, männlich und mechanisch,
   590 Ansagen. Ein Community-Pack von **Carnimo**, mit ElevenLabs erzeugt
-  und von ihm auf einem X50 Ultra Complete getestet. Name und Herkunft
-  stehen in der App direkt in der Liste („Community-Pack von Carnimo“),
-  in der Beschreibung und in der LIESMICH des Archivs. Neues Feld
-  `urheber` in `FertigerDialekt`.
-  - Das eingereichte Paket hatte 620 Tondateien; 30 davon waren Dreames
-    eigene Aufnahmen (Startton, Signaltöne, nicht neu gesprochene
-    Ansagen). Sie sind nicht im Archiv — die App nimmt sie beim
-    Aufspielen aus dem Originalpaket des jeweiligen Roboters. Bestimmt
-    über Länge und Hüllkurve, nicht über den Dateinamen.
-  - Der Name ist neutral gehalten; der ursprüngliche nannte ein
-    geschütztes Spieleuniversum.
+  und von ihm auf einem X50 Ultra Complete getestet. Urheber und Herkunft
+  stehen in der App direkt neben dem Namen. Die 30 Dateien, die Dreames
+  eigene Aufnahmen waren, sind nicht im Archiv — die nimmt die App beim
+  Aufspielen aus dem Originalpaket des jeweiligen Roboters.
 - **Eine Liste für alle Stimmen.** *Fertige Stimmen* zeigt eingebaute,
-  eigene und freie Stimmen gleich groß in einer Liste mit drei Gruppen:
-  *In der App enthalten*, *Eigene*, *Freie Stimmen aus dem Netz*. Vorher
-  standen die freien Stimmen als große Karten auf *Eigene Stimmen*, alle
-  anderen klein in einer Klappliste.
-- **Freie Stimmen vorher anhören.** GLaDOS und Co. mussten erst geladen
-  und gebaut werden, bevor man sie hören konnte. Jetzt lädt *Anhören* sie
-  kurz herunter (der Knopf nennt die Größe), und *Aufspielen* erledigt
-  Laden, Anpassen und Aufspielen in einem Zug. Der Download lässt sich
-  abbrechen.
+  eigene und freie Stimmen gleich groß, geordnet nach *In der App
+  enthalten*, *Eigene* und *Freie Stimmen aus dem Netz*. Freie Stimmen
+  lassen sich vorher anhören; Laden, Anpassen und Aufspielen erledigt ein
+  Zug. Unter der Stimme steht, wie viele ihrer Ansagen auf dieses Modell
+  passen.
+- **Eine Seite weniger.** *Einzelne Ansagen* ist in *Eigene Stimmen*
+  aufgegangen: Dort öffnet ein Knopf die Liste aller Ansagen, und aus den
+  Zuweisungen baut derselbe Knopf das Paket. Vorher gab es dieselben
+  Schaltflächen zweimal, und gebaut wurde auf einer dritten Seite.
+- **Fremde Pakete werden geprüft**, bevor die App sie anfasst: gegen ein
+  Sollbild aus Tondateien und Steuerdateien, mit Blick auf Programmcode,
+  Pfadausbrüche, Verweise und Archive im Archiv — auch drei Ebenen tief.
+  Der Windows-Defender hilft hier nicht: Ein Sprachpaket landet auf einem
+  Roboter, der Linux spricht. Gefundenes wird gemeldet, Gefährliches
+  abgelehnt; entpackt wird dafür nichts (neues Modul `pruefung.py`).
 
 ### Geändert
 
-- **Alles geht unter CUSTOM auf den Roboter** — auch selbst erstellte
-  Pakete. Die Oberfläche zeigt keine eigene Kennung je Dialekt mehr an,
-  und in die Paketbeschreibung wird `CUSTOM` geschrieben. Der Selbsttest
-  prüft, dass nur zwei Stellen ein Paket aufspielen: das eigene Paket
-  fest unter CUSTOM, der Rückweg unter der Kennung des Originalpakets.
-- **Keine Doppel mehr unter „Eigene“.** Pakete, die die App nur zum
-  Aufspielen baut, liegen jetzt in `Meine Pakete\_zum_aufspielen` und
-  überschreiben sich je Stimme. Die bis 1.3.0 angesammelten
-  (`Bayerisch_fertig.tar.gz`, `community_glados_….tar.gz`) werden in der
-  Liste ausgeblendet, aber nicht gelöscht.
-- *Eigene Stimmen* hat keine Karten freier Stimmen und keinen
-  „Store“-Hinweis mehr; Statusanzeige und Protokoll stehen in einer
-  eigenen Karte *Fortschritt*.
-- Fehlt das Originalpaket, verweist die Meldung auf die Startseite statt
-  auf *Einzelne Ansagen*.
-
-### Aktualisierung
-
-Durchgespielt mit echten, aus den Tags gebauten EXEs von 1.3.0 und 1.2.0
-und einem lokalen Proxy, der GitHub-Releases von 1.4.0 bis 10.0.0
-vorspielt.
-
-- **Neustart nach dem Tausch war kein eigenständiger Prozess.** Die neue
-  Fassung erbte die Umgebung der alten, hielt sich für deren Kindprozess
-  und lief mit den entpackten Bibliotheken der *alten* Fassung. Der
-  Starter der alten blieb unsichtbar hängen und sperrte die `.alt.exe` —
-  eine zweite Aktualisierung wäre daran gescheitert. Jetzt startet
-  `neu_starten` mit `PYINSTALLER_RESET_ENVIRONMENT=1`.
-- **Selbstheilung für Updates aus 1.3.0:** Die EXE trägt eine
-  Fassungsdatei. Läuft sie mit fremd entpackten Dateien, startet sie
-  sich vor dem ersten Fenster einmal sauber neu.
-- Eine `config.json` mit BOM (etwa von PowerShell gespeichert) galt als
-  unlesbar, und die App lief mit Standardwerten weiter.
-- `VEROEFFENTLICHEN.md` nennt die Regeln, an die jede ausgelieferte
-  Fassung gebunden ist (Dateiname, Tag-Format, keine Vorabversion,
-  unter 400 MB). 1.2.0 und älter haben keine Aktualisierung.
-- Selbsttest-Abschnitt 48 „Alte Fassungen finden jede neuere“.
-- In allen Beipackzetteln der Stimmen-Archive stand `OHNE GEWAEHR` — jetzt
-  mit Umlaut. Der Umlaut-Test prüft auch Großschreibung und die
-  Textdateien in den Archiven.
-
-### Aus der Durchsicht vor dem Release
-
-- **Anhören und Aufspielen gleichzeitig:** Lief eine Probe noch, während
-  man auf *Aufspielen* klickte, luden beide Threads dieselbe freie Stimme
-  in dieselbe `.part`-Datei. Jetzt wartet der zweite, bis der erste fertig
-  oder abgebrochen ist (`community.download` mit einem Riegel je Paket).
-- **Neue Adresse bei neuem Inhalt:** Seit die Zwischenpakete feste Namen
-  tragen, hätte der Roboter nach einer neueren Fassung derselben Stimme
-  dieselbe URL bekommen. Der Abholname trägt jetzt die ersten Stellen der
-  MD5 (`bayerisch_1a2b3c4d.tar.gz`), wie vorher schon jedes Paket eine
-  eigene Adresse hatte.
-- **Aufgeblähte Fremdarchive:** Freie Stimmen werden im Arbeitsspeicher
-  zusammengesetzt; ein Archiv, das sich auf über 400 MB entpackt, wird
-  jetzt abgelehnt statt eingelesen.
-- **Unbrauchbares X40-Archiv:** Das Projektarchiv ohne feste Prüfsumme
-  galt nach einem Fehlschlag für immer als geladen. Es wird jetzt
-  verworfen und beim nächsten Versuch neu geholt.
-- **Probe ohne Ton:** Enthielt eine Stimme nichts Vorspielbares, hieß es,
-  ffmpeg fehle. Jetzt steht da, was wirklich los ist.
-- Tote Importe und ungenutzte Variablen entfernt (pyflakes).
-- Mit echten Dateien geprüft: Maschinenkult einlesen, anhören und bauen
-  (590 von 620 Ansagen, Dateiliste identisch mit dem Original); GLaDOS,
-  R2-D2 und ein nachgebautes GitHub-Projektarchiv anhören und überlagern.
-
-### Aufnahmen, Lautstärke, Abdeckung
-
-- **Die neuesten Aufnahmen gewinnen.** Ein einmal ausgepacktes Archiv aus
+- **Alles geht unter CUSTOM auf den Roboter**, auch selbst erstellte
+  Pakete. Die App zeigt keine andere Kennung mehr an, und Zwischenpakete
+  liegen in `Meine Pakete\_zum_aufspielen`, statt sich unter „Eigene“ zu
+  sammeln. Die bis 1.3.0 angesammelten werden ausgeblendet, nicht
+  gelöscht.
+- **Freie Stimmen werden so laut wie die Originalansagen.** Bisher kamen
+  sie unverändert auf den Roboter und waren im Schnitt gut ein Dezibel
+  leiser. Gemessen an GLaDOS: Median vorher −1,09 dB, nachher +0,03 dB.
+  Die eingebauten und die selbst gebauten Stimmen waren schon vorher
+  richtig (nachgemessen über alle 593 Ansagen: Median +0,02 dB).
+- **Immer die neuesten Aufnahmen.** Ein einmal ausgepacktes Archiv aus
   der EXE wurde auch nach einem Programm-Update weiterverwendet, und ein
-  alter Download verdeckte die mitgelieferte Fassung für immer. Jetzt
-  entscheidet die Größe (ausgepackte Archive) bzw. ein Fassungsvermerk
-  neben dem Download. Ohne Vermerk - also bei jedem Download vor 1.4.0 -
-  gewinnt die mitgelieferte Fassung, denn sie ist nachweislich jünger.
-- **Freie Stimmen werden so laut wie die Originale.** Bisher kamen sie
-  unverändert auf den Roboter und waren im Schnitt gut ein Dezibel
-  leiser; einzelne Ansagen deutlich mehr. `overlay_pack` bringt jetzt
-  jede übernommene Ansage auf die Lautheit der Originalansage, die sie
-  ersetzt - dieselbe Angleichung wie beim eigenen Paket. Gemessen an
-  GLaDOS: Median vorher -1,09 dB, nachher +0,03 dB. Fehlt ffmpeg, steht
-  es als Warnung im Paket statt still zu geschehen.
-  - Zur Einordnung, weil danach gefragt wurde: Die **eingebauten** Stimmen
-    und die selbst gebauten Pakete waren schon vorher genau richtig.
-    Nachgemessen über alle 593 bzw. 590 Ansagen gegen ihr jeweiliges
-    Original: Median +0,02 dB (Bayerisch) und +0,14 dB (Maschinenkult),
-    keine einzige Ansage mehr als 2 dB daneben.
-- **Vor dem Aufspielen steht da, wie viel ankommt.** Unter der Stimme
-  steht jetzt „Passt auf deinen Roboter: 115 von 620 Ansagen", sobald
-  die Aufnahmen vorliegen; die Zahl steht auch in der Rückfrage. Bisher
-  gab es nur die Katalogangabe („ca. 155 Ansagen"), die für ein anderes
-  Modell gilt. Geladen wird dafür nichts.
-- **Die EXE ist 1,5 MB kleiner**: ffmpeg wird als xz mit BCJ-Filter
-  angehängt statt mit LZMA-Vorgabe. Inhalt und Auspacken bleiben gleich.
+  alter Download verdeckte die mitgelieferte Fassung dauerhaft.
+- **Aktualisierung:** Nach dem Tausch war die neue Fassung kein
+  eigenständiger Prozess — sie lief mit den entpackten Bibliotheken der
+  alten weiter, deren Starter hängen blieb und die `.alt.exe` sperrte.
+  Eine zweite Aktualisierung wäre daran gescheitert. Wer aus 1.3.0
+  kommt, bei dem räumt 1.4.0 das beim ersten Start selbst auf.
+  Durchgespielt mit echten EXEs von 1.3.0 und 1.2.0 gegen vorgespielte
+  Releases bis 10.0.
+
+### Kleinere Korrekturen
+
+- Anhören und Aufspielen luden dieselbe freie Stimme gleichzeitig in
+  dieselbe Datei.
+- Der Roboter bekommt wieder eine neue Adresse, sobald sich der Inhalt
+  eines Pakets ändert (Prüfsumme im Abholnamen).
+- Ein Fremdarchiv, das sich entpackt auf über 400 MB aufbläht, wird
+  abgelehnt; ein unbrauchbares Archiv ohne Prüfsumme wird verworfen
+  statt für immer behalten.
+- „Keine Probe möglich“ nannte fälschlich ffmpeg als Grund.
+- `config.json` mit BOM galt als unlesbar, die App startete mit
+  Standardwerten.
+- In allen Beipackzetteln stand `OHNE GEWAEHR` statt `OHNE GEWÄHR`.
+- Tote Importe entfernt; die EXE ist 1,5 MB kleiner (ffmpeg als xz mit
+  BCJ-Filter angehängt).
 
 ### Selbsttest
 
-Neue Abschnitte 47 „Eine Liste für alle Stimmen“ und 48 „Alte Fassungen
-finden jede neuere“. Abschnitt 47: Zwischenpakete,
-Zielordner des Packers, Abbruch eines Downloads ohne Reste, nur CUSTOM
-als Kennung, Aufbau und Inhalt des Maschinenkult-Archivs.
+1048 Prüfungen in 54 Abschnitten. Neu sind die Abschnitte über die
+Stimmenliste, über Aktualisierungen aus alten Fassungen, über Lautstärke
+und Abdeckung, über die zusammengelegte Seite und über die Prüfung
+fremder Pakete — letztere mit echten Archiven, die Pfadausbruch,
+Programmcode, Verweise und Schachtelung versuchen.
+
+`VEROEFFENTLICHEN.md` nennt außerdem die Regeln, an die jedes künftige
+Release gebunden ist, damit alte Fassungen es finden.
 
 ---
 

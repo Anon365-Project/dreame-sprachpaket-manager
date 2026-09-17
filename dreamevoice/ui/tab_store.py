@@ -10,11 +10,13 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Optional
 
-from .. import (custom, dialect, elevenlabs, importer, installer, library,
-                packer, textfiles, tts)
+from .. import (audio, custom, dialect, elevenlabs, embedded, ffmpeg_setup,
+                importer, installer, library, packer, pruefung, textfiles,
+                tts)
 from ..paths import build_dir
 from .state import AppState, error_text, run_async, to_main
-from .tab_builder import open_with_default_player
+from . import ansagen
+from .ansagen import open_with_default_player
 from .theme import Theme
 from .widgets import (Card, LogView, ScrollableList, ScrollablePage,
                       StatusBadge, show_error, show_info, show_warning)
@@ -47,6 +49,7 @@ class StoreTab(ttk.Frame):
         outer = self.page.body()
 
         self._build_dialect_card(outer)
+        self._build_aufnahmen_card(outer)
 
         # Die freien Stimmen aus dem Netz standen bis 1.3.0 hier als
         # Karten. Seit 1.4.0 stehen sie mit allen anderen fertigen Stimmen
@@ -64,6 +67,163 @@ class StoreTab(ttk.Frame):
 
         self.log = LogView(listing.content, self.theme, height=8)
         self.log.pack(fill="both", expand=False, pady=(10, 0))
+
+    # ------------------------------------------------------------------
+    def _build_aufnahmen_card(self, outer) -> None:
+        """Fertig gesprochene Ansagen: ganze Sätze und einzelne.
+
+        Bis 1.3.0 gab es dafür zwei Orte mit denselben Knöpfen: hier und
+        die Seite "Einzelne Ansagen". Wer dort etwas zuwies, musste
+        außerdem selbst darauf kommen, dass gebaut wird - auf einer
+        dritten Seite. Jetzt steht beides hier, und gebaut wird auch hier.
+        """
+        card = Card(outer, self.theme, "Eigene Aufnahmen verwenden",
+                    "Fertig gesprochene Ansagen - ganze Sätze auf einmal "
+                    "oder Ansage für Ansage.")
+        card.pack(fill="x", pady=(14, 0))
+
+        reihe = ttk.Frame(card.content, style="Card.TFrame")
+        reihe.pack(fill="x")
+        ttk.Button(reihe, text="Aufnahmen einlesen ...",
+                   style="Accent.TButton",
+                   command=self._on_import_ready).pack(side="left")
+        ttk.Button(reihe, text="Ansagen einzeln austauschen ...",
+                   style="Small.TButton",
+                   command=self._on_einzelne).pack(side="left", padx=(8, 0))
+
+        ttk.Label(
+            card.content,
+            text=("'Aufnahmen einlesen' nimmt einen ganzen Satz entgegen: eine "
+                  "ZIP-Datei von der Projektseite, ein fertiges .tar.gz oder "
+                  "einen Ordner voller mp3-, wav- oder ogg-Dateien. Die Zahl "
+                  "im Dateinamen ist die Ansage-Nummer.\n\n"
+                  "'Ansagen einzeln austauschen' öffnet die Liste aller "
+                  "Ansagen: anhören, eine eigene Datei zuweisen, fertig. Aus "
+                  "den Zuweisungen baut dieselbe Schaltfläche dort das Paket.\n\n"
+                  "Beides landet als fertiges Paket in deiner Sammlung und "
+                  "steht danach unter „Fertige Stimmen“ zum Aufspielen bereit."),
+            style="Muted.TLabel", wraplength=820, justify="left"
+        ).pack(anchor="w", pady=(8, 0))
+
+        # ffmpeg: stand bisher auf der Seite "Einzelne Ansagen". Es wird
+        # nur sichtbar, wenn etwas fehlt - im Normalfall steckt es in der
+        # EXE und wird beim ersten Bedarf ausgepackt.
+        self.ffmpeg_reihe = ttk.Frame(card.content, style="Card.TFrame")
+        self.lbl_ffmpeg = ttk.Label(self.ffmpeg_reihe, text="",
+                                    style="Warning.TLabel", wraplength=820,
+                                    justify="left")
+        self.lbl_ffmpeg.pack(anchor="w")
+        self.btn_ffmpeg = ttk.Button(self.ffmpeg_reihe,
+                                     text="ffmpeg automatisch einrichten",
+                                     style="Small.TButton",
+                                     command=self._on_setup_ffmpeg)
+        self.ffmpeg_progress = ttk.Progressbar(self.ffmpeg_reihe,
+                                               mode="determinate",
+                                               maximum=100, length=200)
+        self._ffmpeg_busy = False
+        self._ffmpeg_pruefen()
+
+    # ------------------------------------------------------------------
+    def _ffmpeg_pruefen(self, auspacken: bool = True) -> None:
+        """Zeigt nur dann etwas, wenn ohne ffmpeg etwas fehlen würde."""
+        gefunden = audio.find_ffmpeg()
+        self.state.ffmpeg = gefunden
+        if gefunden is not None:
+            self.ffmpeg_reihe.pack_forget()
+            return
+
+        if embedded.has_ffmpeg():
+            # In der EXE liegt es bei - einmal auspacken, ohne Nachfrage.
+            if auspacken and not self._ffmpeg_busy:
+                self._ffmpeg_auspacken()
+            return
+
+        self.ffmpeg_reihe.pack(fill="x", pady=(12, 0))
+        self.lbl_ffmpeg.configure(
+            text=("ffmpeg wurde nicht gefunden. Ohne ffmpeg lassen sich nur "
+                  "fertige .ogg-Dateien (Vorbis, mono, 16000 Hz) verwenden, "
+                  "und die Lautstärke wird nicht angeglichen. Abhilfe: "
+                  "ffmpeg.exe neben die App legen - oder hier einrichten."))
+        self.btn_ffmpeg.pack(anchor="w", pady=(6, 0))
+
+    def _ffmpeg_auspacken(self) -> None:
+        """Packt das mitgelieferte ffmpeg im Hintergrund aus."""
+        self._ffmpeg_busy = True
+
+        def work(_task):
+            return embedded.extract_ffmpeg()
+
+        def ok(pfad) -> None:
+            self._ffmpeg_busy = False
+            self.state.ffmpeg = pfad
+            self._ffmpeg_pruefen(auspacken=False)
+
+        def fail(_exc) -> None:
+            self._ffmpeg_busy = False
+            self._ffmpeg_pruefen(auspacken=False)
+
+        run_async(self, work, on_success=ok, on_error=fail)
+
+    def _on_setup_ffmpeg(self) -> None:
+        if not messagebox.askyesno("ffmpeg einrichten",
+                                   ffmpeg_setup.describe_source()
+                                   + "\n\nJetzt herunterladen?",
+                                   parent=self):
+            return
+
+        self.btn_ffmpeg.configure(state="disabled")
+        self.ffmpeg_progress.pack(anchor="w", pady=(6, 0))
+        self.ffmpeg_progress.configure(value=0)
+        self.lbl_ffmpeg.configure(text="Lade ffmpeg herunter (etwa 170 MB) ...",
+                                  style="Muted.TLabel")
+
+        def melde(fertig: int, gesamt: int) -> None:
+            anteil = (fertig / gesamt * 100) if gesamt else 0
+            to_main(self, self.ffmpeg_progress.configure, {"value": anteil})
+            to_main(self, self.lbl_ffmpeg.configure,
+                    {"text": f"Lade ffmpeg herunter ... "
+                             f"{fertig // (1024 * 1024)} von "
+                             f"{(gesamt or 1) // (1024 * 1024)} MB"})
+
+        def work(task):
+            return ffmpeg_setup.download_and_install(
+                progress=melde,
+                log=lambda m: to_main(self, self.lbl_ffmpeg.configure, {"text": m}),
+                cancelled=lambda: task.cancelled)
+
+        def ok(_pfad) -> None:
+            self.lbl_ffmpeg.configure(style="Warning.TLabel")
+            self._ffmpeg_pruefen()
+            show_info(self, self.theme, "ffmpeg eingerichtet",
+                      "ffmpeg ist jetzt einsatzbereit.",
+                      "mp3-, wav- und m4a-Dateien werden ab sofort automatisch "
+                      "umgewandelt, und die Lautstärke wird angeglichen.")
+
+        def fail(exc: Exception) -> None:
+            nachricht, hinweis = error_text(exc)
+            self.lbl_ffmpeg.configure(style="Warning.TLabel")
+            self._ffmpeg_pruefen()
+            show_error(self, self.theme, "ffmpeg-Einrichtung fehlgeschlagen",
+                       nachricht, hinweis)
+
+        def zum_schluss() -> None:
+            self.btn_ffmpeg.configure(state="normal")
+            self.ffmpeg_progress.pack_forget()
+
+        run_async(self, work, on_success=ok, on_error=fail,
+                  on_finally=zum_schluss)
+
+    def _on_einzelne(self) -> None:
+        """Öffnet die Liste aller Ansagen zum einzelnen Zuweisen."""
+        if not self.state.has_base_pack:
+            show_warning(
+                self, self.theme, "Originalpaket fehlt",
+                "Das offizielle Sprachpaket deines Roboters wird auf der "
+                "Startseite einmalig geholt.",
+                "Daraus kommen die Hörproben und die Liste der Ansagen, die "
+                "dein Modell überhaupt kennt.")
+            return
+        ansagen.fenster_zeigen(self, self.theme, self.state, self.paket_bauen)
 
     # ------------------------------------------------------------------
     def _build_dialect_card(self, outer) -> None:
@@ -118,20 +278,13 @@ class StoreTab(ttk.Frame):
                                             style="Small.TButton",
                                             command=self._on_delete_custom)
         self.btn_delete_custom.pack(side="left", padx=(8, 0))
-        ttk.Button(eigene, text="Aufnahmen einlesen ...",
-                   style="Small.TButton",
-                   command=self._on_import_ready).pack(side="left", padx=(8, 0))
 
         ttk.Label(card.content,
                   text=("Unter 'Eigenes Paket anlegen' entsteht eine eigene "
                         "Textsammlung - etwa im Stil einer Filmfigur. Sie "
                         "verhält sich wie ein Dialekt: anhören, Texte ändern, "
                         "mit jeder Stimme erzeugen, nach aufgebrauchtem "
-                        "Kontingent fortsetzen. 'Aufnahmen einlesen' nimmt "
-                        "fertig gesprochene Ansagen entgegen: eine "
-                        "ZIP-Datei von der Projektseite, ein fertiges "
-                        ".tar.gz oder einen Ordner voller mp3- und "
-                        "wav-Dateien."),
+                        "Kontingent fortsetzen."),
                   style="Muted.TLabel", wraplength=820,
                   justify="left").pack(anchor="w", pady=(6, 0))
 
@@ -498,8 +651,8 @@ class StoreTab(ttk.Frame):
         if not self.state.has_base_pack:
             show_warning(
                 self, self.theme, "Originalpaket fehlt",
-                "Lade zuerst unter 'Einzelne Ansagen' das offizielle Sprachpaket deines "
-                "Roboters herunter.",
+                "Das offizielle Sprachpaket deines Roboters wird auf der "
+                "Startseite einmalig geholt.",
                 "Jedes eigene Paket entsteht als Kopie davon - sonst fehlen "
                 "dem Roboter alle Ansagen, die du nicht selbst lieferst.")
             return
@@ -529,6 +682,8 @@ class StoreTab(ttk.Frame):
                            ("Alle Dateien", "*.*")])
             if not quelle:
                 return
+            if not self._pruefung_bestanden(Path(quelle)):
+                return
             try:
                 gefunden = importer.import_archive(
                     Path(quelle), build_dir() / "_import",
@@ -542,6 +697,8 @@ class StoreTab(ttk.Frame):
                 initialdir=start if Path(start).is_dir() else str(Path.home()),
                 mustexist=True)
             if not quelle:
+                return
+            if not self._pruefung_bestanden(Path(quelle)):
                 return
             try:
                 gefunden = importer.scan_folder(
@@ -561,15 +718,36 @@ class StoreTab(ttk.Frame):
                 self, self.theme, "Nichts gefunden",
                 f"In {Path(quelle).name} steckt keine zuzuordnende Aufnahme.",
                 "Die Dateien müssen die Ansage-Nummer im Namen tragen, also "
-                "7.ogg, 7.wav oder 7.mp3. Ein passend benannter Vorlagenordner "
-                "lässt sich unter 'Einzelne Ansagen' anlegen.")
+                "7.ogg, 7.wav oder 7.mp3. Einen passend benannten "
+                "Vorlagenordner legt 'Ansagen einzeln austauschen' an.")
+            return
+
+        self.paket_bauen(zuordnung, Path(quelle).stem or "eigenes_paket",
+                         Path(quelle).name)
+
+    def paket_bauen(self, zuordnung: dict, vorschlag: str,
+                    herkunft: str) -> None:
+        """Baut aus zugewiesenen Aufnahmen ein Paket und legt es ab.
+
+        Wird von zwei Wegen benutzt: vom Einlesen ganzer Ordner und
+        Archive und vom Fenster "Ansagen einzeln austauschen". Vorher
+        endete der zweite Weg im Nichts - die Zuweisungen lagen im
+        Zustand, gebaut wurde aber auf einer dritten Seite.
+        """
+        if not self.state.has_base_pack:
+            show_warning(
+                self, self.theme, "Originalpaket fehlt",
+                "Das offizielle Sprachpaket deines Roboters wird auf der "
+                "Startseite einmalig geholt.",
+                "Jedes eigene Paket entsteht als Kopie davon - sonst fehlen "
+                "dem Roboter alle Ansagen, die du nicht selbst lieferst.")
             return
 
         name = simpledialog.askstring(
             "Name für dieses Paket",
             f"{len(zuordnung)} Ansagen gefunden.\n\n"
             f"Unter welchem Namen soll das fertige Paket gespeichert werden?",
-            initialvalue=library.safe_name(Path(quelle).stem or "eigenes_paket"),
+            initialvalue=library.safe_name(vorschlag or "eigenes_paket"),
             parent=self)
         if name is None:
             return
@@ -624,7 +802,7 @@ class StoreTab(ttk.Frame):
         def ok(build) -> None:
             library.write_info(build.path, dialect=name.strip() or ziel.stem,
                                engine="Eigene Aufnahmen",
-                               voice=Path(quelle).name,
+                               voice=herkunft,
                                lang_id=kennung,
                                replaced=len(build.replaced),
                                total=len(zuordnung))
@@ -653,6 +831,47 @@ class StoreTab(ttk.Frame):
 
         run_async(self, work_fn, on_success=ok, on_error=fail,
                   on_finally=lambda: self._busy(False))
+
+    def _pruefung_bestanden(self, quelle: Path) -> bool:
+        """Sieht in fremde Pakete hinein, bevor die App sie anfasst.
+
+        Der Windows-Virenscanner hilft hier nicht: Ein Sprachpaket geht
+        auf einen Roboter, der Linux spricht. Geprüft wird deshalb gegen
+        ein Sollbild - Tondateien und Steuerdateien, sonst nichts.
+        Gefunden wird gemeldet; was gefährlich ist, wird abgelehnt.
+        """
+        befund = pruefung.pruefe_quelle(quelle)
+        if befund.funde:
+            self.log.append(f"Prüfung von {quelle.name}:",
+                            "warn" if befund.stufe >= pruefung.Stufe.VERDACHT
+                            else "info")
+            for fund in befund.funde:
+                self.log.append(f"  {fund.was}: {fund.bedeutung}",
+                                "error" if fund.stufe >= pruefung.Stufe.GEFAHR
+                                else "warn")
+        if befund.luecke:
+            self.log.append(f"  Nicht zu Ende geprüft: {befund.luecke}", "warn")
+
+        if befund.stufe >= pruefung.Stufe.GEFAHR:
+            show_error(
+                self, self.theme, "Dieses Paket wird nicht eingelesen",
+                f"In '{quelle.name}' steckt etwas, das in einem "
+                f"Sprachpaket nichts zu suchen hat.",
+                befund.text() + "\n\nDie App hat nichts davon entpackt und "
+                "nichts ausgeführt. Nimm ein Paket aus einer Quelle, der du "
+                "traust.")
+            return False
+
+        if befund.stufe >= pruefung.Stufe.VERDACHT:
+            return messagebox.askyesno(
+                "Auffälligkeiten gefunden",
+                f"In '{quelle.name}' ist etwas aufgefallen:\n\n"
+                f"{befund.text()}\n\n"
+                f"Das muss nichts Böses heißen - kaputte Dateien sehen "
+                f"ähnlich aus. Eingelesen werden ohnehin nur Tondateien.\n\n"
+                f"Trotzdem einlesen?",
+                parent=self)
+        return True
 
     def _on_import_error(self, exc: Exception) -> None:
         message, hint = error_text(exc)
@@ -1763,8 +1982,8 @@ class StoreTab(ttk.Frame):
         if not self.state.has_base_pack:
             messagebox.showwarning(
                 "Originalpaket fehlt",
-                "Lade zuerst unter 'Einzelne Ansagen' das offizielle Sprachpaket deines Roboters "
-                "herunter - es ist die Grundlage jedes Pakets.",
+                "Das offizielle Sprachpaket deines Roboters wird auf der "
+                "Startseite einmalig geholt - es ist die Grundlage jedes Pakets.",
                 parent=self)
             return
 
@@ -1813,7 +2032,8 @@ class StoreTab(ttk.Frame):
             messagebox.showwarning(
                 "ffmpeg fehlt",
                 "Zum Umwandeln der gesprochenen Ansagen wird ffmpeg gebraucht.\n\n"
-                "Wechsle kurz unter 'Einzelne Ansagen' - dort richtet die App es ein.",
+                "Es steckt in der App und wird beim ersten Bedarf ausgepackt; "
+                "oben auf dieser Seite steht, falls etwas fehlt.",
                 parent=self)
             return
 

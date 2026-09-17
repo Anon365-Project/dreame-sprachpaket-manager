@@ -47,7 +47,7 @@ GESEHEN: list = []
 #: ffmpeg, der Windows-Tresor oder Tkinter, entfallen ganze Blöcke -
 #: und am Ende steht trotzdem "Fehlgeschlagen: 0". Wer der Zahl
 #: vertraut, hört auf, selbst hinzusehen.
-ABSCHNITTE_ERWARTET = 52
+ABSCHNITTE_ERWARTET = 54
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -1327,7 +1327,9 @@ def _alle_pruefungen() -> None:
     # Der Kern: die Vorgabe im Auswahldialog muss das Behalten sein.
     check("'Daneben speichern' steht an erster Stelle",
           _ts.WAHL_DANEBEN.startswith("Daneben"))
-    quelle_imp2 = inspect.getsource(_ts.StoreTab._on_import_ready)
+    # Seit 1.4.0 baut paket_bauen - aus dem Einlesen ganzer Ordner und
+    # aus dem Fenster "Ansagen einzeln austauschen".
+    quelle_imp2 = inspect.getsource(_ts.StoreTab.paket_bauen)
     pos_frage = quelle_imp2.find("WAHL_DANEBEN, WAHL_ERSETZEN")
     pos_vorgabe = quelle_imp2.find("WAHL_DANEBEN)")
     check("und ist die Vorgabe des Dialogs", 0 < pos_frage < pos_vorgabe,
@@ -1538,11 +1540,11 @@ def _alle_pruefungen() -> None:
 
     # Und die Oberfläche muss den eingebetteten Weg auch wirklich gehen,
     # bevor sie zum Herunterladen rät.
-    from dreamevoice.ui.tab_builder import BuilderTab   # noqa: E402
+    from dreamevoice.ui.tab_store import StoreTab   # noqa: E402
 
-    quelle_check = inspect.getsource(BuilderTab._check_ffmpeg)
+    quelle_check = inspect.getsource(StoreTab._ffmpeg_pruefen)
     pos_eingebettet = quelle_check.find("embedded.has_ffmpeg()")
-    pos_download = quelle_check.find("btn_ffmpeg.pack(side=")
+    pos_download = quelle_check.find("btn_ffmpeg.pack(")
     check("erst das eingebettete ffmpeg, dann der Download",
           0 < pos_eingebettet < pos_download,
           f"eingebettet bei {pos_eingebettet}, Download bei {pos_download}")
@@ -1577,7 +1579,7 @@ def _alle_pruefungen() -> None:
             _shell = _fenster.shell
             check("alle Einträge der Seitenleiste sind da",
                   _shell.keys() == ["start", "stimme", "eigene",
-                                    "ansagen", "aufspielen", "verbindung"],
+                                    "aufspielen", "verbindung"],
                   str(_shell.keys()))
             check("Start ist die erste Seite", _shell.current == "start")
             check("ohne Anmeldung steht das Anmeldeformular",
@@ -1585,7 +1587,7 @@ def _alle_pruefungen() -> None:
                   _fenster.page_start._zustand)
             check("was ohne Anmeldung sinnlos ist, ist gesperrt",
                   all(not _shell._eintraege[k].enabled
-                      for k in ("stimme", "eigene", "ansagen", "aufspielen")))
+                      for k in ("stimme", "eigene", "aufspielen")))
             check("Verbindung bleibt erreichbar",
                   _shell._eintraege["verbindung"].enabled)
             check("und trägt einen Warnpunkt",
@@ -1603,9 +1605,9 @@ def _alle_pruefungen() -> None:
             check("es ist immer genau eine Seite platziert",
                   _platziert == [_shell.current], str(_platziert))
 
-            check("die vier bisherigen Ansichten sind eingezogen",
+            check("die bisherigen Ansichten sind eingezogen",
                   all(getattr(_fenster, n, None) is not None for n in
-                      ("tab_connect", "tab_builder", "tab_install", "tab_store")))
+                      ("tab_connect", "tab_install", "tab_store")))
 
             # Die neue Seite muss die mitgelieferten Dialekte auch finden -
             # eine leere Auswahl wäre der peinlichste aller Fehler.
@@ -3133,9 +3135,9 @@ def _alle_pruefungen() -> None:
             _spaeter = [k for k, e in _roh.items() if e.seite is None]
             check("nur die beiden Hauptseiten entstehen sofort",
                   sorted(_sofort) == ["start", "stimme"], f"{sorted(_sofort)}")
-            check("die vier unter 'Erweitert' warten",
-                  sorted(_spaeter) == ["ansagen", "aufspielen", "eigene",
-                                       "verbindung"], f"{sorted(_spaeter)}")
+            check("die drei unter 'Erweitert' warten",
+                  sorted(_spaeter) == ["aufspielen", "eigene", "verbindung"],
+                  f"{sorted(_spaeter)}")
 
             # Der Zugriff über die Eigenschaft baut sie - so bleibt jeder
             # bisherige Aufruf gültig.
@@ -3144,7 +3146,7 @@ def _alle_pruefungen() -> None:
                   _roh["eigene"].seite is _f.tab_store)
 
             # Jede Seite muss sich auch wirklich zeigen lassen.
-            for _key in ("eigene", "ansagen", "aufspielen", "verbindung",
+            for _key in ("eigene", "aufspielen", "verbindung",
                          "stimme", "start"):
                 _f.shell.show(_key)
                 _f.update_idletasks()
@@ -5025,8 +5027,8 @@ def _alle_pruefungen() -> None:
           str(_pv47.count("out_dir=zwischen")))
 
     # f) Das Community-Pack: Urheber sichtbar, männlich, ohne Dreame-Originale.
-    _mk = _dp47.get("maschinenkult")
-    check("Maschinenkult steht im Katalog", _mk is not None)
+    _mk = _dp47.get("servitor")
+    check("Servitor steht im Katalog", _mk is not None)
     if _mk is not None:
         check("mit Urheber Carnimo als Community-Pack",
               _mk.ist_community and _mk.urheber == "Carnimo"
@@ -5036,22 +5038,22 @@ def _alle_pruefungen() -> None:
               _mk.anzeigename)
         check("und die übrigen Stimmen nennen keinen fremden Urheber",
               all(not d.ist_community for d in _dp47.KATALOG if d is not _mk))
-    _zip47 = _w47 / "Fertige Pakete" / "Maschinenkult-Aufnahmen.zip"
+    _zip47 = _w47 / "Fertige Pakete" / "Servitor-Aufnahmen.zip"
     if not _zip47.is_file():
-        uebersprungen("das Maschinenkult-Archiv stimmt", "Archiv fehlt")
+        uebersprungen("das Servitor-Archiv stimmt", "Archiv fehlt")
     else:
         import zipfile as _zf47
-        _o47 = "Maschinenkult-Aufnahmen/"
+        _o47 = "Servitor-Aufnahmen/"
         with _zf47.ZipFile(_zip47) as _z:
             _namen47 = _z.namelist()
             _lies = _z.read(_o47 + "LIESMICH.txt").decode("utf-8-sig")
             _liz = _z.read(_o47 + "LIZENZ-AUDIO.txt").decode("utf-8-sig")
-            _txt = _z.read(_o47 + "Maschinenkult-Texte.txt").decode("utf-8-sig")
+            _txt = _z.read(_o47 + "Servitor-Texte.txt").decode("utf-8-sig")
         _ogg47 = [n for n in _namen47 if n.endswith(".ogg")]
         check("das Archiv hat die 590 Aufnahmen des Autors",
               len(_ogg47) == 590 and (_mk is None or _mk.ansagen == 590),
               str(len(_ogg47)))
-        check("alle liegen im Ordner Maschinenkult-Aufnahmen",
+        check("alle liegen im Ordner Servitor-Aufnahmen",
               all(n.startswith(_o47) for n in _namen47))
         check("die LIESMICH nennt Carnimo und Community-Pack",
               "Carnimo" in _lies and "COMMUNITY-PACK" in _lies
@@ -5059,9 +5061,12 @@ def _alle_pruefungen() -> None:
         check("die Lizenz nennt den Urheber und keine MIT-Freigabe",
               "Carnimo" in _liz and "NICHT unter der MIT-Lizenz" in _liz)
         _alles47 = (_lies + _liz + _txt[:600]).lower()
-        check("Name und Kopf nennen keine fremde Marke",
+        # "Servitor" ist ein gewöhnliches Wort (lateinisch: Diener) und
+        # der Name der Stimme. Geschützt sind die Namen des Universums -
+        # die dürfen weder im Namen noch in den Beipackzetteln stehen.
+        check("Name und Beipackzettel nennen keine fremde Marke",
               not any(w in _alles47 for w in
-                      ("mechanicus", "servitor", "adeptus", "warhammer")))
+                      ("mechanicus", "adeptus", "warhammer", "omnissiah")))
         check("die Texte stehen mit Umlauten und Windows-Zeilenenden da",
               "GEWÄHR" in _liz and "\r\n" in _liz)
 
@@ -5306,6 +5311,249 @@ def _alle_pruefungen() -> None:
     check("und packt es notfalls vorher aus",
           _pv49.count("embedded.extract_ffmpeg()") == 2,
           str(_pv49.count("embedded.extract_ffmpeg()")))
+
+
+    # ==================================================================
+    section("50. Eine Seite weniger, alle Funktionen da")
+    # ==================================================================
+    # "Einzelne Ansagen" war eine eigene Seite mit denselben Knöpfen wie
+    # "Eigene Stimmen" - und wer dort etwas zuwies, musste selbst darauf
+    # kommen, dass auf einer dritten Seite gebaut wird. Seit 1.4.0 gibt
+    # es dafür ein Fenster aus "Eigene Stimmen" heraus, das auch baut.
+    from dreamevoice.ui import ansagen as _an50
+    from dreamevoice.ui.tab_store import StoreTab as _ST50
+
+    _w50 = Path(__file__).resolve().parent
+    check("das Modul der alten Seite ist weg",
+          not (_w50 / "dreamevoice" / "ui" / "tab_builder.py").exists())
+    for _name50 in ("open_with_default_player", "SoundRow", "AnsagenListe",
+                    "AnsagenFenster", "fenster_zeigen"):
+        check(f"ansagen.py bringt {_name50} mit",
+              hasattr(_an50, _name50))
+    check("die Seite 'Eigene Stimmen' öffnet das Fenster und baut daraus",
+          hasattr(_ST50, "_on_einzelne") and hasattr(_ST50, "paket_bauen"))
+    check("und kümmert sich um ffmpeg",
+          hasattr(_ST50, "_ffmpeg_pruefen") and hasattr(_ST50, "_on_setup_ffmpeg"))
+
+    # Kein Knopf darf zweimal dasselbe tun. "Aufnahmen einlesen" gab es
+    # bis 1.3.0 auf beiden Seiten.
+    _ts50 = (_w50 / "dreamevoice" / "ui" / "tab_store.py").read_text(
+        encoding="utf-8")
+    _an50_text = (_w50 / "dreamevoice" / "ui" / "ansagen.py").read_text(
+        encoding="utf-8")
+    check("'Aufnahmen einlesen' steht genau einmal",
+          _ts50.count('text="Aufnahmen einlesen ..."') == 1
+          and "Aufnahmen einlesen" not in _an50_text)
+    check("das Fenster lädt kein Originalpaket mehr",
+          "download_pack" not in _an50_text)
+    _ti50 = (_w50 / "dreamevoice" / "ui" / "tab_install.py").read_text(
+        encoding="utf-8")
+    check("die Wahl der Grundlage ist auf der Expertenseite gelandet",
+          "_on_grundlage_laden" in _ti50 and "base_language" in _ti50)
+
+    # Und jetzt wirklich: Fenster auf, Liste da, Zustand sauber.
+    if not _tk_da:
+        uebersprungen("das Fenster für einzelne Ansagen geht auf",
+                      "Tkinter oder Anzeige fehlt auf diesem Rechner")
+    else:
+        _f50 = None
+        try:
+            _f50 = MainWindow()
+            _f50.withdraw()
+            _f50.update_idletasks()
+            check("die Seitenleiste führt 'Einzelne Ansagen' nicht mehr",
+                  "ansagen" not in _f50.shell.keys(), str(_f50.shell.keys()))
+            _store50 = _f50.tab_store
+            _f50.update_idletasks()
+            _vorher50 = len(_f50.state_obj._listeners.get("base_pack_changed", []))
+            _gebaut50 = []
+            _fenster50 = _an50.fenster_zeigen(
+                _store50, _f50.theme, _f50.state_obj,
+                lambda z, v, h: _gebaut50.append((len(z), v, h)))
+            _fenster50.withdraw()
+            _f50.update_idletasks()
+            check("das Fenster für einzelne Ansagen geht auf",
+                  _fenster50.winfo_exists() == 1)
+            check("und zeigt Ansagen zum Zuweisen",
+                  len(_fenster50.liste._rows) > 0,
+                  f"{len(_fenster50.liste._rows)} Zeilen")
+            check("ein zweiter Klick öffnet kein zweites Fenster",
+                  _an50.fenster_zeigen(_store50, _f50.theme, _f50.state_obj,
+                                       lambda *_a: None) is _fenster50)
+            _fenster50.liste.var_search.set("Akku")
+            _fenster50.liste.rebuild_list()
+            _f50.update_idletasks()
+            check("die Suche filtert",
+                  0 < len(_fenster50.liste._rows) < 40,
+                  f"{len(_fenster50.liste._rows)} Treffer für 'Akku'")
+            # Ohne Zuweisung wird nichts gebaut - sonst entstünde ein
+            # Paket, das nichts ersetzt.
+            _fenster50._on_bauen()
+            check("ohne Zuweisung wird nichts gebaut", not _gebaut50)
+
+            _fenster50.destroy()
+            _f50.update_idletasks()
+            _nachher50 = len(_f50.state_obj._listeners.get("base_pack_changed", []))
+            check("das geschlossene Fenster meldet sich wieder ab",
+                  _nachher50 == _vorher50, f"{_vorher50} -> {_nachher50}")
+            # Und die Meldung darf danach niemanden mehr treffen.
+            _f50.state_obj.notify("base_pack_changed")
+            check("eine spätere Meldung läuft ins Leere, nicht in einen Fehler",
+                  True)
+        finally:
+            if _f50 is not None:
+                try:
+                    _f50.destroy()
+                except Exception:                      # noqa: BLE001
+                    pass
+
+
+    # ==================================================================
+    section("51. Fremde Pakete auf Schadcode prüfen")
+    # ==================================================================
+    # Der Windows-Defender hilft hier nicht: Ein Sprachpaket geht auf
+    # einen Roboter, der Linux spricht. Ein ELF-Programm zwischen den
+    # Ansagen ist für Windows eine unauffällige Datei. Geprüft wird
+    # deshalb gegen ein Sollbild - und zwar mit echten Archiven, die
+    # genau das versuchen.
+    from dreamevoice import pruefung as _pr51
+    import zipfile as _zip51
+
+    _t51 = arbeitsordner()
+    _OGG51 = b"OggS" + b"\x00" * 60
+    _ELF51 = b"\x7fELF\x02\x01\x01" + b"\x00" * 60
+
+    def _zip51_bauen(name, eintraege):
+        pfad = _t51 / name
+        with _zip51.ZipFile(pfad, "w") as z:
+            for n, daten in eintraege:
+                z.writestr(n, daten)
+        return pfad
+
+    def _tar51_bauen(name, eintraege, sonder=()):
+        pfad = _t51 / name
+        with tarfile.open(pfad, "w:gz") as t:
+            for n, daten in eintraege:
+                info = tarfile.TarInfo(n)
+                info.size = len(daten)
+                t.addfile(info, io.BytesIO(daten))
+            for n, ziel, typ in sonder:
+                info = tarfile.TarInfo(n)
+                info.type = typ
+                info.linkname = ziel
+                t.addfile(info)
+        return pfad
+
+    _sauber51 = _tar51_bauen(
+        "sauber.tar.gz",
+        [(f"{n}.ogg", _OGG51) for n in range(1, 20)]
+        + [("voice_mapping.json", b"{}")])
+    _b51 = _pr51.pruefe_archiv(_sauber51)
+    check("ein gewöhnliches Sprachpaket gibt keinen Fund",
+          _b51.stufe == _pr51.Stufe.NICHTS and _b51.eintraege == 20,
+          f"{_b51.stufe.name}, {[f.was for f in _b51.funde]}")
+
+    # a) Ein Linux-Programm, das sich als Ansage ausgibt. Der Fall, für
+    #    den es diese Prüfung überhaupt gibt.
+    _b51 = _pr51.pruefe_archiv(
+        _zip51_bauen("getarnt.zip", [("7.ogg", _ELF51), ("8.ogg", _OGG51)]))
+    check("ein Linux-Programm als 7.ogg gilt als Gefahr",
+          _b51.stufe == _pr51.Stufe.GEFAHR
+          and any("Programmcode" in f.was for f in _b51.funde),
+          f"{[f.was for f in _b51.funde]}")
+
+    # b) Ausbruch aus dem Zielordner.
+    _b51 = _pr51.pruefe_archiv(
+        _tar51_bauen("ausbruch.tar.gz", [("../../autostart.ogg", _OGG51)]))
+    check("ein Eintrag mit .. gilt als Gefahr",
+          _b51.stufe == _pr51.Stufe.GEFAHR
+          and any("Zielordner" in f.was for f in _b51.funde))
+
+    # c) Verweise und Geräteknoten im tar.
+    _b51 = _pr51.pruefe_archiv(_tar51_bauen(
+        "symlink.tar.gz", [("7.ogg", _OGG51)],
+        sonder=[("boese.ogg", "/etc/passwd", tarfile.SYMTYPE)]))
+    check("ein Verweis auf eine fremde Datei gilt als Gefahr",
+          _b51.stufe == _pr51.Stufe.GEFAHR
+          and any("Verweis" in f.was for f in _b51.funde))
+
+    # d) Ausführbares an seiner Endung und an seinem Inhalt.
+    _b51 = _pr51.pruefe_archiv(_zip51_bauen(
+        "skript.zip", [("7.ogg", _OGG51), ("start.sh", b"#!/bin/sh\nrm -rf /")]))
+    check("ein Shell-Skript im Paket gilt als Gefahr",
+          _b51.stufe == _pr51.Stufe.GEFAHR
+          and any(".sh" in f.was for f in _b51.funde))
+
+    # e) Die Frage des Benutzers: Archive im Archiv, in jeder Ebene.
+    _innen51 = _tar51_bauen("innen.tar.gz", [("7.ogg", _ELF51)])
+    _mitte51 = _zip51_bauen("mitte.zip", [("paket.tar.gz", _innen51.read_bytes())])
+    _aussen51 = _zip51_bauen("aussen.zip",
+                             [("ansagen.zip", _mitte51.read_bytes()),
+                              ("7.ogg", _OGG51)])
+    _b51 = _pr51.pruefe_archiv(_aussen51)
+    check("ein Schädling drei Ebenen tief wird trotzdem gefunden",
+          _b51.stufe == _pr51.Stufe.GEFAHR
+          and any("Programmcode" in f.was and "in " in f.was
+                  for f in _b51.funde),
+          f"{[f.was for f in _b51.funde]}")
+    check("und die Schachtelung selbst wird erwähnt",
+          any("Archiv im Archiv" in f.was for f in _b51.funde))
+
+    # f) Verschlüsselt heißt ungeprüft - und ungeprüft ist kein Freispruch.
+    _verschl51 = _zip51_bauen("verschluesselt.zip", [("7.ogg", _OGG51)])
+    _roh51 = bytearray(_verschl51.read_bytes())
+    _roh51[_roh51.find(b"PK\x03\x04") + 6] |= 0x01
+    _roh51[_roh51.find(b"PK\x01\x02") + 8] |= 0x01
+    _verschl51.write_bytes(bytes(_roh51))
+    _b51 = _pr51.pruefe_archiv(_verschl51)
+    check("ein kennwortgeschützter Eintrag ist verdächtig",
+          _b51.stufe == _pr51.Stufe.VERDACHT
+          and any("Verschlüsselt" in f.was for f in _b51.funde),
+          f"{_b51.stufe.name}")
+
+    # g) Unsichtbare Zeichen im Namen.
+    _b51 = _pr51.pruefe_archiv(_zip51_bauen(
+        "tarn.zip", [("harmlos‮gpj.ogg", _OGG51)]))
+    check("ein unsichtbares Steuerzeichen im Namen ist verdächtig",
+          _b51.stufe == _pr51.Stufe.VERDACHT)
+
+    # h) Eine einzelne zugewiesene Datei wird genauso angesehen.
+    (_t51 / "einzeln.ogg").write_bytes(_ELF51)
+    check("auch eine einzeln zugewiesene Datei wird geprüft",
+          _pr51.pruefe_datei(_t51 / "einzeln.ogg").stufe == _pr51.Stufe.GEFAHR)
+    (_t51 / "echt.ogg").write_bytes(_OGG51)
+    check("und eine echte Aufnahme geht durch",
+          _pr51.pruefe_datei(_t51 / "echt.ogg").stufe == _pr51.Stufe.NICHTS)
+
+    # i) Kein Fehlalarm bei dem, was die App selbst ausliefert. Das ist
+    #    die andere Hälfte: Eine Prüfung, die bei echten Paketen anschlägt,
+    #    bringt nur bei, Warnungen wegzuklicken.
+    _echte51 = sorted((Path(__file__).resolve().parent
+                       / "Fertige Pakete").glob("*-Aufnahmen.zip"))
+    if not _echte51:
+        uebersprungen("die eigenen Stimmen lösen keinen Fehlalarm aus",
+                      "keine Aufnahmen im Projektordner")
+    else:
+        _laut51 = [(p.name, [f.was for f in _pr51.pruefe_archiv(p).funde])
+                   for p in _echte51]
+        check("die eigenen Stimmen lösen keinen Fehlalarm aus",
+              all(not funde for _n, funde in _laut51), f"{_laut51[:2]}")
+
+    # j) Und die Prüfung hängt auch wirklich im Weg - an beiden Stellen,
+    #    an denen Fremdes hereinkommt.
+    _w51 = Path(__file__).resolve().parent
+    _ts51 = (_w51 / "dreamevoice" / "ui" / "tab_store.py").read_text(
+        encoding="utf-8")
+    check("das Einlesen prüft vorher",
+          _ts51.count("_pruefung_bestanden(") == 3, _ts51.count(
+              "_pruefung_bestanden("))
+    _pv51 = (_w51 / "dreamevoice" / "ui" / "page_voice.py").read_text(
+        encoding="utf-8")
+    # Zweimal: bei einer freien Stimme aus dem Netz und bei den
+    # Aufnahmen einer fertigen Stimme. Ein eigenes Paket aus "Meine
+    # Pakete" hat die App selbst gebaut - aus schon geprüftem Material.
+    check("und das Aufspielen einer fremden Stimme auch",
+          _pv51.count("self._pruefen(") == 2, str(_pv51.count("self._pruefen(")))
 
 
 def main() -> int:

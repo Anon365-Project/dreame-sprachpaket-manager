@@ -1,7 +1,7 @@
 # Dreame Sprachpaket-Manager
 
 Gib deinem Saugroboter eine andere Stimme: Bayerisch, Hessisch, Wienerisch,
-Berlinerisch oder die mechanische Stimme Maschinenkult. Windows-App für Roboter von **Dreame, MOVA und Trouver**.
+Berlinerisch oder die mechanische Stimme Servitor. Windows-App für Roboter von **Dreame, MOVA und Trouver**.
 Ohne Rooting, ohne Installation, eine einzige Datei.
 
 ```
@@ -11,7 +11,7 @@ Ohne Rooting, ohne Installation, eine einzige Datei.
     "Na denn los. Ick fang an zu sauje."                 Berlinerisch
 ```
 
-**Download: [DreameSprachpaket.exe](../../releases/latest)** — rund 108 MB
+**Download: [DreameSprachpaket.exe](../../releases/latest)** — rund 106 MB
 
 1. Doppelklick. Windows meldet „Computer geschützt", weil die Datei nicht
    signiert ist: *Weitere Informationen → Trotzdem ausführen*.
@@ -40,7 +40,7 @@ geprüft — [wie ich das geprüft habe](docs/Modelle.md).
 **Sechs fertige Stimmen** sind eingebaut und sofort einsatzbereit: Bayerisch
 männlich und weiblich, Hessisch, Wienerisch und Berlinerisch sprechen echten
 Dialekt, auch in der Aussprache — nicht nur in der Wortwahl. Dazu kommt
-**Maschinenkult**, eine männliche, mechanische Stimme: ein Community-Pack von
+**Servitor**, eine männliche, mechanische Stimme: ein Community-Pack von
 **Carnimo**, in dem die Station Schrein und das WLAN Funkkommunion heißt.
 
 Unter *Fertige Stimmen* stehen alle in einer Liste, geordnet nach *In der App
