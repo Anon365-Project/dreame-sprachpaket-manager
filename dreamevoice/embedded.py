@@ -233,6 +233,12 @@ def has_dialekte() -> bool:
     return MAGIC_DIALEKTE in _bloecke()
 
 
+#: Name -> Größe der mitgelieferten Archive. Aus derselben Lesung wie
+#: die Liste; die Größe verrät, ob ein früher ausgepacktes Archiv noch
+#: zu dieser Programmfassung gehört.
+_dialektgroessen: Optional[Dict[str, int]] = None
+
+
 #: Einmal gelesen, dann gemerkt. Die Liste zu holen bedeutet, das ganze
 #: angehängte tar durchzublättern - bei 36 MB dauert das spürbar. Die
 #: Oberfläche fragt aber je Dialekt einmal nach, und das bei jedem
@@ -244,28 +250,39 @@ _dialektliste: Optional[List[str]] = None
 
 def list_dialekte() -> List[str]:
     """Die Dateinamen der mitgelieferten Aufnahme-Archive."""
-    global _dialektliste
+    global _dialektliste, _dialektgroessen
     if _dialektliste is not None:
         return list(_dialektliste)
 
     tf = _dialekt_tar()
     if tf is None:
         _dialektliste = []
+        _dialektgroessen = {}
         return []
     try:
-        _dialektliste = sorted(m.name for m in tf if m.isfile())
+        groessen = {m.name: m.size for m in tf if m.isfile()}
+        _dialektgroessen = groessen
+        _dialektliste = sorted(groessen)
     except tarfile.TarError as exc:
         _LOG.error("Dialektliste nicht lesbar: %s", exc)
         _dialektliste = []
+        _dialektgroessen = {}
     finally:
         tf.close()
     return list(_dialektliste)
 
 
+def dialekt_groesse(dateiname: str) -> Optional[int]:
+    """Wie groß dieses Archiv in DIESER Programmfassung ist."""
+    list_dialekte()
+    return (_dialektgroessen or {}).get(dateiname)
+
+
 def _liste_vergessen() -> None:
     """Nur für Tests: erzwingt erneutes Lesen."""
-    global _dialektliste
+    global _dialektliste, _dialektgroessen
     _dialektliste = None
+    _dialektgroessen = None
 
 
 def dialekte_ordner() -> Path:
@@ -286,9 +303,19 @@ def extract_dialekt(dateiname: str,
         _LOG.warning("Unzulässiger Dialektname abgewiesen: %r", dateiname)
         return None
 
+    # Ein schon ausgepacktes Archiv nur dann wiederverwenden, wenn es
+    # zu dieser Programmfassung gehört. Sonst behielte jeder, der eine
+    # Stimme einmal benutzt hat, sie für immer im alten Stand - eine
+    # verbesserte Aufnahme käme nie bei ihm an.
     ziel = dialekte_ordner() / dateiname
-    if ziel.is_file() and ziel.stat().st_size > 1_000_000:
-        return ziel
+    erwartet = dialekt_groesse(dateiname)
+    if ziel.is_file():
+        da = ziel.stat().st_size
+        if da > 1_000_000 and (erwartet is None or da == erwartet):
+            return ziel
+        if erwartet is not None and da != erwartet:
+            _LOG.info("%s wird neu ausgepackt (%d statt %d Byte)",
+                      dateiname, da, erwartet)
 
     tf = _dialekt_tar()
     if tf is None:

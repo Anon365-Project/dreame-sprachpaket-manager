@@ -47,7 +47,7 @@ GESEHEN: list = []
 #: ffmpeg, der Windows-Tresor oder Tkinter, entfallen ganze Blöcke -
 #: und am Ende steht trotzdem "Fehlgeschlagen: 0". Wer der Zahl
 #: vertraut, hört auf, selbst hinzusehen.
-ABSCHNITTE_ERWARTET = 51
+ABSCHNITTE_ERWARTET = 52
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -308,7 +308,10 @@ def _alle_pruefungen() -> None:
     check("Überlagerung erfolgreich", merged.path.is_file())
     check("Nur passende IDs übernommen", merged.replaced == [7, 40],
           str(merged.replaced))
-    check("Hinweis auf nicht passende ID", len(merged.warnings) == 1,
+    # Zwei Warnungen: die nicht passende Ansage und - seit 1.4.0 - der
+    # Hinweis, dass ohne ffmpeg die Lautstärke nicht angeglichen wurde.
+    check("Hinweis auf nicht passende ID",
+          sum("keine Entsprechung" in w for w in merged.warnings) == 1,
           str(merged.warnings))
     with tarfile.open(merged.path, "r:gz") as tf:
         merged_names = sorted(m.name for m in tf.getmembers())
@@ -5155,6 +5158,154 @@ def _alle_pruefungen() -> None:
     check("main.py startet fremd entpackt einmal neu, vor dem ersten Fenster",
           0 < _main48.find("frisch_starten_falls_noetig")
           < _main48.find("import tkinter  # noqa"))
+
+
+    # ==================================================================
+    section("49. Immer die neuesten Aufnahmen, immer dieselbe Lautstärke")
+    # ==================================================================
+    # Drei Dinge aus der Durchsicht am 18.09.2026: Ein alter Download
+    # darf die neuere eingebaute Fassung nicht verdecken, fremde Stimmen
+    # sollen so laut sein wie die Originale, und vor dem Aufspielen soll
+    # dastehen, wie viel davon auf dieses Modell passt.
+    from dreamevoice import dialektpakete as _dp49, embedded as _em49
+    from dreamevoice import __version__ as _v49
+    import lzma as _lz49
+
+    _ord49 = arbeitsordner()
+    _eintrag49 = _dp49.FertigerDialekt(
+        key="probe", name="Probe", datei="Probe-Aufnahmen.zip", ansagen=1,
+        stimme="Test", beschreibung="")
+    _alt_ordner49, _alt_liste49 = _dp49.ordner, _em49.list_dialekte
+    _dp49.ordner = lambda: _ord49
+    try:
+        (_ord49 / _eintrag49.datei).write_bytes(b"x" * 2_000_000)
+        _em49.list_dialekte = lambda: []
+        check("ohne eingebaute Fassung gilt der Download",
+              _dp49.geladenes_ist_neuer(_eintrag49))
+        _em49.list_dialekte = lambda: [_eintrag49.datei]
+        check("ein Download ohne Vermerk gilt als älter als die EXE",
+              not _dp49.geladenes_ist_neuer(_eintrag49))
+        check("und die Quelle ist dann die mitgelieferte",
+              _dp49.quelle(_eintrag49) == _dp49.QUELLE_MITGELIEFERT)
+        _dp49._fassung_datei(_eintrag49).write_text(_v49, encoding="utf-8")
+        check("ein Download aus dieser Fassung gilt",
+              _dp49.geladenes_ist_neuer(_eintrag49)
+              and _dp49.quelle(_eintrag49) == _dp49.QUELLE_GELADEN)
+        _dp49._fassung_datei(_eintrag49).write_text("0.9.0", encoding="utf-8")
+        check("ein Download aus einer älteren Fassung nicht",
+              not _dp49.geladenes_ist_neuer(_eintrag49))
+    finally:
+        _dp49.ordner, _em49.list_dialekte = _alt_ordner49, _alt_liste49
+
+    # Ein einmal ausgepacktes Archiv aus der EXE darf nach einem
+    # Programm-Update nicht weiterverwendet werden - sonst käme eine
+    # verbesserte Aufnahme nie beim Nutzer an.
+    _quelle49 = (Path(__file__).resolve().parent / "dreamevoice"
+                 / "embedded.py").read_text(encoding="utf-8")
+    check("ausgepackte Archive werden gegen ihre Größe geprüft",
+          "erwartet = dialekt_groesse(dateiname)" in _quelle49
+          and "da == erwartet" in _quelle49)
+
+    # Der ffmpeg-Anhang wird jetzt als xz mit BCJ-Filter gepackt. Der
+    # Entpacker in der EXE muss beide Formate lesen.
+    _roh49 = bytes(range(256)) * 4000
+    for _name49, _daten49 in (
+            ("alt (preset 6)", _lz49.compress(_roh49, preset=6)),
+            ("neu (xz + BCJ)", _lz49.compress(
+                _roh49, format=_lz49.FORMAT_XZ,
+                filters=[{"id": _lz49.FILTER_X86},
+                         {"id": _lz49.FILTER_LZMA2,
+                          "preset": 9 | _lz49.PRESET_EXTREME}]))):
+        check(f"der Entpacker liest Format {_name49}",
+              _lz49.LZMADecompressor().decompress(_daten49) == _roh49)
+
+    # --- Lautstärke einer fremden Stimme, echt gemessen ----------------
+    _ff49 = audio.find_ffmpeg()
+    # Echte Sprachaufnahmen, keine Sinustöne: Ein reiner Ton lässt sich
+    # nicht sinnvoll auf Sprachlautheit bringen (der Limiter greift
+    # sofort), und getestet werden soll das, was wirklich passiert.
+    _archive49 = sorted((Path(__file__).resolve().parent
+                         / "Fertige Pakete").glob("*-Aufnahmen.zip"))
+    if _ff49 is None or not _archive49:
+        uebersprungen("eine fremde Stimme wird so laut wie das Original",
+                      "ffmpeg fehlt" if _ff49 is None
+                      else "keine Aufnahmen im Projektordner")
+    else:
+        import zipfile as _zip49
+        import subprocess as _proc49
+        _t49 = arbeitsordner()
+        with _zip49.ZipFile(_archive49[0]) as _z49:
+            _oggs49 = [n for n in _z49.namelist() if n.endswith(".ogg")][:2]
+            _laut49 = _z49.read(_oggs49[0])
+        (_t49 / "laut.ogg").write_bytes(_laut49)
+
+        # Dieselbe Ansage, absichtlich 12 dB leiser - wie eine fremde
+        # Stimme, die niemand auf das Niveau der Originale gebracht hat.
+        _proc49.run([str(_ff49), "-hide_banner", "-loglevel", "error", "-y",
+                     "-i", str(_t49 / "laut.ogg"), "-af", "volume=-12dB",
+                     "-ar", "16000", "-ac", "1", "-c:a", "libvorbis",
+                     "-q:a", "3", str(_t49 / "leise.ogg")],
+                    check=True, timeout=120)
+        _leise49 = (_t49 / "leise.ogg").read_bytes()
+        _mess_laut = audio.measure_loudness(_t49 / "laut.ogg", _ff49,
+                                            use_cache=False)
+        _mess_leise = audio.measure_loudness(_t49 / "leise.ogg", _ff49,
+                                             use_cache=False)
+        check("die fremde Aufnahme ist wirklich leiser als das Original",
+              bool(_mess_laut) and bool(_mess_leise)
+              and _mess_laut["input_i"] - _mess_leise["input_i"] > 8,
+              f"{_mess_leise['input_i']:.1f} gegen {_mess_laut['input_i']:.1f}"
+              if _mess_laut and _mess_leise else "nicht messbar")
+
+        _basis49 = _t49 / "basis.tar.gz"
+        make_fake_base(_basis49, [7, 12], _laut49)
+        _fremd49 = _t49 / "fremd.tar.gz"
+        with tarfile.open(_fremd49, "w:gz") as _tf49:
+            for _nr49 in (7, 12):
+                _info49 = tarfile.TarInfo(f"{_nr49}.ogg")
+                _info49.size = len(_leise49)
+                _tf49.addfile(_info49, io.BytesIO(_leise49))
+
+        _b49 = packer.overlay_pack(_basis49, _fremd49, out_name="mit.tar.gz",
+                                   out_dir=_t49 / "aus", ffmpeg=_ff49,
+                                   work_dir=_t49 / "arbeit",
+                                   log=lambda _m: None)
+        with tarfile.open(_b49.path) as _tf49:
+            (_t49 / "raus.ogg").write_bytes(_tf49.extractfile("7.ogg").read())
+        _nach49 = audio.measure_loudness(_t49 / "raus.ogg", _ff49,
+                                         use_cache=False)
+        _abstand = (abs(_nach49["input_i"] - _mess_laut["input_i"])
+                    if _nach49 and _mess_laut else 99)
+        check("eine fremde Stimme wird so laut wie das Original",
+              _abstand < 1.0,
+              f"{_nach49['input_i']:.1f} gegen {_mess_laut['input_i']:.1f} LUFS"
+              if _nach49 else "nicht messbar")
+
+        # Ohne ffmpeg bleibt die Aufnahme, wie sie ist - und das Paket
+        # sagt es dazu, statt es stillschweigend zu tun.
+        _b49b = packer.overlay_pack(_basis49, _fremd49, out_name="ohne.tar.gz",
+                                    out_dir=_t49 / "aus2", log=lambda _m: None)
+        with tarfile.open(_b49b.path) as _tf49:
+            _unveraendert = _tf49.extractfile("7.ogg").read() == _leise49
+        check("ohne ffmpeg bleibt die fremde Aufnahme unverändert",
+              _unveraendert)
+        check("und das Paket weist darauf hin",
+              any("Lautstärke" in _w for _w in _b49b.warnings),
+              f"{_b49b.warnings}")
+
+    # --- Wie viel passt auf dieses Modell? -----------------------------
+    _pv49 = (Path(__file__).resolve().parent / "dreamevoice" / "ui"
+             / "page_voice.py").read_text(encoding="utf-8")
+    check("die Seite rechnet die Abdeckung aus",
+          "def _deckung_zeigen" in _pv49 and "Passt auf deinen Roboter" in _pv49)
+    check("ohne dafür etwas zu laden",
+          "def _quelle_ohne_aufwand" in _pv49
+          and "community.ist_geladen(wahl.frei)" in _pv49)
+    check("die Stimmenseite reicht ffmpeg ans Fremdpaket durch",
+          "out_dir=zwischen, ffmpeg=ffmpeg" in _pv49)
+    check("und packt es notfalls vorher aus",
+          _pv49.count("embedded.extract_ffmpeg()") == 2,
+          str(_pv49.count("embedded.extract_ffmpeg()")))
 
 
 def main() -> int:

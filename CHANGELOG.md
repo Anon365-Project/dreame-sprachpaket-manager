@@ -100,6 +100,34 @@ vorspielt.
   (590 von 620 Ansagen, Dateiliste identisch mit dem Original); GLaDOS,
   R2-D2 und ein nachgebautes GitHub-Projektarchiv anhören und überlagern.
 
+### Aufnahmen, Lautstärke, Abdeckung
+
+- **Die neuesten Aufnahmen gewinnen.** Ein einmal ausgepacktes Archiv aus
+  der EXE wurde auch nach einem Programm-Update weiterverwendet, und ein
+  alter Download verdeckte die mitgelieferte Fassung für immer. Jetzt
+  entscheidet die Größe (ausgepackte Archive) bzw. ein Fassungsvermerk
+  neben dem Download. Ohne Vermerk - also bei jedem Download vor 1.4.0 -
+  gewinnt die mitgelieferte Fassung, denn sie ist nachweislich jünger.
+- **Freie Stimmen werden so laut wie die Originale.** Bisher kamen sie
+  unverändert auf den Roboter und waren im Schnitt gut ein Dezibel
+  leiser; einzelne Ansagen deutlich mehr. `overlay_pack` bringt jetzt
+  jede übernommene Ansage auf die Lautheit der Originalansage, die sie
+  ersetzt - dieselbe Angleichung wie beim eigenen Paket. Gemessen an
+  GLaDOS: Median vorher -1,09 dB, nachher +0,03 dB. Fehlt ffmpeg, steht
+  es als Warnung im Paket statt still zu geschehen.
+  - Zur Einordnung, weil danach gefragt wurde: Die **eingebauten** Stimmen
+    und die selbst gebauten Pakete waren schon vorher genau richtig.
+    Nachgemessen über alle 593 bzw. 590 Ansagen gegen ihr jeweiliges
+    Original: Median +0,02 dB (Bayerisch) und +0,14 dB (Maschinenkult),
+    keine einzige Ansage mehr als 2 dB daneben.
+- **Vor dem Aufspielen steht da, wie viel ankommt.** Unter der Stimme
+  steht jetzt „Passt auf deinen Roboter: 115 von 620 Ansagen", sobald
+  die Aufnahmen vorliegen; die Zahl steht auch in der Rückfrage. Bisher
+  gab es nur die Katalogangabe („ca. 155 Ansagen"), die für ein anderes
+  Modell gilt. Geladen wird dafür nichts.
+- **Die EXE ist 1,5 MB kleiner**: ffmpeg wird als xz mit BCJ-Filter
+  angehängt statt mit LZMA-Vorgabe. Inhalt und Auspacken bleiben gleich.
+
 ### Selbsttest
 
 Neue Abschnitte 47 „Eine Liste für alle Stimmen“ und 48 „Alte Fassungen

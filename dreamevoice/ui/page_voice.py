@@ -116,6 +116,12 @@ class VoicePage(ttk.Frame):
         #: Je Stimme die schon umgewandelten Ansagen - ein zweiter Klick
         #: spart Auspacken und ffmpeg.
         self._probe_puffer: Dict[str, Dict[int, Path]] = {}
+        #: Je Stimme: (passt auf dieses Modell, Ansagen im Paket). Wird
+        #: nur berechnet, wenn die Aufnahmen ohne Laden vorliegen.
+        self._deckung: Dict[str, tuple] = {}
+        #: Die Ansagenummern des eigenen Originalpakets, einmal gelesen.
+        self._basis_nummern: Optional[set] = None
+        self._basis_quelle: str = ""
 
         self._build()
         self.refresh()
@@ -174,6 +180,9 @@ class VoicePage(ttk.Frame):
         self.lbl_herkunft = ttk.Label(info, text="", style="Muted.TLabel",
                                       wraplength=700, justify="left")
         self.lbl_herkunft.pack(anchor="w", pady=(2, 0))
+        self.lbl_passend = ttk.Label(info, text="", style="Muted.TLabel",
+                                     wraplength=700, justify="left")
+        self.lbl_passend.pack(anchor="w", pady=(2, 0))
         self.lbl_beschreibung = ttk.Label(info, text="", style="Surface.TLabel",
                                           wraplength=700, justify="left")
         self.lbl_beschreibung.pack(anchor="w", pady=(6, 0))
@@ -380,6 +389,7 @@ class VoicePage(ttk.Frame):
         if wahl is None:
             self.lbl_name.configure(text="Keine Stimme gewählt")
             self.lbl_herkunft.configure(text="")
+            self.lbl_passend.configure(text="")
             self.lbl_beschreibung.configure(
                 text="Es steht noch keine fertige Stimme bereit.")
             self.lbl_hinweis.configure(text="")
@@ -387,6 +397,7 @@ class VoicePage(ttk.Frame):
             return
         self.lbl_name.configure(text=wahl.name)
         self.lbl_herkunft.configure(text=wahl.details)
+        self._deckung_zeigen(wahl)
         self.lbl_beschreibung.configure(text=wahl.beschreibung)
         self.lbl_hinweis.configure(text=wahl.hinweis)
         if wahl.frei is not None:
@@ -395,6 +406,100 @@ class VoicePage(ttk.Frame):
         else:
             self.btn_projekt.pack_forget()
         self._probe_beschriften()
+
+    def _quelle_ohne_aufwand(self, wahl: Auswahl) -> Optional[Path]:
+        """Die Aufnahmen, sofern sie schon hier liegen - ohne Laden.
+
+        Nur dafür gedacht, die Abdeckung im Voraus auszurechnen. Nichts
+        wird dafür heruntergeladen oder ausgepackt; sobald eine Stimme
+        einmal angehört oder aufgespielt wurde, liegt sie vor.
+        """
+        if wahl.paket is not None:
+            return wahl.paket
+        if wahl.frei is not None:
+            return (wahl.frei.local_path()
+                    if community.ist_geladen(wahl.frei) else None)
+        if wahl.dialekt is not None:
+            geladen = dialektpakete.bereits_geladen(wahl.dialekt)
+            if geladen is not None and dialektpakete.geladenes_ist_neuer(
+                    wahl.dialekt):
+                return geladen
+            ausgepackt = embedded.dialekte_ordner() / wahl.dialekt.datei
+            erwartet = embedded.dialekt_groesse(wahl.dialekt.datei)
+            try:
+                if ausgepackt.is_file() and (erwartet is None
+                                             or ausgepackt.stat().st_size == erwartet):
+                    return ausgepackt
+            except OSError:
+                pass
+            return dialektpakete.im_projektordner(wahl.dialekt)
+        return None
+
+    def _modell_nummern(self) -> Optional[set]:
+        """Die Ansagenummern im Originalpaket dieses Roboters."""
+        pfad = self.state.base_pack_path
+        if not pfad:
+            return None
+        pfad = Path(pfad)
+        try:
+            kennung = f"{pfad}-{pfad.stat().st_mtime_ns}"
+        except OSError:
+            return None
+        if self._basis_nummern is not None and kennung == self._basis_quelle:
+            return self._basis_nummern
+        nummern = set(vorhoeren.verfuegbare_ids(pfad))
+        if not nummern:
+            return None
+        self._basis_nummern, self._basis_quelle = nummern, kennung
+        return nummern
+
+    def _deckung_text(self, wahl: Auswahl) -> str:
+        passend, gesamt = self._deckung.get(wahl.key, (None, None))
+        if passend is None:
+            return ""
+        if gesamt and passend < gesamt:
+            fehlt = gesamt - passend
+            return (f"Passt auf deinen Roboter: {passend} von {gesamt} "
+                    f"Ansagen. Die übrigen {fehlt} kennt dein Modell nicht; "
+                    f"alles, was nicht ersetzt wird, bleibt auf Deutsch.")
+        return f"Passt auf deinen Roboter: alle {passend} Ansagen."
+
+    def _deckung_zeigen(self, wahl: Auswahl) -> None:
+        """Zeigt, wie viel von der Stimme auf diesem Modell ankommt.
+
+        Die Zahl aus dem Katalog ("ca. 155 Ansagen") sagt wenig: Ein
+        Paket für ein anderes Modell deckt oft nur einen Teil ab, und
+        das erfährt man sonst erst nach dem Aufspielen.
+        """
+        self.lbl_passend.configure(text=self._deckung_text(wahl))
+        if wahl.key in self._deckung:
+            return
+        quelle = self._quelle_ohne_aufwand(wahl)
+        if quelle is None:
+            return
+        key = wahl.key
+
+        def work(_task):
+            modell = self._modell_nummern()
+            if not modell:
+                return None
+            nummern = set(vorhoeren.verfuegbare_ids(quelle))
+            if not nummern:
+                return None
+            return len(nummern & modell), len(nummern)
+
+        def ok(ergebnis) -> None:
+            if ergebnis is None:
+                return
+            self._deckung[key] = ergebnis
+            wahl_jetzt = self._gewaehlt()
+            if wahl_jetzt is not None and wahl_jetzt.key == key:
+                self.lbl_passend.configure(text=self._deckung_text(wahl_jetzt))
+
+        def still(exc: Exception) -> None:
+            _LOG.debug("Abdeckung nicht bestimmbar: %s", exc)
+
+        run_async(self, work, on_success=ok, on_error=still)
 
     def _probe_beschriften(self) -> None:
         if self._probe_laeuft is not None:
@@ -592,7 +697,10 @@ class VoicePage(ttk.Frame):
     def _frage_text(self, wahl: Auswahl, kennung: str) -> str:
         ziel = self.state.device.name or self.state.model
         teile = [f"'{wahl.name}' auf {ziel} aufspielen?"]
-        if wahl.frei is not None:
+        gemessen = self._deckung_text(wahl)
+        if gemessen:
+            teile.append(gemessen)
+        elif wahl.frei is not None:
             teile.append(
                 f"Die Stimme bringt etwa {wahl.frei.approx_sounds} Ansagen "
                 f"mit. Alle übrigen bleiben auf der deutschen "
@@ -651,6 +759,18 @@ class VoicePage(ttk.Frame):
         self.badge.set("Bereite vor ...", "muted")
 
         def work(task: Task):
+            nonlocal ffmpeg
+            # Dasselbe wie beim Anhören: ffmpeg steckt in der EXE und
+            # wird beim ersten Bedarf ausgepackt. Ohne es bliebe die
+            # Lautstärke einer freien Stimme unangeglichen.
+            if ffmpeg is None and embedded.has_ffmpeg():
+                self._log("Packe ffmpeg einmalig aus ...", "step")
+                try:
+                    ffmpeg = embedded.extract_ffmpeg()
+                    self.state.ffmpeg = ffmpeg
+                except OSError as exc:
+                    _LOG.warning("ffmpeg ließ sich nicht auspacken: %s", exc)
+
             if wahl.paket is not None:
                 self._log(f"Verwende das fertige Paket {wahl.paket.name}.", "info")
                 build = packer.load_existing(wahl.paket)
@@ -669,7 +789,8 @@ class VoicePage(ttk.Frame):
                     build = packer.overlay_pack(
                         base_pack=Path(basis), overlay_pack_path=archiv,
                         out_name=f"frei_{wahl.frei.key}.tar.gz",
-                        out_dir=zwischen,
+                        out_dir=zwischen, ffmpeg=ffmpeg,
+                        work_dir=build_dir() / "_fremd_arbeit",
                         mapping=mapping, log=lambda m: self._log(m),
                         progress=lambda d, t: to_main(
                             self, self.progress.configure,
@@ -777,6 +898,11 @@ class VoicePage(ttk.Frame):
         def zum_schluss() -> None:
             self._task = None
             self._busy(False)
+            # Jetzt liegen die Aufnahmen vor - die Abdeckung lässt sich
+            # ausrechnen und beim nächsten Blick anzeigen.
+            aktuell = self._gewaehlt()
+            if aktuell is not None:
+                self._deckung_zeigen(aktuell)
             # Eine eben geladene freie Stimme muss nicht mehr "lädt"
             # auf dem Knopf stehen haben.
             self._probe_beschriften()

@@ -28,7 +28,7 @@ from typing import Callable, List, Optional
 
 import requests
 
-from . import PROJEKT_URL, embedded
+from . import PROJEKT_URL, __version__, embedded
 from .errors import NetworkError, PackError
 from .paths import data_dir
 
@@ -198,9 +198,47 @@ def im_projektordner(eintrag: FertigerDialekt) -> Optional[Path]:
     return None
 
 
+#: Neben einer heruntergeladenen Datei steht, mit welcher
+#: Programmfassung sie geholt wurde.
+FASSUNG_SUFFIX = ".fassung"
+
+
+def _fassung_datei(eintrag: FertigerDialekt) -> Path:
+    return eintrag.local_path.with_suffix(
+        eintrag.local_path.suffix + FASSUNG_SUFFIX)
+
+
+def geladene_fassung(eintrag: FertigerDialekt) -> str:
+    """Mit welcher Programmfassung die geladene Datei geholt wurde."""
+    try:
+        return _fassung_datei(eintrag).read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def geladenes_ist_neuer(eintrag: FertigerDialekt) -> bool:
+    """Ist die heruntergeladene Fassung neuer als die mitgelieferte?
+
+    Wer sich bewusst ein Update geholt hat, will nicht wieder den Stand
+    aus der EXE. Umgekehrt gilt das genauso: Nach einem Programm-Update
+    ist die mitgelieferte Fassung die neuere, und der alte Download
+    darf sie nicht für immer verdecken.
+
+    Ohne Vermerk (Download aus einer Fassung vor 1.4.0) gewinnt die
+    mitgelieferte - sie ist nachweislich jünger als der Download.
+    """
+    if eintrag.datei not in embedded.list_dialekte():
+        return True
+    geholt = geladene_fassung(eintrag)
+    if not geholt:
+        return False
+    from .aktualisierung import ist_neuer
+    return not ist_neuer(__version__, geholt)
+
+
 def quelle(eintrag: FertigerDialekt) -> str:
     """Woher dieser Dialekt gerade käme, ohne etwas zu tun."""
-    if bereits_geladen(eintrag) is not None:
+    if bereits_geladen(eintrag) is not None and geladenes_ist_neuer(eintrag):
         return QUELLE_GELADEN
     if eintrag.datei in embedded.list_dialekte():
         return QUELLE_MITGELIEFERT
@@ -222,10 +260,13 @@ def beschaffen(eintrag: FertigerDialekt,
     Update geholt hat, will nicht wieder den Stand aus der EXE.
     """
     geladen = bereits_geladen(eintrag)
-    if geladen is not None:
+    if geladen is not None and geladenes_ist_neuer(eintrag):
         if log:
             log(f"{eintrag.name}: verwende die heruntergeladene Fassung.")
         return geladen
+    if geladen is not None and log:
+        log(f"{eintrag.name}: die mitgelieferte Fassung ist neuer als die "
+            f"früher geladene.")
 
     ausgepackt = embedded.extract_dialekt(eintrag.datei, log=log)
     if ausgepackt is not None:
@@ -309,5 +350,12 @@ def download(eintrag: FertigerDialekt,
             "geschickt.")
 
     tmp.replace(ziel)
+    # Vermerken, aus welcher Programmfassung dieser Download stammt.
+    # Ohne das könnte ein späteres Programm-Update seine eigenen,
+    # neueren Aufnahmen nicht von einem alten Download unterscheiden.
+    try:
+        _fassung_datei(eintrag).write_text(__version__, encoding="utf-8")
+    except OSError as exc:
+        _LOG.warning("Fassungsvermerk nicht geschrieben: %s", exc)
     _LOG.info("%s geladen (%d Bytes)", eintrag.datei, ziel.stat().st_size)
     return ziel

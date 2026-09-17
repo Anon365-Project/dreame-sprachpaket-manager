@@ -67,9 +67,15 @@ def main() -> int:
 
     raw = ffmpeg.read_bytes()
     print(f"ffmpeg.exe:  {len(raw) / 1024 / 1024:8.1f} MB")
-    print("Komprimiere (dauert etwa eine Minute) ...")
+    print("Komprimiere (dauert ein bis zwei Minuten) ...")
 
-    payload = lzma.compress(raw, preset=6)
+    # xz mit BCJ-Filter für x86-Programmcode: derselbe Inhalt, rund
+    # 1,5 MB kleiner als preset 6, und das Auspacken bleibt gleich
+    # schnell (LZMADecompressor erkennt das Format selbst).
+    payload = lzma.compress(raw, format=lzma.FORMAT_XZ, filters=[
+        {"id": lzma.FILTER_X86},
+        {"id": lzma.FILTER_LZMA2, "preset": 9 | lzma.PRESET_EXTREME},
+    ])
     print(f"komprimiert: {len(payload) / 1024 / 1024:8.1f} MB "
           f"({len(payload) * 100 // len(raw)} %)")
 

@@ -404,13 +404,21 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
                  mapping: Optional[Dict[int, int]] = None,
                  log: LogFn = _noop_log,
                  progress: Optional[ProgressFn] = None,
-                 out_dir: Optional[Path] = None) -> BuildResult:
+                 out_dir: Optional[Path] = None,
+                 ffmpeg: Optional[Path] = None,
+                 work_dir: Optional[Path] = None) -> BuildResult:
     """Legt ein fremdes Sprachpaket auf das Originalpaket des eigenen Modells.
 
     Community-Pakete sind meist für ein anderes Modell gebaut und
     enthalten nur Ogg-Dateien ohne die Steuerdateien. Direkt installiert
     fehlen dem Roboter dann Ansagen. Hier werden nur die Audiodateien
     übernommen, alles andere kommt aus dem eigenen Originalpaket.
+
+    Mit `ffmpeg` bekommt jede übernommene Ansage die Lautheit der
+    Originalansage, die sie ersetzt - genau wie beim eigenen Paket.
+    Fremde Aufnahmen sind sonst oft mehrere Dezibel leiser als die
+    deutschen Originale, und das fällt am Roboter sofort auf, weil
+    laute und leise Ansagen abwechselnd kommen.
     """
     if not base_pack.is_file():
         raise PackError("Das Originalpaket deines Modells fehlt.",
@@ -439,6 +447,42 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
     replaced: List[int] = []
     total_members = 0
     used: set[str] = set()
+    warnings: List[str] = []
+
+    # Lautheit der Originalansagen als Vorlage. Ohne ffmpeg bleibt die
+    # fremde Aufnahme, wie sie ist - das steht dann als Warnung im
+    # Protokoll, statt still zu geschehen.
+    pegel: Dict[int, float] = {}
+    arbeit: Optional[Path] = None
+    if ffmpeg is not None:
+        log("Messe die Lautstärke der Originalansagen ...")
+        pegel = reference_levels(base_pack, ffmpeg, log=log)
+        arbeit = Path(work_dir) if work_dir else (build_dir() / "_fremd_arbeit")
+        arbeit.mkdir(parents=True, exist_ok=True)
+
+    angeglichen = 0
+
+    def angleichen(nummer: int, daten: bytes) -> bytes:
+        """Bringt eine fremde Ansage auf die Lautheit ihres Originals."""
+        nonlocal angeglichen
+        if arbeit is None:
+            return daten
+        quelle = arbeit / f"{nummer}.ogg"
+        try:
+            quelle.write_bytes(daten)
+            fertig, geaendert = prepare(quelle, arbeit / f"{nummer}_laut.ogg",
+                                        ffmpeg,
+                                        target_lufs=target_for(pegel, nummer))
+            neu = fertig.read_bytes()
+        except Exception as exc:                       # noqa: BLE001
+            # Eine einzelne Ansage, die sich nicht umwandeln lässt, darf
+            # das ganze Paket nicht kippen - sie geht dann unverändert
+            # mit.
+            _LOG.warning("Ansage %s nicht angeglichen: %s", nummer, exc)
+            return daten
+        if geaendert:
+            angeglichen += 1
+        return neu
 
     try:
         with tarfile.open(base_pack, "r:gz") as src_tar, \
@@ -450,7 +494,7 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
                     total_members += 1
 
                 if name in overlay:
-                    payload = overlay[name]
+                    payload = angleichen(int(name[:-4]), overlay[name])
                     dst_tar.addfile(_tarinfo(name, len(payload)), io.BytesIO(payload))
                     replaced.append(int(name[:-4]))
                     used.add(name)
@@ -472,13 +516,19 @@ def overlay_pack(base_pack: Path, overlay_pack_path: Path,
     tmp_path.replace(out_path)
     md5, size = _md5_and_size(out_path)
 
-    warnings: List[str] = []
+    if arbeit is not None:
+        log(f"Lautstärke angeglichen: {angeglichen} von {len(replaced)} "
+            f"Ansagen angepasst, der Rest passte schon.")
     unused = len(overlay) - len(used)
     if unused:
         warnings.append(
             f"{unused} Ansagen des Fremdpakets haben im Originalpaket deines "
             f"Modells keine Entsprechung und wurden weggelassen."
         )
+    if arbeit is None:
+        warnings.append(
+            "Die Lautstärke wurde nicht angeglichen, weil ffmpeg fehlt. "
+            "Einzelne Ansagen können leiser klingen als die deutschen.")
     log(f"Fertig: {size / (1024 * 1024):.1f} MB, {len(replaced)} Ansagen übernommen")
 
     result = BuildResult(path=out_path, md5=md5, size=size, replaced=sorted(replaced),

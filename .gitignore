@@ -16,6 +16,8 @@ Fertige Pakete/
 # Build-Ergebnisse. Die EXE ist 51 MB - die kommt ebenfalls ins Release.
 build/
 dist/
+# Nur zum Ausprobieren gebaute aeltere Fassungen - nie ins Repository.
+disttest/
 *.spec.bak
 
 # Python
