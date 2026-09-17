@@ -508,6 +508,30 @@ def altlasten_entfernen(exe: Optional[Path] = None) -> int:
     return weg
 
 
+#: Sagt dem PyInstaller-Starter, dass er eine eigenständige neue Instanz
+#: ist (ab PyInstaller 6.9). Ohne das erbt die neu gestartete Fassung
+#: die Umgebungsvariablen der alten und hält sich für deren Kindprozess:
+#: Sie packt sich nicht selbst aus, sondern läuft mit den entpackten
+#: Bibliotheken der ALTEN Fassung - und der Starter der alten Fassung
+#: bleibt unsichtbar hängen und sperrt die beiseitegelegte .alt.exe.
+#: Beobachtet beim Tausch 1.3.0 -> 1.4.0.
+PYI_NEU = "PYINSTALLER_RESET_ENVIRONMENT"
+
+#: Merkt sich, dass die App sich schon einmal frisch gestartet hat -
+#: damit daraus nie eine Schleife wird.
+SCHON_NEU = "DREAMEVOICE_FRISCH_ENTPACKT"
+
+#: Liegt neben den entpackten Daten und nennt die Fassung, zu der sie
+#: gehören. Geschrieben von DreameSprachpaket.spec.
+FASSUNG_DATEI = "fassung.txt"
+
+
+def _neue_umgebung() -> dict:
+    umgebung = os.environ.copy()
+    umgebung[PYI_NEU] = "1"
+    return umgebung
+
+
 def neu_starten(exe: Optional[Path] = None) -> bool:
     """Startet die getauschte Fassung und meldet, ob das gelang."""
     exe = exe or eigene_exe()
@@ -518,11 +542,56 @@ def neu_starten(exe: Optional[Path] = None) -> bool:
         if sys.platform == "win32":
             kwargs["creationflags"] = getattr(subprocess, "DETACHED_PROCESS", 0)
         subprocess.Popen([str(exe)], cwd=str(exe.parent), close_fds=True,
-                         **kwargs)
+                         env=_neue_umgebung(), **kwargs)
         return True
     except OSError as exc:                             # pragma: no cover
         _LOG.warning("Neustart fehlgeschlagen: %s", exc)
         return False
+
+
+def fremd_entpackt(meipass: Optional[str] = None,
+                   version: str = __version__) -> bool:
+    """Läuft diese EXE mit den entpackten Dateien einer anderen Fassung?
+
+    Das passiert nach einer Aktualisierung aus 1.3.0 heraus: Deren
+    Neustart kennt `PYI_NEU` noch nicht. Die Fassungsdatei gibt es erst
+    ab 1.4.0 - fehlt sie oder nennt sie eine andere Version, sind die
+    Dateien nicht die eigenen.
+    """
+    meipass = meipass if meipass is not None else getattr(sys, "_MEIPASS", None)
+    if not meipass:
+        return False
+    try:
+        steht = (Path(meipass) / "dreamevoice" / "data" / FASSUNG_DATEI
+                 ).read_text(encoding="utf-8").strip()
+    except OSError:
+        steht = ""
+    return steht != version
+
+
+def frisch_starten_falls_noetig() -> bool:
+    """Startet die EXE sauber neu, wenn sie fremd entpackt läuft.
+
+    Gibt True zurück, wenn der Aufrufer sich sofort beenden soll. Das
+    geschieht höchstens einmal: Der neue Prozess bekommt `SCHON_NEU`
+    mit und versucht es nicht noch einmal.
+    """
+    if os.environ.pop(SCHON_NEU, ""):
+        return False
+    exe = eigene_exe()
+    if exe is None or not fremd_entpackt():
+        return False
+    umgebung = _neue_umgebung()
+    umgebung[SCHON_NEU] = "1"
+    try:
+        kwargs = {}
+        if sys.platform == "win32":
+            kwargs["creationflags"] = getattr(subprocess, "DETACHED_PROCESS", 0)
+        subprocess.Popen([str(exe)], cwd=str(exe.parent), close_fds=True,
+                         env=umgebung, **kwargs)
+    except OSError:                                    # pragma: no cover
+        return False
+    return True
 
 
 def jetzt() -> int:

@@ -47,7 +47,7 @@ GESEHEN: list = []
 #: ffmpeg, der Windows-Tresor oder Tkinter, entfallen ganze Blöcke -
 #: und am Ende steht trotzdem "Fehlgeschlagen: 0". Wer der Zahl
 #: vertraut, hört auf, selbst hinzusehen.
-ABSCHNITTE_ERWARTET = 50
+ABSCHNITTE_ERWARTET = 51
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -4967,6 +4967,100 @@ def _alle_pruefungen() -> None:
                       ("mechanicus", "servitor", "adeptus", "warhammer")))
         check("die Texte stehen mit Umlauten und Windows-Zeilenenden da",
               "GEWÄHR" in _liz and "\r\n" in _liz)
+
+
+    # ==================================================================
+    section("48. Alte Fassungen finden jede neuere")
+    # ==================================================================
+    # Ab 1.3.0 fragt die App GitHub nach "releases/latest". Was dort
+    # steht, muss jede alte Fassung verstehen - auch eine 3.0 oder 10.0.
+    # Die Regeln fürs Veröffentlichen stehen in VEROEFFENTLICHEN.md.
+    from dreamevoice import aktualisierung as _ak48
+
+    for _lauf, _tag, _soll in (
+            ("1.3.0", "v1.4.0", True), ("1.3.0", "v3.0.0", True),
+            ("1.3.0", "3.0", True), ("1.3.0", "v3", True),
+            ("1.4.0", "v1.10.0", True), ("1.9.9", "v1.10.0", True),
+            ("2.9.9", "v10.0.0", True), ("1.4.0", "v1.4.0", False),
+            ("1.4.0", "v1.3.0", False), ("3.0.0", "v2.9.9", False),
+            ("10.0.0", "v9.9.9", False), ("3.0.0", "v3.0", False)):
+        check(f"{_lauf} {'bekommt' if _soll else 'bekommt kein'} {_tag} angeboten",
+              _ak48.ist_neuer(_tag, _lauf) is _soll)
+
+    # Diese Namen sind in allen ausgelieferten Fassungen fest verdrahtet.
+    # Ändert sich einer, finden die alten Fassungen nichts mehr.
+    check("die Abfrage geht weiter an releases/latest",
+          _ak48.API_URL == "https://api.github.com/repos/{pfad}/releases/latest")
+    check("die Programmdatei heißt weiter DreameSprachpaket.exe",
+          _ak48.EXE_NAME == "DreameSprachpaket.exe")
+    check("die Projektadresse ist unverändert",
+          _ak48._repo_pfad() == "Anon365-Project/dreame-sprachpaket-manager",
+          _ak48._repo_pfad())
+    _exe48 = Path(__file__).resolve().parent / "dist" / "DreameSprachpaket.exe"
+    if _exe48.is_file():
+        check("die EXE bleibt unter der Grenze alter Fassungen (400 MB)",
+              _exe48.stat().st_size < 400 * 1024 * 1024)
+
+    # Der Neustart nach dem Tausch muss ein eigenständiger Prozess sein.
+    # Ohne PYINSTALLER_RESET_ENVIRONMENT lief 1.4.0 nach dem Tausch aus
+    # 1.3.0 mit deren entpackten Bibliotheken, und der alte Starter
+    # blieb unsichtbar hängen.
+    _gestartet = []
+
+    class _Popen48:
+        def __init__(self, args, **kw):
+            _gestartet.append(kw.get("env") or {})
+
+    _alt_popen = _ak48.subprocess.Popen
+    _ak48.subprocess.Popen = _Popen48
+    try:
+        _datei48 = arbeitsordner() / "DreameSprachpaket.exe"
+        _datei48.write_bytes(b"MZ")
+        check("der Neustart meldet Erfolg", _ak48.neu_starten(_datei48))
+        check("und startet als eigenständige Instanz",
+              bool(_gestartet) and _gestartet[-1].get(_ak48.PYI_NEU) == "1",
+              f"{[sorted(e)[:3] for e in _gestartet]}")
+    finally:
+        _ak48.subprocess.Popen = _alt_popen
+
+    _mei = arbeitsordner()
+    check("ohne Fassungsdatei gilt die Entpackung als fremd",
+          _ak48.fremd_entpackt(str(_mei), "1.4.0"))
+    (_mei / "dreamevoice" / "data").mkdir(parents=True)
+    (_mei / "dreamevoice" / "data" / _ak48.FASSUNG_DATEI).write_text(
+        "1.3.0", encoding="utf-8")
+    check("eine andere Fassung gilt als fremd",
+          _ak48.fremd_entpackt(str(_mei), "1.4.0"))
+    (_mei / "dreamevoice" / "data" / _ak48.FASSUNG_DATEI).write_text(
+        "1.4.0\n", encoding="utf-8")
+    check("die eigene Fassung nicht",
+          not _ak48.fremd_entpackt(str(_mei), "1.4.0"))
+    check("aus dem Quellcode gestartet ist nichts fremd",
+          not _ak48.fremd_entpackt("", "1.4.0"))
+    check("aus dem Quellcode startet nichts neu",
+          _ak48.frisch_starten_falls_noetig() is False)
+
+    # Beim Test der Aktualisierung gefunden: Eine mit PowerShell
+    # geschriebene config.json (mit BOM) galt als unlesbar.
+    from dreamevoice import config as _cfg48
+    _bom48 = arbeitsordner() / "config.json"
+    _bom48.write_bytes(b"\xef\xbb\xbf" + b'{"update_pruefen": true}')
+    _alt_cf48 = _cfg48.config_file
+    _cfg48.config_file = lambda: _bom48
+    try:
+        check("eine config.json mit BOM wird gelesen",
+              _cfg48.Config.load()["update_pruefen"] is True)
+    finally:
+        _cfg48.config_file = _alt_cf48
+    _spec48 = (Path(__file__).resolve().parent
+               / "DreameSprachpaket.spec").read_text(encoding="utf-8")
+    check("der Bauplan legt die Fassungsdatei bei",
+          "fassung.txt" in _spec48 and "(str(_fassung)" in _spec48)
+    _main48 = (Path(__file__).resolve().parent / "main.py").read_text(
+        encoding="utf-8")
+    check("main.py startet fremd entpackt einmal neu, vor dem ersten Fenster",
+          0 < _main48.find("frisch_starten_falls_noetig")
+          < _main48.find("import tkinter  # noqa"))
 
 
 def main() -> int:

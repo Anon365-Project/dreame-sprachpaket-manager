@@ -63,6 +63,16 @@ def main() -> int:
                "Installiere es mit:\n\n    pip install -r requirements.txt")
         return 1
 
+    # Nach einer Aktualisierung aus 1.3.0 heraus läuft die neue EXE mit
+    # den entpackten Dateien der alten. Dann einmal sauber neu starten,
+    # bevor irgendein Fenster aufgeht.
+    try:
+        from dreamevoice import aktualisierung
+        if aktualisierung.frisch_starten_falls_noetig():
+            return 0
+    except Exception:                                  # noqa: BLE001
+        pass
+
     try:
         import tkinter  # noqa: F401
     except ImportError:

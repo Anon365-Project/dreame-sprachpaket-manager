@@ -323,7 +323,10 @@ class Config:
         if not path.exists():
             return cls()
         try:
-            with path.open("r", encoding="utf-8") as fh:
+            # utf-8-sig: Mit PowerShell oder manchem Editor gespeichert
+            # beginnt die Datei mit einer BOM. json.load lehnte sie dann
+            # ab, und die App lief mit Standardwerten weiter.
+            with path.open("r", encoding="utf-8-sig") as fh:
                 return cls(json.load(fh))
         except (OSError, ValueError) as exc:
             _LOG.warning("config.json unlesbar (%s), starte mit Standardwerten", exc)

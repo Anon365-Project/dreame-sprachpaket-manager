@@ -61,6 +61,19 @@ auf. Diese Zwischenschritte liegen jetzt in einem eigenen Unterordner und
 überschreiben sich. Die alten werden ausgeblendet, aber **nicht gelöscht** —
 wer sie loswerden will, löscht sie selbst.
 
+### Aktualisieren klappt jetzt auch mehrmals hintereinander
+
+Nach einer Aktualisierung startete die neue Fassung nicht ganz eigenständig:
+Sie lief mit Teilen der alten weiter, und ein unsichtbarer Rest der alten
+Fassung blieb bis zur Abmeldung hängen. Beim ersten Mal fiel das nicht auf,
+eine zweite Aktualisierung wäre aber daran gescheitert. Das ist behoben;
+wer aus 1.3.0 kommt, bei dem räumt 1.4.0 das beim ersten Start selbst auf.
+
+Getestet mit echten Programmdateien von 1.3.0 und 1.2.0 gegen vorgespielte
+Releases bis Version 10.0: Jede Fassung ab 1.3.0 findet die jeweils neueste
+und spielt sie ein. **1.2.0 kennt noch keine Aktualisierung** — wer die
+hat, lädt 1.4.0 einmal von Hand herunter.
+
 ### Kleinere Korrekturen
 
 * In den Beipackzetteln aller Stimmen-Archive stand **`OHNE GEWAEHR`** —
@@ -109,7 +122,7 @@ offiziellen Pakets, sodass keine Ansage verlorengeht; der Roboter prüft es
 selbst gegen MD5 und Größe. Vor dem Senden fragt die App, ob dein Gerät den
 Sprachpaket-Dienst überhaupt kennt — wenn nicht, wird gar nichts geschrieben.
 
-Geprüft für diese Fassung: **967 Selbsttests** in 50 Abschnitten, darunter
+Geprüft für diese Fassung: **993 Selbsttests** in 51 Abschnitten, darunter
 nachgestellte Angriffe mit Archivbomben, Pfadausbrüchen, untergeschobenen
 Programmen und manipulierten Katalogantworten. Eine der Prüfungen fragt den
 echten Dreame-Katalog ab und schlägt an, wenn sich dort etwas ändert.
@@ -174,10 +187,10 @@ Dann fragt Windows gar nicht erst.
 Zur Kontrolle die SHA-256-Prüfsumme dieser EXE:
 
 ```
-eed52c00cca2948582f35dde696107c884844c9364ad0788332b2ec39436a1e8
+399819f5ee990f61044135426705aaa3e5cfca409c0ae17ee19701be3e295920
 ```
 
-Größe: 112.775.219 Byte (107,6 MB), Dateiversion 1.4.0.0.
+Größe: 112.777.544 Byte (107,6 MB), Dateiversion 1.4.0.0.
 
 Nachrechnen unter Windows:
 `certutil -hashfile DreameSprachpaket.exe SHA256`

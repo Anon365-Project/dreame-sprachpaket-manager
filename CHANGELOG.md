@@ -50,13 +50,36 @@ geschriebene Fassung steht in [RELEASE.md](RELEASE.md).
   eigenen Karte *Fortschritt*.
 - Fehlt das Originalpaket, verweist die Meldung auf die Startseite statt
   auf *Einzelne Ansagen*.
+
+### Aktualisierung
+
+Durchgespielt mit echten, aus den Tags gebauten EXEs von 1.3.0 und 1.2.0
+und einem lokalen Proxy, der GitHub-Releases von 1.4.0 bis 10.0.0
+vorspielt.
+
+- **Neustart nach dem Tausch war kein eigenständiger Prozess.** Die neue
+  Fassung erbte die Umgebung der alten, hielt sich für deren Kindprozess
+  und lief mit den entpackten Bibliotheken der *alten* Fassung. Der
+  Starter der alten blieb unsichtbar hängen und sperrte die `.alt.exe` —
+  eine zweite Aktualisierung wäre daran gescheitert. Jetzt startet
+  `neu_starten` mit `PYINSTALLER_RESET_ENVIRONMENT=1`.
+- **Selbstheilung für Updates aus 1.3.0:** Die EXE trägt eine
+  Fassungsdatei. Läuft sie mit fremd entpackten Dateien, startet sie
+  sich vor dem ersten Fenster einmal sauber neu.
+- Eine `config.json` mit BOM (etwa von PowerShell gespeichert) galt als
+  unlesbar, und die App lief mit Standardwerten weiter.
+- `VEROEFFENTLICHEN.md` nennt die Regeln, an die jede ausgelieferte
+  Fassung gebunden ist (Dateiname, Tag-Format, keine Vorabversion,
+  unter 400 MB). 1.2.0 und älter haben keine Aktualisierung.
+- Selbsttest-Abschnitt 48 „Alte Fassungen finden jede neuere“.
 - In allen Beipackzetteln der Stimmen-Archive stand `OHNE GEWAEHR` — jetzt
   mit Umlaut. Der Umlaut-Test prüft auch Großschreibung und die
   Textdateien in den Archiven.
 
 ### Selbsttest
 
-Neuer Abschnitt 47 „Eine Liste für alle Stimmen“: Zwischenpakete,
+Neue Abschnitte 47 „Eine Liste für alle Stimmen“ und 48 „Alte Fassungen
+finden jede neuere“. Abschnitt 47: Zwischenpakete,
 Zielordner des Packers, Abbruch eines Downloads ohne Reste, nur CUSTOM
 als Kennung, Aufbau und Inhalt des Maschinenkult-Archivs.
 

@@ -9,6 +9,19 @@ from pathlib import Path
 
 BASE = Path(SPECPATH)
 
+# Welche Fassung zu den entpackten Dateien gehört. Die EXE vergleicht das
+# beim Start mit ihrer eigenen Version und erkennt so, ob sie nach einer
+# Aktualisierung mit den Dateien der alten Fassung läuft
+# (siehe aktualisierung.fremd_entpackt).
+import re as _re
+
+_version = _re.search(r'__version__\s*=\s*"([^"]+)"',
+                      (BASE / "dreamevoice" / "__init__.py").read_text(
+                          encoding="utf-8")).group(1)
+_fassung = BASE / "build" / "_fassung" / "fassung.txt"
+_fassung.parent.mkdir(parents=True, exist_ok=True)
+_fassung.write_text(_version, encoding="utf-8")
+
 a = Analysis(
     ["main.py"],
     pathex=[str(BASE)],
@@ -21,6 +34,7 @@ a = Analysis(
     # Ressource der Programmdatei - auslesen lässt sich das zur
     # Laufzeit nicht. Fürs Fenstersymbol muss die Datei daneben liegen.
     datas=[("dreamevoice/data/sound_catalog.json", "dreamevoice/data"),
+           (str(_fassung), "dreamevoice/data"),
            ("docs", "docs"),
            ("app.ico", ".")],
     hiddenimports=[],

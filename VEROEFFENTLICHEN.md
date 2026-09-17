@@ -87,6 +87,33 @@ in der EXE, aber der Knopf „neuere Fassung holen" lief für sie in einen
   denen die App das Paket für das jeweilige Modell selbst baut.
 * Der Ordner `Daten` und `dist\Daten` — dort stehen persönliche Angaben.
 
+### Damit alte Fassungen das Release finden
+
+Jede Fassung ab 1.3.0 fragt GitHub nach dem **neuesten** Release und
+vergleicht die Versionsnummer zahlenweise. Das klappt für 1.4.0 genauso
+wie für 3.0 oder 10.0 — solange diese Regeln eingehalten werden. Sie
+sind in jeder ausgelieferten Fassung fest eingebaut:
+
+* Die Programmdatei heißt immer genau **`DreameSprachpaket.exe`** und
+  liegt direkt am Release (nicht in einem ZIP).
+* Tag im Format **`vX.Y.Z`** (z. B. `v3.0.0`).
+* Das Release ist **kein Entwurf und keine Vorabversion** — die
+  übergeht GitHub bei „neuestes Release“.
+* Das Repository bleibt `Anon365-Project/dreame-sprachpaket-manager`
+  (eine Umbenennung leitet GitHub weiter, ein Löschen nicht).
+* Die EXE bleibt **unter 400 MB**.
+* Die Prüfsumme steht im Release-Text (GitHub legt sie zusätzlich selbst
+  an). Ohne Prüfsumme tauscht keine Fassung die Datei aus.
+
+Version **1.2.0 und älter** haben keine Aktualisierung — wer die hat, muss
+einmal von Hand herunterladen.
+
+Nach einer Aktualisierung **aus 1.3.0 heraus** startet die neue Fassung
+sich einmal von selbst frisch (1.3.0 hat beim Neustart die alte Umgebung
+mitgegeben). Verwendet eine künftige Fassung eine andere Python-Version,
+kann dieser erste Neustart scheitern; dann genügt es, die EXE von Hand zu
+starten. Ab 1.4.0 tritt das nicht mehr auf.
+
 ## 6. Nach dem Veröffentlichen
 
 Einmal in der App auf **Aktualisierung → Jetzt nach Aktualisierung
