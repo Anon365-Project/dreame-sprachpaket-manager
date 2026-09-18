@@ -162,6 +162,15 @@ def scan_folder(folder: Path, known_ids: Optional[Iterable[int]] = None,
     # Unterordner werden mitgenommen, aber flach ausgewertet.
     dateien = sorted(p for p in folder.rglob("*") if p.is_file())
 
+    # Dieselbe Grenze wie in pruefung.pruefe_ordner. Ohne sie gäbe es
+    # einen Bereich, den die Prüfung nicht mehr ansieht, der Import aber
+    # noch übernimmt - der wäre der ideale Platz für eine Schaddatei.
+    if len(dateien) > MAX_EINTRAEGE:
+        ergebnis.skipped.append(
+            f"{len(dateien) - MAX_EINTRAEGE} weitere Dateien (der Ordner "
+            f"enthält mehr als {MAX_EINTRAEGE} Dateien)")
+        dateien = dateien[:MAX_EINTRAEGE]
+
     for pfad in dateien:
         if pfad.suffix.lower() not in SUPPORTED_INPUT:
             ergebnis.skipped.append(f"{pfad.name} (kein bekanntes Audioformat)")
@@ -450,6 +459,15 @@ def extract_archive(archive: Path, target: Path,
                     (target / name).write_bytes(roh)
                     geschrieben.add(name)
                     anzahl += 1
+        # Zwischen Auswählen und Einlesen kann die Datei verschwinden:
+        # Stick gezogen, Netzlaufwerk getrennt, Datei gelöscht. Ohne
+        # diesen Zweig kam ein roher "[Errno 2]" an die Oberfläche.
+        except FileNotFoundError as exc:
+            raise PackError(
+                "Die Datei ist nicht mehr auffindbar.",
+                f"'{archive.name}' war beim Auswählen noch da. Wurde sie "
+                f"verschoben, gelöscht - oder liegt sie auf einem Stick "
+                f"oder Netzlaufwerk, das inzwischen getrennt ist?") from exc
         # EOFError fällt bei einer abgeschnittenen .tar.gz an und ist
         # kein TarError - der ging bisher roh an die Oberfläche.
         except (tarfile.TarError, EOFError, zlib.error) as exc:

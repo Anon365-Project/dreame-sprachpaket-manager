@@ -600,12 +600,11 @@ class VoicePage(ttk.Frame):
                 if ffmpeg is None and embedded.has_ffmpeg():
                     to_main(self, self.lbl_probe.configure,
                             {"text": "ffmpeg wird einmalig ausgepackt ..."})
-                    try:
-                        ffmpeg = embedded.extract_ffmpeg()
-                        self.state.ffmpeg = ffmpeg
-                    except OSError as exc:
-                        _LOG.warning("ffmpeg ließ sich nicht auspacken: %s",
-                                     exc)
+                    ffmpeg = embedded.extract_ffmpeg()
+                    self.state.ffmpeg = ffmpeg
+                    if ffmpeg is None and embedded.letzter_fehler:
+                        self._log(f"ffmpeg ließ sich nicht auspacken: "
+                                  f"{embedded.letzter_fehler}", "warn")
                 try:
                     quelle = self._quelle_holen(wahl, laden=True, task=task)
                 except community.Abgebrochen:
@@ -659,6 +658,10 @@ class VoicePage(ttk.Frame):
                 show_warning(
                     self, self.theme, "Keine Probe möglich",
                     "Aus dieser Stimme ließ sich keine Ansage entnehmen.",
+                    ("Zum Anhören wird ffmpeg gebraucht. Es steckt in der "
+                     "EXE und wird beim ersten Bedarf ausgepackt - hier "
+                     "ging das nicht: " + embedded.letzter_fehler)
+                    if embedded.letzter_fehler else
                     "Zum Anhören wird ffmpeg gebraucht. Es steckt in der EXE "
                     "und wird beim ersten Bedarf ausgepackt.")
                 return
@@ -801,11 +804,11 @@ class VoicePage(ttk.Frame):
             # Lautstärke einer freien Stimme unangeglichen.
             if ffmpeg is None and embedded.has_ffmpeg():
                 self._log("Packe ffmpeg einmalig aus ...", "step")
-                try:
-                    ffmpeg = embedded.extract_ffmpeg()
-                    self.state.ffmpeg = ffmpeg
-                except OSError as exc:
-                    _LOG.warning("ffmpeg ließ sich nicht auspacken: %s", exc)
+                ffmpeg = embedded.extract_ffmpeg()
+                self.state.ffmpeg = ffmpeg
+                if ffmpeg is None and embedded.letzter_fehler:
+                    self._log(f"ffmpeg ließ sich nicht auspacken: "
+                              f"{embedded.letzter_fehler}", "warn")
 
             if wahl.paket is not None:
                 self._log(f"Verwende das fertige Paket {wahl.paket.name}.", "info")
@@ -928,6 +931,13 @@ class VoicePage(ttk.Frame):
                     # bisher nur im Protokoll - im Fenster las der Nutzer
                     # trotzdem die Tatsachenbehauptung.
                     + (ergebnis.hint or installer.NEUSTART_HINWEIS))
+            elif self._task is not None and self._task.cancelled:
+                # Selbst abgebrochen ist kein Fehlschlag. Rot und
+                # "Nicht aufgespielt" ließen den Nutzer glauben, es sei
+                # etwas schiefgegangen.
+                self.badge.set("Abgebrochen", "muted")
+                self.log.append("Vom Benutzer abgebrochen. Auf dem Roboter "
+                                "hat sich nichts geändert.", "info")
             else:
                 self.badge.set("Nicht aufgespielt", "error")
                 self.log.append(ergebnis.message, "error")

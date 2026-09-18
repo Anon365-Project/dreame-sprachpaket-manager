@@ -47,7 +47,7 @@ GESEHEN: list = []
 #: ffmpeg, der Windows-Tresor oder Tkinter, entfallen ganze Blöcke -
 #: und am Ende steht trotzdem "Fehlgeschlagen: 0". Wer der Zahl
 #: vertraut, hört auf, selbst hinzusehen.
-ABSCHNITTE_ERWARTET = 54
+ABSCHNITTE_ERWARTET = 55
 
 
 def check(name: str, condition: bool, detail: str = "") -> None:
@@ -5422,7 +5422,10 @@ def _alle_pruefungen() -> None:
     import zipfile as _zip51
 
     _t51 = arbeitsordner()
-    _OGG51 = b"OggS" + b"\x00" * 60
+    # Eine echte, gültige Ogg-Seite: Seit 1.4.0 sieht sich die Prüfung
+    # den Aufbau bis zum letzten Byte an - eine Attrappe aus "OggS" und
+    # Nullen wäre (zu Recht) selbst ein Fund.
+    _OGG51 = minimal_vorbis_ogg()
     _ELF51 = b"\x7fELF\x02\x01\x01" + b"\x00" * 60
 
     def _zip51_bauen(name, eintraege):
@@ -5546,9 +5549,10 @@ def _alle_pruefungen() -> None:
     _w51 = Path(__file__).resolve().parent
     _ts51 = (_w51 / "dreamevoice" / "ui" / "tab_store.py").read_text(
         encoding="utf-8")
-    check("das Einlesen prüft vorher",
-          _ts51.count("_pruefung_bestanden(") == 3, _ts51.count(
-              "_pruefung_bestanden("))
+    check("das Einlesen prüft vorher, im Hintergrund",
+          "_pruefen_dann_einlesen" in _ts51
+          and "_pruefung_annehmen" in _ts51
+          and "pruefung.pruefe_quelle" in _ts51)
     _pv51 = (_w51 / "dreamevoice" / "ui" / "page_voice.py").read_text(
         encoding="utf-8")
     # Zweimal: bei einer freien Stimme aus dem Netz und bei den
@@ -5556,6 +5560,140 @@ def _alle_pruefungen() -> None:
     # Pakete" hat die App selbst gebaut - aus schon geprüftem Material.
     check("und das Aufspielen einer fremden Stimme auch",
           _pv51.count("self._pruefen(") == 2, str(_pv51.count("self._pruefen(")))
+
+
+    # ==================================================================
+    section("52. Was die Beta-Tester gefunden haben")
+    # ==================================================================
+    # Vier Prüfer haben die Fassung vor dem Release durchgesehen. Die
+    # Funde stehen hier als Prüfung, damit sie nicht wiederkommen.
+    from dreamevoice import pruefung as _pr52, embedded as _em52
+
+    _w52 = Path(__file__).resolve().parent
+    _t52 = arbeitsordner()
+    _ELF52 = b"\x7fELF\x02\x01\x01" + b"\x00" * 60
+
+    # a) Prüfung und Import müssen dieselbe Menge ansehen. Sonst gäbe es
+    #    einen Bereich, den die Prüfung übergeht, der Import aber noch
+    #    übernimmt - genau dort läge dann die Schaddatei.
+    check("Prüfung und Import hören bei derselben Zahl auf",
+          _pr52.MAX_EINTRAEGE == _imp.MAX_EINTRAEGE,
+          f"{_pr52.MAX_EINTRAEGE} gegen {_imp.MAX_EINTRAEGE}")
+    _viele = _t52 / "viele"
+    _viele.mkdir()
+    for _n52 in range(12):
+        (_viele / f"{_n52}.ogg").write_bytes(minimal_vorbis_ogg())
+    (_viele / "999.ogg").write_bytes(_ELF52)
+    _b52 = _pr52.pruefe_ordner(_viele, hoechstens=5)
+    check("ein zu großer Ordner wird als nicht zu Ende geprüft gemeldet",
+          bool(_b52.luecke) and _b52.stufe >= _pr52.Stufe.VERDACHT,
+          f"{_b52.stufe.name}, Lücke={_b52.luecke!r}")
+
+    # b) Eine gültige Ogg-Datei mit angehängtem Inhalt. Der Anfang
+    #    stimmt, ein Blick auf die ersten Bytes merkt nichts.
+    _echt52 = minimal_vorbis_ogg()
+    (_t52 / "sauber.ogg").write_bytes(_echt52)
+    (_t52 / "getarnt.ogg").write_bytes(_echt52 + _ELF52)
+    (_t52 / "halb.ogg").write_bytes(_echt52[:len(_echt52) // 2])
+    check("eine gültige Aufnahme bleibt ohne Fund",
+          _pr52.pruefe_datei(_t52 / "sauber.ogg").stufe == _pr52.Stufe.NICHTS)
+    _b52 = _pr52.pruefe_datei(_t52 / "getarnt.ogg")
+    check("etwas hinter der Tondatei gilt als Gefahr",
+          _b52.stufe == _pr52.Stufe.GEFAHR
+          and any("hinter der Tondatei" in f.was for f in _b52.funde),
+          f"{[f.was for f in _b52.funde]}")
+    _b52 = _pr52.pruefe_datei(_t52 / "halb.ogg")
+    check("eine abgeschnittene Aufnahme gilt nur als Verdacht",
+          _b52.stufe == _pr52.Stufe.VERDACHT,
+          f"{_b52.stufe.name} - kaputt ist nicht dasselbe wie bösartig")
+
+    # c) Eine Datei ohne Endung ist genauso unerwartet wie eine fremde.
+    (_t52 / "ohneendung").write_bytes(b"egal")
+    _b52 = _pr52.pruefe_datei(_t52 / "ohneendung")
+    check("auch eine Datei ohne Endung wird genannt",
+          any("ohne Endung" in f.was for f in _b52.funde),
+          f"{[f.was for f in _b52.funde]}")
+
+    # d) Die Prüfung muss sich abbrechen lassen - sie läuft im
+    #    Hintergrund, und ein Abbrechen-Knopf, der nichts tut, ist
+    #    schlimmer als keiner.
+    _gross52 = _t52 / "gross.tar.gz"
+    with tarfile.open(_gross52, "w:gz") as _tf52:
+        for _n52 in range(200):
+            _info52 = tarfile.TarInfo(f"{_n52}.ogg")
+            _info52.size = len(_echt52)
+            _tf52.addfile(_info52, io.BytesIO(_echt52))
+    _b52 = _pr52.pruefe_archiv(_gross52, cancelled=lambda: True)
+    check("ein Abbruch hält die Prüfung sofort an",
+          _b52.eintraege == 0 and "abgebrochen" in _b52.luecke.lower(),
+          f"{_b52.eintraege} Einträge, {_b52.luecke!r}")
+
+    # e) Zwei Threads dürfen nicht gleichzeitig dieselbe Datei auspacken.
+    check("das Auspacken hat einen Riegel je Ziel",
+          _em52._riegel("a") is _em52._riegel("a")
+          and _em52._riegel("a") is not _em52._riegel("b"))
+    _quelle52 = (_w52 / "dreamevoice" / "embedded.py").read_text(
+        encoding="utf-8")
+    for _fn52 in ("extract_ffmpeg", "extract_dialekt"):
+        _stelle = _quelle52.find(f"def {_fn52}(")
+        _rumpf = _quelle52[_stelle:_stelle + 1200]
+        check(f"{_fn52} nimmt den Riegel",
+              "_riegel(" in _rumpf, _rumpf[:80])
+
+    # f) Ein fehlgeschlagenes Auspacken darf nicht als "wird gleich"
+    #    durchgehen - der Grund gehört in die Oberfläche.
+    check("der Grund eines Fehlschlags wird gemerkt",
+          hasattr(_em52, "letzter_fehler"))
+    _pv52 = (_w52 / "dreamevoice" / "ui" / "page_voice.py").read_text(
+        encoding="utf-8")
+    check("und die Stimmenseite zeigt ihn",
+          _pv52.count("embedded.letzter_fehler") >= 2,
+          str(_pv52.count("embedded.letzter_fehler")))
+
+    # g) Selbst abgebrochen ist kein Fehlschlag.
+    check("ein abgebrochenes Aufspielen wird nicht als Fehler gezeigt",
+          'self.badge.set("Abgebrochen", "muted")' in _pv52)
+    _ps52 = (_w52 / "dreamevoice" / "ui" / "page_start.py").read_text(
+        encoding="utf-8")
+    check("auch das Wiederherstellen lässt sich abbrechen",
+          "_zurueck_abbrechen" in _ps52 and "cancelled=lambda" in _ps52)
+    _iq52 = (_w52 / "dreamevoice" / "installer.py").read_text(encoding="utf-8")
+    check("und der Abbruch kommt beim Warten an",
+          "def restore_official" in _iq52
+          and "cancelled: Optional[Callable[[], bool]] = None" in _iq52
+          and "Vom Benutzer abgebrochen." in _iq52)
+
+    # h) Beim Beenden fragen, wenn noch etwas läuft.
+    # Nicht auf "gerade läuft nichts" prüfen: Aus früheren Abschnitten
+    # kann noch etwas im Hintergrund arbeiten. Geprüft wird der Zähler.
+    from dreamevoice.ui import state as _st52
+    _vorher52 = _st52.laufende_vorgaenge()
+    _st52._laeuft_mehr(1)
+    _waehrend52 = _st52.laufende_vorgaenge()
+    _st52._laeuft_mehr(-1)
+    check("laufende Vorgänge werden gezählt",
+          _waehrend52 == _vorher52 + 1
+          and _st52.laufende_vorgaenge() == _vorher52,
+          f"{_vorher52} -> {_waehrend52} -> {_st52.laufende_vorgaenge()}")
+    _app52 = (_w52 / "dreamevoice" / "ui" / "app.py").read_text(
+        encoding="utf-8")
+    check("das Fenster fragt vor dem Beenden nach",
+          "laufende_vorgaenge()" in _app52 and "Es läuft noch etwas" in _app52)
+
+    # i) Verschwundene Datei: verständliche Meldung statt Errno.
+    _weg52 = _t52 / "weg.tar.gz"
+    _weg52.write_bytes(b"\x1f\x8b" + b"\x00" * 40)
+    _weg52.unlink()
+    try:
+        _imp.extract_archive(_weg52, _t52 / "ziel")
+        _meldung52 = ""
+    except DreameError as _exc52:
+        _meldung52 = f"{_exc52}"
+    except Exception as _exc52:                        # noqa: BLE001
+        _meldung52 = f"roh: {type(_exc52).__name__}"
+    check("eine verschwundene Datei wird verständlich gemeldet",
+          "nicht mehr auffindbar" in _meldung52 or "kein Archiv" in _meldung52,
+          _meldung52[:80])
 
 
 def main() -> int:

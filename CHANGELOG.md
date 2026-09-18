@@ -58,6 +58,29 @@ geschriebene Fassung steht in [RELEASE.md](RELEASE.md).
   Durchgespielt mit echten EXEs von 1.3.0 und 1.2.0 gegen vorgespielte
   Releases bis 10.0.
 
+### Aus dem Beta-Test
+
+Vier Prüfer sind die Fassung vor dem Release durchgegangen (Laiensicht,
+Fehlerfälle, Sicherheit, Texte). Behoben:
+
+- **Eine Datei hätte an der Prüfung vorbeigeschleust werden können:**
+  Prüfung und Import zählten Einträge unterschiedlich. Jetzt gilt dieselbe
+  Grenze, und was darüber liegt, wird als „nicht zu Ende geprüft" gemeldet.
+- **Angehängter Inhalt hinter einer gültigen Aufnahme** wird erkannt: Die
+  Ogg-Struktur wird bis zum letzten Byte durchlaufen. Eine abgeschnittene
+  Datei gilt dabei nur als Verdacht - kaputt ist nicht dasselbe wie
+  bösartig.
+- **Die Prüfung blockierte die Oberfläche** und ließ sich nicht abbrechen.
+  Beides behoben; Prüfen und Einlesen laufen im Hintergrund.
+- **Zwei gleichzeitige Klicks konnten dieselbe Datei beschädigen** (Anhören
+  und Aufspielen packten dieselbe Stimme parallel aus). Jetzt ein Riegel je
+  Ziel, wie bei den freien Stimmen.
+- Beim Beenden fragt die App nach, wenn noch etwas läuft.
+- Ein selbst abgebrochenes Aufspielen wird nicht mehr als Fehler gezeigt;
+  das Wiederherstellen lässt sich abbrechen.
+- Die wichtigste Warnung (in der Dreamehome-App jetzt keine Sprache
+  auswählen) steht in der Erfolgsmeldung statt nur im Hilfetext.
+
 ### Kleinere Korrekturen
 
 - Anhören und Aufspielen luden dieselbe freie Stimme gleichzeitig in
@@ -76,7 +99,7 @@ geschriebene Fassung steht in [RELEASE.md](RELEASE.md).
 
 ### Selbsttest
 
-1048 Prüfungen in 54 Abschnitten. Neu sind die Abschnitte über die
+1061 Prüfungen in 55 Abschnitten. Neu sind die Abschnitte über die
 Stimmenliste, über Aktualisierungen aus alten Fassungen, über Lautstärke
 und Abdeckung, über die zusammengelegte Seite und über die Prüfung
 fremder Pakete — letztere mit echten Archiven, die Pfadausbruch,

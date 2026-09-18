@@ -154,7 +154,7 @@ offiziellen Pakets, sodass keine Ansage verlorengeht; der Roboter prüft es
 selbst gegen MD5 und Größe. Vor dem Senden fragt die App, ob dein Gerät den
 Sprachpaket-Dienst überhaupt kennt — wenn nicht, wird gar nichts geschrieben.
 
-Geprüft für diese Fassung: **1043 Selbsttests** in 54 Abschnitten, darunter
+Geprüft für diese Fassung: **1061 Selbsttests** in 55 Abschnitten, darunter
 nachgestellte Angriffe mit Archivbomben, Pfadausbrüchen, untergeschobenen
 Programmen und manipulierten Katalogantworten. Eine der Prüfungen fragt den
 echten Dreame-Katalog ab und schlägt an, wenn sich dort etwas ändert.
@@ -219,10 +219,10 @@ Dann fragt Windows gar nicht erst.
 Zur Kontrolle die SHA-256-Prüfsumme dieser EXE:
 
 ```
-3f9b9a83ba03d9a1db32a2a8747f6cb7b2065e6113e60872e683803cb7010f52
+44be54145cf22a44d60c8bd3e0aeaea89e5fc624a245c537179b36e40f0b257b
 ```
 
-Größe: 111.179.174 Byte (106,0 MB), Dateiversion 1.4.0.0.
+Größe: 111.186.297 Byte (106,0 MB), Dateiversion 1.4.0.0.
 
 Nachrechnen unter Windows:
 `certutil -hashfile DreameSprachpaket.exe SHA256`

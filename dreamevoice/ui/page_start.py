@@ -292,13 +292,15 @@ class StartPage(ttk.Frame):
             return
 
         cloud, geraet = self.state.cloud, self.state.device
-        self.btn_original_zurueck.configure(state="disabled")
+        self.btn_original_zurueck.configure(text="Abbrechen",
+                                            command=self._zurueck_abbrechen)
         self.badge_zurueck.set("Stelle wieder her ...", "muted")
 
-        def work(_task):
+        def work(task):
             return installer.restore_official(
                 cloud=cloud, device=geraet, pack=paket,
-                log=lambda m: _LOG.info("%s", m))
+                log=lambda m: _LOG.info("%s", m),
+                cancelled=lambda: task.cancelled)
 
         def ok(ergebnis) -> None:
             # Belegt oder nur wahrscheinlich - der Unterschied zählt
@@ -325,9 +327,27 @@ class StartPage(ttk.Frame):
             show_error(self, self.theme, "Nicht wiederhergestellt",
                        nachricht, hinweis)
 
-        run_async(self, work, on_success=ok, on_error=fail,
-                  on_finally=lambda: self.btn_original_zurueck.configure(
-                      state="normal"))
+        def zum_schluss() -> None:
+            self._zurueck_task = None
+            self.btn_original_zurueck.configure(
+                text="Originalstimme wiederherstellen", state="normal",
+                command=self._on_original_zurueck)
+
+        self._zurueck_task = run_async(self, work, on_success=ok,
+                                       on_error=fail, on_finally=zum_schluss)
+
+    def _zurueck_abbrechen(self) -> None:
+        """Bricht das Wiederherstellen ab, solange es noch läuft.
+
+        Der Auftrag selbst ist beim Roboter möglicherweise schon
+        angekommen - abgebrochen wird das Warten darauf. Das steht auch
+        in der Meldung, damit niemand glaubt, nichts sei passiert.
+        """
+        aufgabe = getattr(self, "_zurueck_task", None)
+        if aufgabe is None or aufgabe.cancelled:
+            return
+        aufgabe.cancel()
+        self.badge_zurueck.set("Wird abgebrochen ...", "warn")
 
     # ------------------------------------------------------------------
     def _aus_config(self) -> None:

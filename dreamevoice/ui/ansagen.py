@@ -157,6 +157,11 @@ class SoundRow(ttk.Frame):
         self._store()
 
     def _store(self) -> None:
+        # Tk schickt beim Zerstören des Fensters noch ein <FocusOut>.
+        # Dann gibt es die Zeile schon nicht mehr, und jeder Zugriff auf
+        # ein Geschwister-Widget endete in einem Fehlerfenster.
+        if not self.winfo_exists():
+            return
         value = self.var_path.get().strip().strip('"')
         self.var_path.set(value)
         self.liste.state.config.set_assignment(self.sound.id, value)
@@ -331,6 +336,8 @@ class AnsagenListe(ttk.Frame):
         self.rebuild_list()
 
     def refresh_counter(self) -> None:
+        if not self.lbl_counter.winfo_exists():
+            return
         zugewiesen = len(self.state.assignments())
         gesamt = len(self.state.catalog)
         fehlend = len(self.state.missing_assignments())
@@ -363,8 +370,10 @@ class AnsagenListe(ttk.Frame):
         self.state.prebuilt = None
         self.state.prebuilt_name = ""
         self.state.save()
-        self.refresh_rows()
-        self.refresh_counter()
+        # Neu aufbauen, nicht nur auffrischen: Steht der Filter auf "nur
+        # bereits zugewiesene", gehören die Zeilen jetzt nicht mehr in
+        # die Liste - sie blieben sonst leer stehen.
+        self.rebuild_list()
 
 
 class AnsagenFenster(tk.Toplevel):

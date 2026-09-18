@@ -18,7 +18,7 @@ from ..paths import data_dir, icon_file, log_file
 from .page_start import StartPage
 from .page_voice import VoicePage
 from .shell import NavShell
-from .state import AppState, run_async, spaeter
+from .state import AppState, laufende_vorgaenge, run_async, spaeter
 from .tab_connect import ConnectTab
 from .tab_store import StoreTab
 from .fenster_update import UpdateFenster
@@ -640,6 +640,21 @@ class MainWindow(tk.Tk):
 
     # ------------------------------------------------------------------
     def _on_close(self) -> None:
+        # Läuft noch etwas, wird gefragt. Ein abgeschnittener Vorgang ist
+        # nicht schlimm - der Roboter bekommt nur ein halbes Paket gar
+        # nicht erst zu sehen -, aber eine laufende Erzeugung über
+        # ElevenLabs kostet bezahltes Kontingent, und ein abgebrochenes
+        # Aufspielen lässt den Nutzer im Unklaren.
+        laufend = laufende_vorgaenge()
+        if laufend and not messagebox.askyesno(
+                "Es läuft noch etwas",
+                f"{laufend} Vorgang/Vorgänge laufen gerade - zum Beispiel "
+                f"Aufspielen, Erzeugen oder ein Download.\n\n"
+                f"Beim Beenden bricht das ab. Schon Gesprochenes bleibt "
+                f"gespeichert, ein angefangenes Paket nicht.\n\n"
+                f"Trotzdem beenden?",
+                parent=self):
+            return
         try:
             self.state_obj.save()
         except Exception:  # pragma: no cover

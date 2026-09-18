@@ -787,50 +787,85 @@ class StoreTab(ttk.Frame):
                 filetypes=[("Aufnahmen und Pakete",
                             "*.zip *.tar.gz *.tgz *.tar"),
                            ("Alle Dateien", "*.*")])
-            if not quelle:
-                return
-            if not self._pruefung_bestanden(Path(quelle)):
-                return
-            try:
-                gefunden = importer.import_archive(
-                    Path(quelle), build_dir() / "_import",
-                    known_ids=bekannt, log=lambda m: self._log(m))
-            except Exception as exc:                   # noqa: BLE001
-                self._on_import_error(exc)
-                return
         else:
             quelle = filedialog.askdirectory(
                 parent=self, title="Ordner mit den Aufnahmen wählen",
                 initialdir=start if Path(start).is_dir() else str(Path.home()),
                 mustexist=True)
-            if not quelle:
-                return
-            if not self._pruefung_bestanden(Path(quelle)):
-                return
-            try:
-                gefunden = importer.scan_folder(
-                    Path(quelle), known_ids=bekannt, log=lambda m: self._log(m))
-            except Exception as exc:                   # noqa: BLE001
-                self._on_import_error(exc)
-                return
+        if not quelle:
+            return
 
         # Beim nächsten Mal dort weitermachen, wo zuletzt etwas lag.
         merken = Path(quelle)
         self.state.config["last_audio_dir"] = str(
             merken if merken.is_dir() else merken.parent)
 
-        zuordnung = gefunden.assigned
-        if not zuordnung:
-            show_warning(
-                self, self.theme, "Nichts gefunden",
-                f"In {Path(quelle).name} steckt keine zuzuordnende Aufnahme.",
-                "Die Dateien müssen die Ansage-Nummer im Namen tragen, also "
-                "7.ogg, 7.wav oder 7.mp3. Einen passend benannten "
-                "Vorlagenordner legt 'Ansagen einzeln austauschen' an.")
-            return
+        self._pruefen_dann_einlesen(Path(quelle), bekannt)
 
-        self.paket_bauen(zuordnung, Path(quelle).stem or "eigenes_paket",
-                         Path(quelle).name)
+    def _pruefen_dann_einlesen(self, quelle: Path, bekannt) -> None:
+        """Erst ansehen, dann einlesen - beides im Hintergrund.
+
+        Beides lief früher im Hauptthread. Bei einem Archiv mit vielen
+        oder verschachtelten Einträgen stand die App dann einfach still,
+        ohne Fortschritt und ohne Abbruch ("Keine Rückmeldung").
+        """
+        self.log.clear()
+        self.log.append(f"Sehe mir {quelle.name} an ...", "step")
+        self._busy(True, abbrechbar=True)
+        self.badge.set("Prüfe ...", "muted")
+
+        def work(task):
+            befund = pruefung.pruefe_quelle(
+                quelle, cancelled=lambda: task.cancelled)
+            return befund
+
+        def geprueft(befund) -> None:
+            self._busy(False)
+            if not self._pruefung_annehmen(quelle, befund):
+                self.badge.set("Nicht eingelesen", "muted")
+                return
+            self._einlesen(quelle, bekannt)
+
+        def fail(exc: Exception) -> None:
+            self._busy(False)
+            self._on_import_error(exc)
+
+        self._task = run_async(self, work, on_success=geprueft, on_error=fail)
+
+    def _einlesen(self, quelle: Path, bekannt) -> None:
+        """Holt die Aufnahmen aus Archiv oder Ordner - im Hintergrund."""
+        self.log.append(f"Lese {quelle.name} ein ...", "step")
+        self._busy(True, abbrechbar=False)
+        self.badge.set("Lese ein ...", "muted")
+
+        def work(_task):
+            if quelle.is_dir():
+                return importer.scan_folder(
+                    quelle, known_ids=bekannt, log=lambda m: self._log(m))
+            return importer.import_archive(
+                quelle, build_dir() / "_import",
+                known_ids=bekannt, log=lambda m: self._log(m))
+
+        def ok(gefunden) -> None:
+            self._busy(False)
+            zuordnung = gefunden.assigned
+            if not zuordnung:
+                self.badge.set("Nichts gefunden", "warn")
+                show_warning(
+                    self, self.theme, "Nichts gefunden",
+                    f"In {quelle.name} steckt keine zuzuordnende Aufnahme.",
+                    "Die Dateien müssen die Ansage-Nummer im Namen tragen, "
+                    "also 7.ogg, 7.wav oder 7.mp3. Einen passend benannten "
+                    "Vorlagenordner legt 'Ansagen einzeln austauschen' an.")
+                return
+            self.paket_bauen(zuordnung, quelle.stem or "eigenes_paket",
+                             quelle.name)
+
+        def fail(exc: Exception) -> None:
+            self._busy(False)
+            self._on_import_error(exc)
+
+        self._task = run_async(self, work, on_success=ok, on_error=fail)
 
     def paket_bauen(self, zuordnung: dict, vorschlag: str,
                     herkunft: str) -> None:
@@ -941,15 +976,14 @@ class StoreTab(ttk.Frame):
         run_async(self, work_fn, on_success=ok, on_error=fail,
                   on_finally=lambda: self._busy(False))
 
-    def _pruefung_bestanden(self, quelle: Path) -> bool:
-        """Sieht in fremde Pakete hinein, bevor die App sie anfasst.
+    def _pruefung_annehmen(self, quelle: Path, befund) -> bool:
+        """Zeigt den Befund und fragt, wo es etwas zu fragen gibt.
 
         Der Windows-Virenscanner hilft hier nicht: Ein Sprachpaket geht
         auf einen Roboter, der Linux spricht. Geprüft wird deshalb gegen
         ein Sollbild - Tondateien und Steuerdateien, sonst nichts.
         Gefunden wird gemeldet; was gefährlich ist, wird abgelehnt.
         """
-        befund = pruefung.pruefe_quelle(quelle)
         if befund.funde:
             self.log.append(f"Prüfung von {quelle.name}:",
                             "warn" if befund.stufe >= pruefung.Stufe.VERDACHT
@@ -971,7 +1005,7 @@ class StoreTab(ttk.Frame):
                 "traust.")
             return False
 
-        if befund.stufe >= pruefung.Stufe.VERDACHT:
+        if befund.stufe >= pruefung.Stufe.VERDACHT or befund.luecke:
             return messagebox.askyesno(
                 "Auffälligkeiten gefunden",
                 f"In '{quelle.name}' ist etwas aufgefallen:\n\n"

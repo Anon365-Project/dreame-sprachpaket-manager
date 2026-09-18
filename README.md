@@ -39,7 +39,7 @@ geprüft — [wie ich das geprüft habe](docs/Modelle.md).
 
 **Sechs fertige Stimmen** sind eingebaut und sofort einsatzbereit: Bayerisch
 männlich und weiblich, Hessisch, Wienerisch und Berlinerisch sprechen echten
-Dialekt, auch in der Aussprache — nicht nur in der Wortwahl. Dazu kommt
+Dialekt, auch in der Aussprache — nicht nur in der Wortwahl. Die sechste ist
 **Servitor**, eine männliche, mechanische Stimme: ein Community-Pack von
 **Carnimo**, in dem die Station Schrein und das WLAN Funkkommunion heißt.
 
@@ -158,6 +158,11 @@ Teil des Quellcodes.
 ElevenLabs erzeugt; eine so weitgehende Lizenz wie MIT lässt sich dafür nicht
 erteilen. Privat nutzen und unverändert weitergeben: ja. Als Trainingsmaterial
 für Sprachmodelle oder als eigenständiges Produkt verkaufen: nein.
+
+Für **Servitor** gelten eigene, strengere Bedingungen: Die Stimme stammt von
+**Carnimo**, nicht aus diesem Projekt. Privat nutzen ja, jede kommerzielle
+Verwendung nein, Bearbeitung zur Weitergabe nur mit seiner Zustimmung —
+nachzulesen in `LIZENZ-AUDIO.txt` im Archiv `Servitor-Aufnahmen.zip`.
 
 ---
 

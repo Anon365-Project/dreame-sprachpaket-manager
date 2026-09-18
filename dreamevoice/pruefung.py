@@ -29,7 +29,7 @@ import zipfile
 from dataclasses import dataclass, field
 from enum import IntEnum
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 _LOG = logging.getLogger(__name__)
 
@@ -124,9 +124,26 @@ _BOMBE_VERHAELTNIS = 200
 _BOMBE_BYTES = 200 * 1024 * 1024
 
 #: So viele Einträge werden angesehen. Ein Sprachpaket hat gut 600.
-_MAX_EINTRAEGE = 5000
+#:
+#: Wichtig: Der Importer muss bei derselben Zahl aufhören. Sonst gäbe es
+#: einen Bereich, den die Prüfung nicht mehr ansieht, der Import aber
+#: noch übernimmt - genau dort läge dann die Schaddatei. Deshalb nennt
+#: importer.MAX_EINTRAEGE dieselbe Grenze, und was darüber hinausgeht,
+#: wird hier als Lücke gemeldet statt stillschweigend übergangen.
+MAX_EINTRAEGE = 5000
+_MAX_EINTRAEGE = MAX_EINTRAEGE
 #: So viele Bytes werden je Eintrag gelesen, um den Typ zu bestimmen.
 _PROBE = 8
+
+#: Tondateien werden zusätzlich ganz gelesen und auf ihren Aufbau
+#: geprüft - bis zu dieser Größe je Datei. Eine Ansage von ein paar
+#: Sekunden wiegt 20 bis 60 kB; alles über einem Megabyte ist schon
+#: außergewöhnlich.
+MAX_TON_BYTES = 12 * 1024 * 1024
+
+#: Obergrenze für alles, was diese Prüfung insgesamt liest. Ohne sie
+#: könnte ein sehr großes Archiv die Prüfung zur Geduldsprobe machen.
+MAX_LESEN = 256 * 1024 * 1024
 
 
 @dataclass
@@ -147,6 +164,8 @@ class Befund:
     eintraege: int = 0
     #: Fehlgeschlagene Prüfung ist kein Freispruch - hier steht, warum.
     luecke: str = ""
+    #: Wie viel schon gelesen wurde (siehe MAX_LESEN).
+    gelesen: int = 0
 
     @property
     def sauber(self) -> bool:
@@ -208,9 +227,12 @@ def _name_pruefen(befund: Befund, name: str) -> None:
             Stufe.VERDACHT, "Doppelte Dateiendung",
             f"'{kurz}' sieht vorne harmlos aus, endet aber auf "
             f".{teile[-1].lower()}.")
-    elif endung and endung not in _ERLAUBTE_ENDUNGEN:
+    elif endung not in _ERLAUBTE_ENDUNGEN:
+        # Auch ohne Endung: Eine Datei, die nicht ins Sollbild passt,
+        # gehört genannt. Vorher blieb genau dieser Fall stumm.
         befund.melden(
-            Stufe.HINWEIS, f"Unerwarteter Dateityp im Paket ({endung})",
+            Stufe.HINWEIS,
+            f"Unerwarteter Dateityp im Paket ({endung or 'ohne Endung'})",
             "Er wird beim Einlesen übergangen - im Paket landet er nicht.")
 
 
@@ -220,6 +242,87 @@ def _archivart(kopf: bytes) -> str:
         if kopf.startswith(muster):
             return art
     return ""
+
+
+def _ogg_aufbau(daten: bytes) -> Optional[Tuple[Stufe, str]]:
+    """Läuft die Ogg-Datei sauber bis zum letzten Byte durch?
+
+    Ogg besteht aus Seiten: "OggS", 26 Bytes Kopf, dann eine Tabelle mit
+    der Länge der Abschnitte. Damit lässt sich die Datei von vorn bis
+    hinten durchlaufen. Bleibt am Ende etwas übrig, ist es kein Ton
+    mehr - genau so versteckt man etwas hinter einer gültigen Datei:
+    Der Anfang stimmt, ein Blick auf die ersten Bytes merkt nichts, und
+    Programme, die nur den Ton abspielen, überlesen den Rest.
+
+    Rückgabe: None, wenn alles stimmt - sonst Stufe und Grund. Eine
+    abgeschnittene Datei ist meist nur kaputt (Verdacht); etwas HINTER
+    der letzten Seite kommt nicht von allein dorthin (Gefahr).
+    """
+    stelle = 0
+    ende = len(daten)
+    seiten = 0
+    while stelle < ende:
+        if daten[stelle:stelle + 4] != b"OggS":
+            return (Stufe.GEFAHR,
+                    f"hinter der letzten Tonseite stehen noch "
+                    f"{ende - stelle} Bytes, die kein Ton sind")
+        if stelle + 27 > ende:
+            return (Stufe.VERDACHT, "die letzte Tonseite ist abgeschnitten")
+        abschnitte = daten[stelle + 26]
+        kopf_laenge = 27 + abschnitte
+        if stelle + kopf_laenge > ende:
+            return (Stufe.VERDACHT, "die letzte Tonseite ist abgeschnitten")
+        nutzlast = sum(daten[stelle + 27:stelle + 27 + abschnitte])
+        stelle += kopf_laenge + nutzlast
+        seiten += 1
+        if seiten > 200_000:
+            return None          # unerwartet viele Seiten, aber lesbar
+    if stelle == ende:
+        return None
+    return (Stufe.VERDACHT, "die letzte Tonseite ist abgeschnitten")
+
+
+def _ton_pruefen(befund: Befund, name: str, hole) -> None:
+    """Liest eine Tondatei ganz und sieht sich ihren Aufbau an.
+
+    `hole` liefert den Inhalt; gelesen wird nur, was auch als Tondatei
+    gemeint ist, und nur bis zu den Grenzen oben.
+    """
+    kurz = Path(name.replace("\\", "/")).name
+    if not kurz.lower().endswith(".ogg"):
+        return
+    if befund.gelesen >= MAX_LESEN:
+        befund.luecke = "Es wurde nicht alles gelesen (Prüfung begrenzt)."
+        return
+    try:
+        daten = hole()
+    except (OSError, ValueError) as exc:
+        befund.luecke = f"'{name}' ließ sich nicht lesen ({exc})."
+        return
+    if daten is None:
+        return
+    befund.gelesen += len(daten)
+    if len(daten) > MAX_TON_BYTES:
+        befund.melden(
+            Stufe.VERDACHT, "Ungewöhnlich große Tondatei",
+            f"'{name}' ist {len(daten) // (1024 * 1024)} MB groß. Eine "
+            f"Ansage wiegt ein paar Dutzend Kilobyte.")
+        return
+    if not daten.startswith(b"OggS"):
+        return                     # das meldet schon _inhalt_pruefen
+    ergebnis = _ogg_aufbau(daten)
+    if ergebnis is not None:
+        stufe, grund = ergebnis
+        if stufe >= Stufe.GEFAHR:
+            befund.melden(
+                stufe, "Etwas hängt hinter der Tondatei",
+                f"'{name}' beginnt wie eine Aufnahme, aber {grund}. Genau "
+                f"so versteckt man Inhalte hinter einer gültigen Datei.")
+        else:
+            befund.melden(
+                stufe, "Unvollständige Tondatei",
+                f"'{name}': {grund}. Meist ein abgebrochener Download - "
+                f"die Ansage bliebe dann stumm.")
 
 
 def _inhalt_pruefen(befund: Befund, name: str, kopf: bytes) -> None:
@@ -274,10 +377,12 @@ def pruefe_datei(pfad: Path) -> Befund:
     befund.eintraege = 1
     _name_pruefen(befund, pfad.name)
     _inhalt_pruefen(befund, pfad.name, kopf)
+    _ton_pruefen(befund, pfad.name, pfad.read_bytes)
     return befund
 
 
-def _zip_pruefen(befund: Befund, pfad: Path, tiefe: int = 0) -> None:
+def _zip_pruefen(befund: Befund, pfad: Path, tiefe: int = 0,
+                 cancelled: Optional[Callable[[], bool]] = None) -> None:
     gepackt = pfad.stat().st_size
     entpackt = 0
     with zipfile.ZipFile(pfad) as zf:
@@ -286,7 +391,11 @@ def _zip_pruefen(befund: Befund, pfad: Path, tiefe: int = 0) -> None:
             befund.melden(
                 Stufe.VERDACHT, "Sehr viele Einträge",
                 f"{len(infos)} Dateien - ein Sprachpaket hat gut 600.")
+            befund.luecke = (f"Nur die ersten {_MAX_EINTRAEGE} von "
+                             f"{len(infos)} Einträgen angesehen.")
         for info in infos[:_MAX_EINTRAEGE]:
+            if cancelled is not None and cancelled():
+                raise Abgebrochen()
             befund.eintraege += 1
             _name_pruefen(befund, info.filename)
             if info.is_dir():
@@ -316,12 +425,15 @@ def _zip_pruefen(befund: Befund, pfad: Path, tiefe: int = 0) -> None:
                     if art:
                         _innen_pruefen(befund, info.filename, art, tiefe,
                                        lambda: zf.open(info))
+                _ton_pruefen(befund, info.filename,
+                             lambda i=info: zf.read(i))
             except (zipfile.BadZipFile, OSError, RuntimeError, NotImplementedError) as exc:
                 befund.luecke = f"Ein Eintrag ließ sich nicht lesen ({exc})."
     _bombe_pruefen(befund, gepackt, entpackt)
 
 
-def _tar_pruefen(befund: Befund, pfad: Path, tiefe: int = 0) -> None:
+def _tar_pruefen(befund: Befund, pfad: Path, tiefe: int = 0,
+                 cancelled: Optional[Callable[[], bool]] = None) -> None:
     gepackt = pfad.stat().st_size
     entpackt = 0
     with tarfile.open(pfad, "r:*") as tf:
@@ -331,7 +443,11 @@ def _tar_pruefen(befund: Befund, pfad: Path, tiefe: int = 0) -> None:
                     Stufe.VERDACHT, "Sehr viele Einträge",
                     f"mehr als {_MAX_EINTRAEGE} - ein Sprachpaket hat "
                     f"gut 600.")
+                befund.luecke = (f"Nur die ersten {_MAX_EINTRAEGE} Einträge "
+                                 f"angesehen.")
                 break
+            if cancelled is not None and cancelled():
+                raise Abgebrochen()
             befund.eintraege += 1
             _name_pruefen(befund, member.name)
             if member.issym() or member.islnk():
@@ -359,6 +475,12 @@ def _tar_pruefen(befund: Befund, pfad: Path, tiefe: int = 0) -> None:
                     if art:
                         _innen_pruefen(befund, member.name, art, tiefe,
                                        lambda m=member: tf.extractfile(m))
+
+                    def _ganz(m=member):
+                        quelle = tf.extractfile(m)
+                        return quelle.read() if quelle is not None else None
+
+                    _ton_pruefen(befund, member.name, _ganz)
             except (tarfile.TarError, OSError, EOFError) as exc:
                 befund.luecke = f"Ein Eintrag ließ sich nicht lesen ({exc})."
     _bombe_pruefen(befund, gepackt, entpackt)
@@ -441,15 +563,22 @@ def _innen_pruefen(befund: Befund, name: str, art: str, tiefe: int,
                 pass
 
 
-def pruefe_archiv(pfad: Path, tiefe: int = 0) -> Befund:
+class Abgebrochen(Exception):
+    """Der Benutzer hat die Prüfung abgebrochen - kein Fund, kein Fehler."""
+
+
+def pruefe_archiv(pfad: Path, tiefe: int = 0,
+                  cancelled: Optional[Callable[[], bool]] = None) -> Befund:
     """Sieht in ein zip- oder tar.gz-Archiv hinein, ohne es auszupacken."""
     befund = Befund()
     pfad = Path(pfad)
     try:
         if zipfile.is_zipfile(pfad):
-            _zip_pruefen(befund, pfad, tiefe)
+            _zip_pruefen(befund, pfad, tiefe, cancelled)
         else:
-            _tar_pruefen(befund, pfad, tiefe)
+            _tar_pruefen(befund, pfad, tiefe, cancelled)
+    except Abgebrochen:
+        befund.luecke = "Vom Benutzer abgebrochen." 
     except (zipfile.BadZipFile, tarfile.TarError, OSError, EOFError,
             ValueError) as exc:
         # Kein Freispruch: Was sich nicht lesen lässt, ist ungeprüft.
@@ -458,7 +587,8 @@ def pruefe_archiv(pfad: Path, tiefe: int = 0) -> Befund:
     return befund
 
 
-def pruefe_ordner(pfad: Path, hoechstens: int = _MAX_EINTRAEGE) -> Befund:
+def pruefe_ordner(pfad: Path, hoechstens: int = _MAX_EINTRAEGE,
+                  cancelled: Optional[Callable[[], bool]] = None) -> Befund:
     """Dasselbe für einen Ordner voller Aufnahmen."""
     befund = Befund()
     pfad = Path(pfad)
@@ -467,7 +597,16 @@ def pruefe_ordner(pfad: Path, hoechstens: int = _MAX_EINTRAEGE) -> Befund:
     except OSError as exc:
         befund.luecke = f"Der Ordner ließ sich nicht lesen ({exc})."
         return befund
+    if len(dateien) > hoechstens:
+        befund.melden(
+            Stufe.VERDACHT, "Sehr viele Dateien im Ordner",
+            f"{len(dateien)} Dateien - ein Sprachpaket hat gut 600.")
+        befund.luecke = (f"Nur die ersten {hoechstens} von {len(dateien)} "
+                         f"Dateien angesehen.")
     for datei in dateien[:hoechstens]:
+        if cancelled is not None and cancelled():
+            befund.luecke = "Vom Benutzer abgebrochen."
+            return befund
         befund.eintraege += 1
         _name_pruefen(befund, datei.name)
         try:
@@ -477,6 +616,7 @@ def pruefe_ordner(pfad: Path, hoechstens: int = _MAX_EINTRAEGE) -> Befund:
             befund.luecke = f"'{datei.name}' ließ sich nicht lesen ({exc})."
             continue
         _inhalt_pruefen(befund, datei.name, kopf)
+        _ton_pruefen(befund, datei.name, datei.read_bytes)
         if _archivart(kopf):
             innen = pruefe_archiv(datei, tiefe=1)
             for fund in innen.funde:
@@ -487,11 +627,14 @@ def pruefe_ordner(pfad: Path, hoechstens: int = _MAX_EINTRAEGE) -> Befund:
     return befund
 
 
-def pruefe_quelle(pfad: Optional[Path]) -> Befund:
+def pruefe_quelle(pfad: Optional[Path],
+                  cancelled: Optional[Callable[[], bool]] = None) -> Befund:
     """Archiv oder Ordner - je nachdem, was übergeben wurde."""
     if pfad is None:
         befund = Befund()
         befund.luecke = "Es wurde nichts übergeben."
         return befund
     pfad = Path(pfad)
-    return pruefe_ordner(pfad) if pfad.is_dir() else pruefe_archiv(pfad)
+    if pfad.is_dir():
+        return pruefe_ordner(pfad, cancelled=cancelled)
+    return pruefe_archiv(pfad, cancelled=cancelled)

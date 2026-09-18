@@ -747,13 +747,21 @@ def restore_official(cloud: DreameCloud,
                      pack: VoicePackInfo,
                      log: LogFn = _noop_log,
                      step: StepFn = _noop_step,
-                     timeout: float = 420.0) -> InstallOutcome:
+                     timeout: float = 420.0,
+                     cancelled: Optional[Callable[[], bool]] = None
+                     ) -> InstallOutcome:
     """Stellt ein offizielles Sprachpaket wieder her.
 
     Hier wird bewusst Dreames eigene Download-URL benutzt - der Roboter
     lädt also direkt beim Hersteller, ganz ohne PC im Spiel. Das ist
     derselbe Vorgang, den die Dreamehome-App beim Sprachwechsel auslöst.
+
+    `cancelled` beendet das Warten - der Auftrag beim Roboter bleibt
+    davon unberührt, er ist dann längst unterwegs. Ohne diese
+    Möglichkeit saß man bis zu sieben Minuten vor einem gesperrten
+    Knopf.
     """
+    cancelled = cancelled or (lambda: False)
     log(f"Stelle das offizielle Paket '{pack.label}' wieder her.")
     log(f"Quelle: {pack.url}")
     log(f"Größe: {pack.size} Bytes, MD5: {pack.md5}")
@@ -785,6 +793,13 @@ def restore_official(cloud: DreameCloud,
     deadline = time.time() + timeout
     while time.time() < deadline:
         time.sleep(TAKT)
+        if cancelled():
+            return InstallOutcome(
+                False, "Vom Benutzer abgebrochen.",
+                hint=("Der Auftrag ist beim Roboter bereits angekommen - "
+                      "abgebrochen wurde nur das Warten darauf. Ob er die "
+                      "Originalstimme geholt hat, verrät 'Am Roboter "
+                      "abfragen'."))
         ergebnis = beobachter.nachsehen(log)
 
         if ergebnis == _Beobachter.FEHLER:

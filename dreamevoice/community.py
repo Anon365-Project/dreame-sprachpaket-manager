@@ -10,7 +10,7 @@ tar-Archiv mit Ogg-Dateien im erwarteten Schema.
 
 Bayerisch, Schwäbisch oder eine Prominentenstimme wie Bruce Willis gibt
 es als fertiges Dreame-Paket nicht. Solche Pakete müsste man selbst
-erzeugen - technisch geht das über "Einzelne Ansagen", indem
+erzeugen - technisch geht das über "Ansagen einzeln austauschen", indem
 man die gewünschten Ansagen mit einer Sprachsynthese erzeugt und
 zuweist. Stimmen realer Personen nachzubilden ist rechtlich heikel
 (Persönlichkeitsrecht) und deshalb bewusst nicht Teil dieser App.

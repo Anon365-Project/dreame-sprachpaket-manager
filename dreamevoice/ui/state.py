@@ -196,6 +196,26 @@ class Task:
         return self._cancel.is_set()
 
 
+#: Wie viele Hintergrundvorgänge gerade laufen. Wird nur hochgezählt,
+#: damit die App beim Beenden fragen kann, statt einen laufenden
+#: Download oder eine bezahlte Sprachausgabe kommentarlos abzuschneiden.
+_LAEUFT = threading.Semaphore(0)
+_LAEUFT_ZAEHLER = 0
+_LAEUFT_RIEGEL = threading.Lock()
+
+
+def laufende_vorgaenge() -> int:
+    """Wie viele Hintergrundvorgänge gerade arbeiten."""
+    with _LAEUFT_RIEGEL:
+        return _LAEUFT_ZAEHLER
+
+
+def _laeuft_mehr(wieviel: int) -> None:
+    global _LAEUFT_ZAEHLER
+    with _LAEUFT_RIEGEL:
+        _LAEUFT_ZAEHLER = max(0, _LAEUFT_ZAEHLER + wieviel)
+
+
 def run_async(widget: tk.Misc,
               work: Callable[..., Any],
               on_success: Optional[Callable[[Any], None]] = None,
@@ -234,6 +254,7 @@ def run_async(widget: tk.Misc,
             pass
 
     def runner() -> None:
+        _laeuft_mehr(1)
         try:
             result = work(task)
         except Exception as exc:  # noqa: BLE001 - wird an die GUI weitergereicht
@@ -245,6 +266,7 @@ def run_async(widget: tk.Misc,
             if on_success:
                 zurueck(lambda r=result: on_success(r))
         finally:
+            _laeuft_mehr(-1)
             if on_finally:
                 zurueck(on_finally)
 

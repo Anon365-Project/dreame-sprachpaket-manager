@@ -7,6 +7,13 @@ ausdrücklich **nicht**. Sie wurden mit [ElevenLabs](https://elevenlabs.io)
 erzeugt, und eine so weitgehende Lizenz wie MIT lässt sich dafür nicht
 erteilen — man kann nur weitergeben, was man selbst hat.
 
+**Ausnahme: `Servitor-Aufnahmen.zip`.** Diese Stimme stammt nicht aus
+diesem Projekt, sondern von **Carnimo**. Für sie gelten seine eigenen,
+strengeren Bedingungen: privat nutzen ja, jede kommerzielle Verwendung
+nein, Bearbeitung zur Weitergabe nur mit seiner Zustimmung. Sie stehen in
+`LIZENZ-AUDIO.txt` im Archiv `Servitor-Aufnahmen.zip`. Alles Weitere auf
+dieser Seite betrifft nur die fünf Stimmen dieses Projekts.
+
 ## Erlaubt
 
 * Nutzung auf deinen eigenen Geräten, privat wie gewerblich

@@ -35,6 +35,7 @@ import logging
 import lzma
 import sys
 import tarfile
+import threading
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
@@ -115,12 +116,41 @@ def target_path() -> Path:
     return data_dir() / "ffmpeg" / "ffmpeg.exe"
 
 
+#: Warum das Auspacken zuletzt scheiterte - für die Oberfläche, die
+#: sonst nur "wird ausgepackt" sagen könnte, während in Wahrheit die
+#: Platte voll ist oder ein Virenscanner den Ordner sperrt.
+letzter_fehler: str = ""
+
+#: Je Ziel ein Riegel. Anhören und Aufspielen laufen in eigenen Threads
+#: und packen dieselbe Datei aus, wenn man zügig hintereinander klickt.
+#: Beide schrieben dann in dieselbe .part-Datei - das Ergebnis war eine
+#: verstümmelte Stimme. community.py hat denselben Riegel aus demselben
+#: Grund.
+_RIEGEL: Dict[str, threading.Lock] = {}
+_RIEGEL_SELBST = threading.Lock()
+
+
+def _riegel(schluessel: str) -> threading.Lock:
+    with _RIEGEL_SELBST:
+        return _RIEGEL.setdefault(schluessel, threading.Lock())
+
+
 def extract_ffmpeg(progress: Optional[ProgressFn] = None,
                    log: Optional[LogFn] = None) -> Optional[Path]:
     """Packt das mitgelieferte ffmpeg aus. Gibt den Pfad zurück.
 
-    Ein bereits ausgepacktes ffmpeg wird wiederverwendet.
+    Ein bereits ausgepacktes ffmpeg wird wiederverwendet. Klappt es
+    nicht, steht der Grund in `letzter_fehler`. Wer gleichzeitig
+    dasselbe will, wartet, bis der erste fertig ist.
     """
+    with _riegel("ffmpeg"):
+        return _extract_ffmpeg(progress, log)
+
+
+def _extract_ffmpeg(progress: Optional[ProgressFn] = None,
+                    log: Optional[LogFn] = None) -> Optional[Path]:
+    global letzter_fehler
+    letzter_fehler = ""
     target = target_path()
     if target.is_file() and target.stat().st_size > 1_000_000:
         return target
@@ -161,11 +191,14 @@ def extract_ffmpeg(progress: Optional[ProgressFn] = None,
     except (OSError, lzma.LZMAError) as exc:
         tmp.unlink(missing_ok=True)
         _LOG.error("ffmpeg konnte nicht ausgepackt werden: %s", exc)
+        letzter_fehler = f"{exc}"
         return None
 
     if written < 1_000_000:
         tmp.unlink(missing_ok=True)
         _LOG.error("Ausgepacktes ffmpeg ist unplausibel klein (%d Byte)", written)
+        letzter_fehler = (f"Die ausgepackte Datei war unerwartet klein "
+                          f"({written} Byte).")
         return None
 
     try:
@@ -173,6 +206,7 @@ def extract_ffmpeg(progress: Optional[ProgressFn] = None,
     except OSError as exc:
         tmp.unlink(missing_ok=True)
         _LOG.error("ffmpeg konnte nicht abgelegt werden: %s", exc)
+        letzter_fehler = f"{target.parent}: {exc}"
         return None
 
     if log:
@@ -293,8 +327,16 @@ def extract_dialekt(dateiname: str,
                     log: Optional[LogFn] = None) -> Optional[Path]:
     """Packt ein mitgeliefertes Aufnahme-Archiv aus und gibt den Pfad zurück.
 
-    Ein bereits ausgepacktes Archiv wird wiederverwendet.
+    Ein bereits ausgepacktes Archiv wird wiederverwendet. Zwei
+    gleichzeitige Anfragen nach derselben Stimme laufen nacheinander -
+    sonst schrieben beide in dieselbe .part-Datei.
     """
+    with _riegel(f"dialekt:{dateiname}"):
+        return _extract_dialekt(dateiname, log)
+
+
+def _extract_dialekt(dateiname: str,
+                     log: Optional[LogFn] = None) -> Optional[Path]:
     # Heute kommen die Namen aus einer festen Liste in dialektpakete.py.
     # Der Riegel steht hier trotzdem: Käme der Name irgendwann von
     # außen, dürfte "..\\..\\autostart.exe" nicht aus dem Ordner
