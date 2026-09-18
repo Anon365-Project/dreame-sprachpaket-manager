@@ -21,13 +21,12 @@ Der Roboter meldet eine Kennung, die die App nicht kennt.
   Kennung einen eigenen Ordner an, den man über die Cloud nicht mehr löschen
   kann — eine einzige Kennung überschreibt sich selbst.
 * **Zurück zur Originalstimme** geht es jederzeit: auf der Seite *Start* mit
-  **Originalstimme zurück**, oder unter *Bauen und Aufspielen* mit
-  *Originalstimme wiederherstellen*. Beides ist derselbe Vorgang — der
-  Roboter lädt sie direkt bei Dreame.
+  **Originalstimme wiederherstellen**. Der Roboter lädt sie direkt bei Dreame;
+  dieser PC ist dabei gar nicht beteiligt — der Weg klappt also auch dann,
+  wenn das Aufspielen an Firewall oder Netz gescheitert ist.
 
 Ob dein Paket läuft, verrät auf der Seite *Start* der Knopf **Am Roboter
-abfragen**; unter *Bauen und Aufspielen* heißt derselbe Knopf *Sprachpaket am
-Roboter abfragen*. Die Antwort kommt direkt vom Gerät, nicht aus der App.
+abfragen**. Die Antwort kommt direkt vom Gerät, nicht aus der App.
 
 ---
 

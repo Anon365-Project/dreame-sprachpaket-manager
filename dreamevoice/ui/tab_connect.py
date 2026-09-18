@@ -9,11 +9,12 @@ from tkinter import messagebox, ttk
 from .. import __version__
 from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
                      DreameCloud, regionen_fuer)
+from .. import server
 from ..errors import NoDeviceError
 from .state import AppState, error_text, run_async
 from .theme import Theme
 from .widgets import (Card, InfoBanner, ScrollablePage, StatusBadge,
-                      labeled_value, show_error, show_info)
+                      labeled_value, show_error, show_info, show_warning)
 
 DREAMEHOME_HELP = "https://www.dreametech.com/pages/support"
 
@@ -187,6 +188,8 @@ class ConnectTab(ttk.Frame):
         # Steht seit Version 1.3.0 in einem eigenen Fenster, erreichbar
         # über den Knopf oben rechts. Hier bleibt nur ein Verweis für
         # alle, die es an dieser Stelle gewohnt sind.
+        self._build_netz_card(outer)
+
         akt = Card(outer, self.theme, "Aktualisierung",
                    "Nachsehen, ob es eine neuere Fassung gibt")
         akt.pack(fill="x", pady=(14, 0))
@@ -449,6 +452,107 @@ class ConnectTab(ttk.Frame):
                   else devices[0].did)
         self.tree.selection_set(target)
         self.tree.focus(target)
+
+    def _build_netz_card(self, outer) -> None:
+        """Wie der Roboter das Paket von diesem PC abholt.
+
+        Braucht fast niemand: Die App findet Adresse und Port selbst.
+        Nötig wird es, wenn mehrere Netzwerkkarten im Spiel sind oder
+        der Roboter diesen PC nicht erreicht. Bis 1.3.0 standen diese
+        Felder auf einer eigenen Seite "Bauen und Aufspielen"; dort
+        suchte sie niemand, und alles andere auf der Seite gab es
+        inzwischen doppelt.
+        """
+        card = Card(outer, self.theme, "Netzwerk fürs Aufspielen",
+                    "Nur nötig, wenn der Roboter diesen PC nicht erreicht.")
+        card.pack(fill="x", pady=(14, 0))
+
+        ttk.Label(
+            card.content,
+            text=("Der Roboter lädt das Paket selbst von diesem PC - die App "
+                  "startet dafür kurz einen kleinen Webserver. Adresse und "
+                  "Port sucht sie sich allein; leer lassen heißt "
+                  "automatisch.\n\n"
+                  "Wichtig ist nur: PC und Roboter müssen im selben Netz "
+                  "hängen (kein Gast- oder IoT-WLAN), und die "
+                  "Windows-Firewall muss beim ersten Mal 'Privates "
+                  "Netzwerk' erlauben."),
+            style="Muted.TLabel", wraplength=820, justify="left"
+        ).pack(anchor="w", pady=(0, 10))
+
+        netz = ttk.Frame(card.content, style="Card.TFrame")
+        netz.pack(fill="x")
+        netz.columnconfigure(1, weight=1)
+
+        ttk.Label(netz, text="PC-Adresse", style="Surface.TLabel").grid(
+            row=0, column=0, sticky="w", pady=4, padx=(0, 10))
+        self.var_ip = tk.StringVar(value=self.state.config["host_ip"])
+        self.combo_ip = ttk.Combobox(netz, textvariable=self.var_ip, width=24,
+                                     values=server.candidate_ips())
+        self.combo_ip.grid(row=0, column=1, sticky="w", pady=4)
+        ttk.Label(netz, text="leer = automatisch ermitteln",
+                  style="Muted.TLabel").grid(row=0, column=2, sticky="w",
+                                             padx=(10, 0))
+
+        ttk.Label(netz, text="Port", style="Surface.TLabel").grid(
+            row=1, column=0, sticky="w", pady=4, padx=(0, 10))
+        self.var_port = tk.StringVar(
+            value=str(self.state.config["serve_port"] or ""))
+        ttk.Entry(netz, textvariable=self.var_port, width=10).grid(
+            row=1, column=1, sticky="w", pady=4)
+        ttk.Label(netz, text="leer = freien Port wählen",
+                  style="Muted.TLabel").grid(row=1, column=2, sticky="w",
+                                             padx=(10, 0))
+
+        ttk.Label(netz, text="Eigene URL", style="Surface.TLabel").grid(
+            row=2, column=0, sticky="w", pady=4, padx=(0, 10))
+        self.var_url = tk.StringVar(value=self.state.config["public_url"])
+        ttk.Entry(netz, textvariable=self.var_url).grid(
+            row=2, column=1, columnspan=2, sticky="ew", pady=4)
+        ttk.Label(netz,
+                  text=("Nur für den Notfall: Wenn der Roboter diesen PC "
+                        "nicht erreicht, kannst du das gebaute Paket selbst "
+                        "irgendwo hochladen und hier die öffentliche Adresse "
+                        "eintragen."),
+                  style="Muted.TLabel", wraplength=560,
+                  justify="left").grid(row=3, column=1, columnspan=2,
+                                       sticky="w")
+
+        knoepfe = ttk.Frame(card.content, style="Card.TFrame")
+        knoepfe.pack(fill="x", pady=(12, 0))
+        ttk.Button(knoepfe, text="Übernehmen", style="Small.TButton",
+                   command=self._on_netz_speichern).pack(side="left")
+        self.badge_netz = StatusBadge(knoepfe, self.theme, "")
+        self.badge_netz.pack(side="left", padx=(12, 0))
+
+    def _on_netz_speichern(self) -> None:
+        """Merkt die Netzwerkangaben - mit Prüfung des Ports."""
+        roh = self.var_port.get().strip()
+        if roh:
+            if not roh.isdigit() or not 1 <= int(roh) <= 65535:
+                show_warning(self, self.theme, "Port unzulässig",
+                             f"'{roh}' ist keine Portnummer.",
+                             "Erlaubt sind Zahlen von 1 bis 65535. Leer "
+                             "lassen heißt: Die App sucht sich selbst einen "
+                             "freien Port.")
+                return
+            port = int(roh)
+        else:
+            port = 0
+
+        adresse = self.var_url.get().strip()
+        if adresse and not adresse.lower().startswith(("http://", "https://")):
+            show_warning(self, self.theme, "Adresse unvollständig",
+                         "Die eigene URL muss mit http:// oder https:// "
+                         "beginnen.",
+                         f"Eingetragen war: {adresse}")
+            return
+
+        self.state.config["host_ip"] = self.var_ip.get().strip()
+        self.state.config["serve_port"] = port
+        self.state.config["public_url"] = adresse
+        self.state.save()
+        self.badge_netz.set("Übernommen", "ok")
 
     def beim_zeigen(self) -> None:
         """Beim Öffnen der Seite nachziehen, was inzwischen bekannt ist."""

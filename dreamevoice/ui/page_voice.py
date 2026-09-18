@@ -228,6 +228,16 @@ class VoicePage(ttk.Frame):
             style="Muted.TLabel", wraplength=720, justify="left"
         ).pack(anchor="w", pady=(10, 0))
 
+        ttk.Label(
+            card2.content,
+            text=("Dafür müssen dieser PC und der Roboter im selben Netz "
+                  "hängen - kein Gast- oder IoT-WLAN - und die "
+                  "Windows-Firewall muss die App ins private Netzwerk "
+                  "lassen. Klappt das nicht, hilft „Eigene URL“ unter "
+                  "„Verbindung“."),
+            style="Muted.TLabel", wraplength=720, justify="left"
+        ).pack(anchor="w", pady=(6, 0))
+
         self.progress = ttk.Progressbar(card2.content, mode="determinate",
                                         maximum=100)
         self.progress.pack(fill="x", pady=(12, 6))
@@ -734,9 +744,11 @@ class VoicePage(ttk.Frame):
                     + " und gegen ihre Prüfsumme geprüft.")
         if wahl.hinweis:
             teile.append(wahl.hinweis)
-        teile.append(f"Kennung: {kennung} - eine schon dort liegende eigene "
-                     f"Stimme wird dabei überschrieben.")
-        teile.append("Der Rückweg zur Originalstimme bleibt jederzeit offen.")
+        teile.append("Eine vorher von hier aufgespielte Stimme wird dabei "
+                     "ersetzt. Die deutsche Originalstimme deines Roboters "
+                     "bleibt unangetastet.")
+        teile.append("Der Rückweg ist ein Klick auf der Startseite: "
+                     "„Originalstimme wiederherstellen“.")
         return "\n\n".join(teile)
 
     def _on_install(self) -> None:
@@ -772,6 +784,9 @@ class VoicePage(ttk.Frame):
         bekannt = self.state.catalog.ids() if self.state.catalog else None
         port = int(self.state.config["serve_port"] or 0)
         host = self.state.config["host_ip"] or ""
+        # Notfallweg für alle, deren Roboter diesen PC nicht erreicht:
+        # eigene Adresse, eingetragen unter "Verbindung".
+        eigene_url = (self.state.config["public_url"] or "").strip()
         zwischen = library.zwischenstand_ordner(build_dir())
 
         self.log.clear()
@@ -864,7 +879,7 @@ class VoicePage(ttk.Frame):
             self._log("Übertrage auf den Roboter", "step")
             return installer.install_pack(
                 cloud=cloud, device=geraet, build=build,
-                port=port, host_ip=host,
+                port=port, host_ip=host, public_url=eigene_url,
                 log=lambda m: self._log(m), step=self._step,
                 cancelled=lambda: task.cancelled)
 
@@ -897,8 +912,17 @@ class VoicePage(ttk.Frame):
                      if ergebnis.bestaetigt else
                      f"{wahl.name} wurde auf den Roboter übertragen."),
                     "Probier es aus: Lass ihn eine Reinigung starten - er "
-                    "sollte anders klingen.\n\nIn der Dreamehome-App taucht "
-                    "das Paket nicht auf; das ist normal und kein Fehler.\n\n"
+                    "sollte anders klingen.\n\n"
+                    # Der häufigste Weg, sich die neue Stimme wieder
+                    # kaputtzumachen: In der Handy-App nachsehen und dort
+                    # eine Sprache antippen. Bis 1.3.0 stand diese Warnung
+                    # nur auf der Expertenseite - also dort, wo sie
+                    # niemand las.
+                    "Wichtig: Wähle in der Dreamehome-App jetzt keine "
+                    "Sprache aus. Damit lädt der Roboter seine alte Stimme "
+                    "nach und überschreibt deine. Dass die App eine "
+                    "abweichende Spracheinstellung meldet, ist gerade das "
+                    "gute Zeichen - dein Paket läuft.\n\n"
                     # Der Hinweis aus dem Ergebnis sagt bei einem nur
                     # wahrscheinlichen Erfolg, woran es liegt. Er stand
                     # bisher nur im Protokoll - im Fenster las der Nutzer

@@ -36,6 +36,7 @@ DEFAULTS: Dict[str, Any] = {
     "last_audio_dir": "",
     "serve_port": 0,             # 0 = freien Port automatisch wählen
     "host_ip": "",               # leer = automatisch ermitteln
+    "public_url": "",            # eigene Adresse statt des PC-Webservers
     "dark_mode": False,
     # Sprachsynthese für Dialektpakete
     "tts_engine": "windows",     # windows | elevenlabs
@@ -236,7 +237,8 @@ class Config:
     #: IP seines PCs mit.
     PERSOENLICH = (
         "email", "device_id", "device_name", "device_model", "device_mac",
-        "host_ip", "elevenlabs_voice_id", "elevenlabs_voice_name",
+        "host_ip", "public_url", "elevenlabs_voice_id",
+        "elevenlabs_voice_name",
     )
 
     def forget_personal(self, auch_zugangsdaten: bool = True) -> List[str]:

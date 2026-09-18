@@ -21,10 +21,13 @@ geschriebene Fassung steht in [RELEASE.md](RELEASE.md).
   lassen sich vorher anhören; Laden, Anpassen und Aufspielen erledigt ein
   Zug. Unter der Stimme steht, wie viele ihrer Ansagen auf dieses Modell
   passen.
-- **Eine Seite weniger.** *Einzelne Ansagen* ist in *Eigene Stimmen*
-  aufgegangen: Dort öffnet ein Knopf die Liste aller Ansagen, und aus den
-  Zuweisungen baut derselbe Knopf das Paket. Vorher gab es dieselben
-  Schaltflächen zweimal, und gebaut wurde auf einer dritten Seite.
+- **Zwei Seiten weniger.** *Einzelne Ansagen* und *Bauen und Aufspielen*
+  sind aufgegangen: Ansagen einzeln austauschen und daraus bauen geht
+  unter *Eigene Stimmen*, aufgespielt wird unter *Fertige Stimmen*, der
+  Rückweg zur Originalstimme erledigt sich auf der *Startseite*, und die
+  Netzwerkangaben (PC-Adresse, Port, eigene URL) stehen unter
+  *Verbindung*. Übrig bleiben vier Seiten statt sechs; verloren geht
+  nichts.
 - **Fremde Pakete werden geprüft**, bevor die App sie anfasst: gegen ein
   Sollbild aus Tondateien und Steuerdateien, mit Blick auf Programmcode,
   Pfadausbrüche, Verweise und Archive im Archiv — auch drei Ebenen tief.

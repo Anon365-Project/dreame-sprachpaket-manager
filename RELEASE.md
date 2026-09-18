@@ -45,12 +45,17 @@ Stimme dafür kurz herunter, und der Knopf sagt vorher, wie viel. Gefällt
 sie, erledigt **Aufspielen** den Rest in einem Zug. Ein Schritt und eine
 ganze Seite weniger.
 
-### Eine Seite weniger, nichts verloren
+### Zwei Seiten weniger, nichts verloren
 
-*Einzelne Ansagen* gibt es nicht mehr als eigene Seite. Was dort ging, geht
-jetzt unter **Eigene Stimmen**: ein Knopf öffnet die Liste aller Ansagen,
-jede kann eine eigene Audiodatei bekommen — und **derselbe Knopf baut daraus
-das Paket**. Vorher standen dieselben Schaltflächen auf zwei Seiten, und
+Die App hat jetzt vier Seiten statt sechs: **Start**, **Fertige Stimmen**,
+**Eigene Stimmen**, **Verbindung**.
+
+*Einzelne Ansagen* und *Bauen und Aufspielen* gibt es nicht mehr. Was dort
+ging, geht jetzt dort, wo man es sucht: Ansagen einzeln austauschen und
+daraus ein Paket bauen unter **Eigene Stimmen**, aufspielen unter **Fertige
+Stimmen**, die Originalstimme zurückholen mit einem Klick auf der
+**Startseite** — und die Netzwerkangaben für den Notfall unter
+**Verbindung**. Vorher standen dieselben Schaltflächen auf zwei Seiten, und
 gebaut wurde auf einer dritten.
 
 ### Fremde Pakete werden vorher geprüft
@@ -149,7 +154,7 @@ offiziellen Pakets, sodass keine Ansage verlorengeht; der Roboter prüft es
 selbst gegen MD5 und Größe. Vor dem Senden fragt die App, ob dein Gerät den
 Sprachpaket-Dienst überhaupt kennt — wenn nicht, wird gar nichts geschrieben.
 
-Geprüft für diese Fassung: **1048 Selbsttests** in 54 Abschnitten, darunter
+Geprüft für diese Fassung: **1043 Selbsttests** in 54 Abschnitten, darunter
 nachgestellte Angriffe mit Archivbomben, Pfadausbrüchen, untergeschobenen
 Programmen und manipulierten Katalogantworten. Eine der Prüfungen fragt den
 echten Dreame-Katalog ab und schlägt an, wenn sich dort etwas ändert.
@@ -214,10 +219,10 @@ Dann fragt Windows gar nicht erst.
 Zur Kontrolle die SHA-256-Prüfsumme dieser EXE:
 
 ```
-7466ffc580464033890a0cddd9344d27ca91e1033a25034becf05400c35fcd85
+3f9b9a83ba03d9a1db32a2a8747f6cb7b2065e6113e60872e683803cb7010f52
 ```
 
-Größe: 111.194.102 Byte (106,0 MB), Dateiversion 1.4.0.0.
+Größe: 111.179.174 Byte (106,0 MB), Dateiversion 1.4.0.0.
 
 Nachrechnen unter Windows:
 `certutil -hashfile DreameSprachpaket.exe SHA256`

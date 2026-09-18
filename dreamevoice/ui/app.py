@@ -20,7 +20,6 @@ from .page_voice import VoicePage
 from .shell import NavShell
 from .state import AppState, run_async, spaeter
 from .tab_connect import ConnectTab
-from .tab_install import InstallTab
 from .tab_store import StoreTab
 from .fenster_update import UpdateFenster
 from .theme import Theme
@@ -267,11 +266,6 @@ class MainWindow(tk.Tk):
                        bauen=lambda: StoreTab(buehne, self.theme,
                                               self.state_obj),
                        section="Erweitert", beim_zeigen=self._beim_eigene)
-        self.shell.add("aufspielen", "Bauen und Aufspielen", "⬆",
-                       bauen=lambda: InstallTab(buehne, self.theme,
-                                                self.state_obj),
-                       section="Erweitert",
-                       beim_zeigen=lambda: self.tab_install.refresh_summary())
         self.shell.add("verbindung", "Verbindung", "🔌",
                        bauen=lambda: ConnectTab(buehne, self.theme,
                                                 self.state_obj),
@@ -318,10 +312,6 @@ class MainWindow(tk.Tk):
     @property
     def tab_store(self):
         return self.shell.seite("eigene")
-
-    @property
-    def tab_install(self):
-        return self.shell.seite("aufspielen")
 
     @property
     def tab_connect(self):
@@ -406,7 +396,7 @@ class MainWindow(tk.Tk):
         ohne_basis = ("Dafür fehlt noch das offizielle Sprachpaket deines "
                       "Roboters. Es wird auf der Startseite einmalig geholt.")
 
-        for key in ("stimme", "eigene", "aufspielen"):
+        for key in ("stimme", "eigene"):
             self.shell.set_enabled(key, verbunden and basis,
                                    ohne_anmeldung if not verbunden else ohne_basis)
 
@@ -690,11 +680,10 @@ Das war es. Alles andere steht unter "Erweitert" und wird nur gebraucht,
 wenn man mehr will:
 
 - Eigene Stimmen: eigene Texte, andere Dialekte, Sprachsynthese über
-  Windows oder ElevenLabs, eigene Aufnahmen einlesen und einzelne
-  Ansagen austauschen
-- Bauen und Aufspielen: der ausführliche Weg mit allen Schaltern,
-  Netzwerkeinstellungen und dem Rückweg zur Originalstimme
-- Verbindung: Konto oder Region wechseln
+  Windows oder ElevenLabs, eigene oder heruntergeladene Aufnahmen
+  einlesen und einzelne Ansagen austauschen
+- Verbindung: Konto, Region oder Roboter wechseln - und die
+  Netzwerkangaben, falls der Roboter diesen PC nicht erreicht
 
 Graue Einträge in der Leiste sind nicht kaputt - sie brauchen nur erst
 die Anmeldung. Ein Klick darauf verrät, was fehlt.
@@ -743,13 +732,12 @@ Zwei Dinge dazu:
   und Dreames Katalog kennt sie nicht. Das ist Absicht: Der Roboter
   legt je Kennung einen eigenen Ordner an, und löschen kann man den
   über die Cloud nicht.
-- Zurück zur Originalstimme geht es jederzeit über "Bauen und
-  Aufspielen" > "Originalstimme wiederherstellen".
+- Zurück zur Originalstimme geht es jederzeit: Startseite,
+  "Originalstimme wiederherstellen". Der Roboter holt sein Paket dann
+  direkt bei Dreame; dieser PC ist dabei gar nicht beteiligt.
 
 Ob dein Paket läuft, verrät der Knopf "Am Roboter abfragen" auf der
-Startseite - unter "Bauen und Aufspielen" heißt derselbe Knopf
-"Sprachpaket am Roboter abfragen". Die Antwort kommt direkt vom
-Gerät, nicht aus der App.
+Startseite. Die Antwort kommt direkt vom Gerät, nicht aus der App.
 
 
 WENN DER ROBOTER DAS PAKET NICHT ABHOLT

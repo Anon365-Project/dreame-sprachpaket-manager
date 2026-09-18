@@ -11,9 +11,9 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Optional
 
 from .. import (audio, custom, dialect, elevenlabs, embedded, ffmpeg_setup,
-                importer, installer, library, packer, pruefung, textfiles,
-                tts)
-from ..paths import build_dir
+                importer, installer, library, official, packer, pruefung,
+                textfiles, tts)
+from ..paths import build_dir, preview_dir
 from .state import AppState, error_text, run_async, to_main
 from . import ansagen
 from .ansagen import open_with_default_player
@@ -48,8 +48,8 @@ class StoreTab(ttk.Frame):
         self.page.pack(fill="both", expand=True)
         outer = self.page.body()
 
-        self._build_dialect_card(outer)
         self._build_aufnahmen_card(outer)
+        self._build_dialect_card(outer)
 
         # Die freien Stimmen aus dem Netz standen bis 1.3.0 hier als
         # Karten. Seit 1.4.0 stehen sie mit allen anderen fertigen Stimmen
@@ -77,14 +77,15 @@ class StoreTab(ttk.Frame):
         außerdem selbst darauf kommen, dass gebaut wird - auf einer
         dritten Seite. Jetzt steht beides hier, und gebaut wird auch hier.
         """
-        card = Card(outer, self.theme, "Eigene Aufnahmen verwenden",
+        card = Card(outer, self.theme,
+                    "Eigene oder heruntergeladene Aufnahmen einlesen",
                     "Fertig gesprochene Ansagen - ganze Sätze auf einmal "
                     "oder Ansage für Ansage.")
-        card.pack(fill="x", pady=(14, 0))
+        card.pack(fill="x")
 
         reihe = ttk.Frame(card.content, style="Card.TFrame")
         reihe.pack(fill="x")
-        ttk.Button(reihe, text="Aufnahmen einlesen ...",
+        ttk.Button(reihe, text="Aufnahmen oder Paket einlesen ...",
                    style="Accent.TButton",
                    command=self._on_import_ready).pack(side="left")
         ttk.Button(reihe, text="Ansagen einzeln austauschen ...",
@@ -93,17 +94,40 @@ class StoreTab(ttk.Frame):
 
         ttk.Label(
             card.content,
-            text=("'Aufnahmen einlesen' nimmt einen ganzen Satz entgegen: eine "
-                  "ZIP-Datei von der Projektseite, ein fertiges .tar.gz oder "
-                  "einen Ordner voller mp3-, wav- oder ogg-Dateien. Die Zahl "
-                  "im Dateinamen ist die Ansage-Nummer.\n\n"
+            text=("'Aufnahmen oder Paket einlesen' nimmt einen ganzen Satz "
+                  "entgegen: eine ZIP-Datei mit Aufnahmen, ein fertiges "
+                  ".tar.gz-Sprachpaket oder einen Ordner voller mp3-, wav- "
+                  "oder ogg-Dateien. Die Zahl im Dateinamen ist die "
+                  "Ansage-Nummer. Fremde Pakete werden vorher geprüft.\n\n"
                   "'Ansagen einzeln austauschen' öffnet die Liste aller "
                   "Ansagen: anhören, eine eigene Datei zuweisen, fertig. Aus "
-                  "den Zuweisungen baut dieselbe Schaltfläche dort das Paket.\n\n"
+                  "den Zuweisungen baut dieselbe Schaltfläche dort das "
+                  "Paket.\n\n"
                   "Beides landet als fertiges Paket in deiner Sammlung und "
-                  "steht danach unter „Fertige Stimmen“ zum Aufspielen bereit."),
+                  "steht danach unter „Fertige Stimmen“ zum Aufspielen "
+                  "bereit."),
             style="Muted.TLabel", wraplength=820, justify="left"
         ).pack(anchor="w", pady=(8, 0))
+
+        # Grundlage: Jedes eigene Paket entsteht als Kopie des
+        # offiziellen. Normalerweise das deutsche, das die Startseite von
+        # selbst holt - umstellen will das fast niemand, deshalb steht es
+        # klein am Rand statt auf einer eigenen Seite.
+        grundlage = ttk.Frame(card.content, style="Card.TFrame")
+        grundlage.pack(fill="x", pady=(12, 0))
+        ttk.Label(grundlage, text="Originalpaket als Grundlage:",
+                  style="Muted.TLabel").pack(side="left", padx=(0, 8))
+        self.var_basis = tk.StringVar()
+        self.combo_basis = ttk.Combobox(grundlage, textvariable=self.var_basis,
+                                        state="readonly", width=28, values=[])
+        self.combo_basis.pack(side="left")
+        self.btn_basis = ttk.Button(grundlage, text="wechseln",
+                                    style="Small.TButton",
+                                    command=self._on_grundlage_laden)
+        self.btn_basis.pack(side="left", padx=(6, 0))
+        self.lbl_basis = ttk.Label(card.content, text="", style="Muted.TLabel",
+                                   wraplength=820, justify="left")
+        self.lbl_basis.pack(anchor="w", pady=(4, 0))
 
         # ffmpeg: stand bisher auf der Seite "Einzelne Ansagen". Es wird
         # nur sichtbar, wenn etwas fehlt - im Normalfall steckt es in der
@@ -122,6 +146,89 @@ class StoreTab(ttk.Frame):
                                                maximum=100, length=200)
         self._ffmpeg_busy = False
         self._ffmpeg_pruefen()
+
+    # ------------------------------------------------------------------
+    def _grundlage_fuellen(self) -> None:
+        """Zeigt, auf welchem offiziellen Paket die eigenen Pakete fußen."""
+        pakete = self.state.official_packs
+        beschriftungen = [p.label for p in pakete]
+        if list(self.combo_basis.cget("values")) != beschriftungen:
+            self.combo_basis.configure(values=beschriftungen)
+        jetzt = self.state.base_pack_info
+        if jetzt is not None and jetzt.label in beschriftungen:
+            self.var_basis.set(jetzt.label)
+        elif beschriftungen and not self.var_basis.get():
+            self.var_basis.set(beschriftungen[0])
+        self.lbl_basis.configure(
+            text=("Dein eigenes Paket ist eine Kopie davon - alles, was du "
+                  "nicht selbst ersetzt, bleibt darauf. Normalerweise "
+                  "Deutsch; wechseln muss man das nur, wenn der Roboter "
+                  "künftig auf einer anderen Sprache aufbauen soll."))
+
+    def _on_grundlage_laden(self) -> None:
+        """Lädt das gewählte offizielle Paket als neue Grundlage."""
+        modell = self.state.model
+        if not modell:
+            show_warning(self, self.theme, "Kein Roboter gewählt",
+                         "Melde dich auf der Startseite an und wähle deinen "
+                         "Roboter.")
+            return
+        gewaehlt = next((p for p in self.state.official_packs
+                         if p.label == self.var_basis.get()), None)
+        if gewaehlt is None:
+            show_warning(self, self.theme, "Keine Sprache gewählt",
+                         "Die Liste der offiziellen Pakete ist noch leer.",
+                         "Sie kommt von Dreame, sobald der Roboter bekannt "
+                         "ist - einen Moment warten und erneut versuchen.")
+            return
+        if (self.state.base_pack_info is not None
+                and gewaehlt.id == self.state.base_pack_info.id):
+            self.lbl_basis.configure(
+                text=f"{gewaehlt.label} ist bereits die Grundlage.")
+            return
+
+        self.btn_basis.configure(state="disabled")
+        self.lbl_basis.configure(text=f"Lade {gewaehlt.label} ...")
+        self.log.append(f"Wechsle die Grundlage auf {gewaehlt.label} ...",
+                        "step")
+
+        def melde(fertig: int, gesamt: int) -> None:
+            anteil = (fertig / gesamt * 100) if gesamt else 0
+            to_main(self, self.progress.configure, {"value": anteil})
+
+        def work(_task):
+            pfad = official.download_pack(gewaehlt, modell, progress=melde)
+            proben = official.extract_previews(
+                pfad, preview_dir() / f"{modell}_{gewaehlt.id}")
+            return pfad, proben
+
+        def ok(ergebnis) -> None:
+            pfad, proben = ergebnis
+            self.state.base_pack_path = pfad
+            self.state.base_pack_info = gewaehlt
+            self.state.previews = proben
+            self.state.config["base_language"] = gewaehlt.id
+            self.state.save()
+            nummern = sorted(proben)
+            if nummern:
+                self.state.catalog = self.state.catalog.restrict_to(nummern)
+            self.state.notify("base_pack_changed")
+            self.lbl_basis.configure(
+                text=f"Grundlage: {gewaehlt.label}, {len(proben)} Ansagen.")
+            self.log.append(f"Grundlage ist jetzt {gewaehlt.label}.", "ok")
+
+        def fail(exc: Exception) -> None:
+            nachricht, hinweis = error_text(exc)
+            self.lbl_basis.configure(text="Nicht geladen.")
+            show_error(self, self.theme, "Originalpaket nicht geladen",
+                       nachricht, hinweis)
+
+        def zum_schluss() -> None:
+            self.btn_basis.configure(state="normal")
+            self.progress.configure(value=0)
+
+        run_async(self, work, on_success=ok, on_error=fail,
+                  on_finally=zum_schluss)
 
     # ------------------------------------------------------------------
     def _ffmpeg_pruefen(self, auspacken: bool = True) -> None:
@@ -819,7 +926,9 @@ class StoreTab(ttk.Frame):
             show_info(self, self.theme, "Paket ist fertig",
                       f"{len(build.replaced)} Ansagen übernommen.",
                       f"Gespeichert als:\n{build.path.name}\n\n"
-                      f"Unter 'Fertige Stimmen' wählst du es zum Installieren aus.")
+                      f"So geht es weiter: links auf „Fertige Stimmen“ - "
+                      f"dein Paket steht dort unter „Eigene“. Auswählen, "
+                      f"anhören, aufspielen.")
 
         def fail(exc: Exception) -> None:
             message, hint = error_text(exc)
@@ -1521,7 +1630,8 @@ class StoreTab(ttk.Frame):
         self._on_engine_changed()
 
     def beim_zeigen(self) -> None:
-        """Wird aufgerufen, wenn die Seite zum ersten Mal sichtbar wird."""
+        """Wird aufgerufen, wenn die Seite sichtbar wird."""
+        self._grundlage_fuellen()
         if not self._stimmen_geladen:
             self._stimmen_geladen = True
             self._refresh_voice_info()

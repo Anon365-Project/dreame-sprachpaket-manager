@@ -29,6 +29,7 @@ dreamevoice/
   installer.py               Ablauf: bauen, ausliefern, Auftrag, Überwachung
   community.py               Geprüfte Community-Pakete
   importer.py                Ordner und Archive stapelweise übernehmen
+  pruefung.py                Fremde Pakete gegen ein Sollbild prüfen
   dialect.py                 Dialektpakete: sprechen, umwandeln, bauen
   textfiles.py               Dialekttexte als Datei aus- und einlesen
   library.py                 Sammlung der gebauten Pakete (Namen, Beschreibung)
@@ -52,8 +53,7 @@ dreamevoice/
     page_voice.py            *Fertige Stimmen* - wählen, anhören, aufspielen
     tab_store.py             *Eigene Stimmen*
     ansagen.py               Fenster *Ansagen einzeln austauschen*
-    tab_install.py           *Bauen und Aufspielen*
-    tab_connect.py           *Verbindung*
+    tab_connect.py           *Verbindung* - Konto, Roboter, Netzwerk
 ```
 
 ---

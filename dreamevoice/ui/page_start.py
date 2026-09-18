@@ -20,16 +20,16 @@ from __future__ import annotations
 
 import logging
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 
-from .. import official
+from .. import installer, official
 from ..cloud import (MARKEN, MARKEN_LABELS, REGION_LABELS, REGIONS,
                      DreameCloud, regionen_fuer)
 from ..paths import preview_dir
 from .state import AppState, error_text, run_async, spaeter, to_main
 from .theme import Theme
 from .widgets import (Card, ScrollablePage, StatusBadge, show_error,
-                      show_warning)
+                      show_info, show_warning)
 
 _LOG = logging.getLogger(__name__)
 
@@ -243,15 +243,16 @@ class StartPage(ttk.Frame):
         knoepfe.pack(fill="x", pady=(16, 0))
         ttk.Button(knoepfe, text="Andere Stimme wählen", style="Accent.TButton",
                    command=lambda: self.gehe_zu("stimme")).pack(side="left")
-        # "original" war nie eine Seite - der Knopf tat schlicht nichts.
-        # Ausgerechnet der, den jemand drückt, wenn ihm die neue Stimme
-        # auf die Nerven geht. Der Rückweg steht unter "Bauen und
-        # Aufspielen" im Abschnitt "Notausgang", und genau dorthin rollt
-        # _zum_notausgang die Seite - nicht an ihren Anfang, wo als
-        # größter Knopf "Sprachpaket installieren" wartet.
-        ttk.Button(knoepfe, text="Originalstimme zurück",
-                   command=self._zum_notausgang
-                   ).pack(side="left", padx=(8, 0))
+        # Der Rückweg passiert hier, nicht auf einer anderen Seite. Wer
+        # ihn drückt, will die Stimme loswerden - und nicht erst auf
+        # einer Seite voller Prüfsummen und Ports den richtigen
+        # Abschnitt suchen (bis 1.3.0 genau so).
+        self.btn_original_zurueck = ttk.Button(
+            knoepfe, text="Originalstimme wiederherstellen",
+            command=self._on_original_zurueck)
+        self.btn_original_zurueck.pack(side="left", padx=(8, 0))
+        self.badge_zurueck = StatusBadge(knoepfe, self.theme, "")
+        self.badge_zurueck.pack(side="left", padx=(12, 0))
 
         self.lbl_geraet = ttk.Label(rahmen, text="", style="MutedBg.TLabel",
                                     wraplength=760, justify="left")
@@ -259,14 +260,74 @@ class StartPage(ttk.Frame):
         return rahmen
 
     # ------------------------------------------------------------------
-    def _zum_notausgang(self) -> None:
-        """Wechselt zu "Bauen und Aufspielen" und rollt zum Notausgang."""
-        self.gehe_zu("aufspielen")
-        fenster = self.winfo_toplevel()
-        seite = getattr(fenster, "tab_install", None)
-        zeigen = getattr(seite, "zeige_notausgang", None)
-        if callable(zeigen):
-            zeigen()
+    def _on_original_zurueck(self) -> None:
+        """Lässt den Roboter sein offizielles Paket direkt bei Dreame holen.
+
+        Dieser PC ist dabei nicht beteiligt - deshalb klappt es auch
+        dann, wenn das Aufspielen an Firewall oder Netz gescheitert ist.
+        """
+        if not self.state.connected:
+            show_warning(self, self.theme, "Nicht verbunden",
+                         "Melde dich zuerst oben an und wähle deinen Roboter.")
+            return
+
+        paket = official.find_pack(self.state.official_packs, "DE")
+        if paket is None and self.state.official_packs:
+            paket = self.state.official_packs[0]
+        if paket is None:
+            show_warning(
+                self, self.theme, "Sprachliste fehlt",
+                "Die Liste der offiziellen Sprachpakete ist noch nicht da.",
+                "Sie kommt von Dreame, sobald der Roboter bekannt ist - "
+                "einen Moment warten und erneut versuchen.")
+            return
+
+        if not messagebox.askyesno(
+                "Originalstimme wiederherstellen",
+                f"Der Roboter holt '{paket.label}' direkt bei Dreame und "
+                f"spricht danach wieder wie ab Werk.\n\n"
+                f"Dein eigenes Paket bleibt auf diesem PC erhalten - du "
+                f"kannst es jederzeit wieder aufspielen.\n\nFortfahren?",
+                parent=self):
+            return
+
+        cloud, geraet = self.state.cloud, self.state.device
+        self.btn_original_zurueck.configure(state="disabled")
+        self.badge_zurueck.set("Stelle wieder her ...", "muted")
+
+        def work(_task):
+            return installer.restore_official(
+                cloud=cloud, device=geraet, pack=paket,
+                log=lambda m: _LOG.info("%s", m))
+
+        def ok(ergebnis) -> None:
+            # Belegt oder nur wahrscheinlich - der Unterschied zählt
+            # gerade hier: Diesen Weg geht jemand, WEIL etwas nicht
+            # stimmt. Ein grünes "wieder aktiv" ohne Nachweis wäre die
+            # schädlichste aller Meldungen.
+            gut = ergebnis.success and ergebnis.bestaetigt
+            self.badge_zurueck.set(
+                "Originalstimme ist wieder aktiv" if gut
+                else ergebnis.message, "ok" if gut else "warn")
+            if ergebnis.success:
+                show_info(self, self.theme,
+                          "Fertig" if gut else "Auftrag ist raus",
+                          ergebnis.message,
+                          ergebnis.hint or installer.NEUSTART_HINWEIS)
+            else:
+                show_warning(self, self.theme, "Nicht wiederhergestellt",
+                             ergebnis.message, ergebnis.hint or "")
+            self._on_query(still=True)
+
+        def fail(exc: Exception) -> None:
+            nachricht, hinweis = error_text(exc)
+            self.badge_zurueck.set("Fehlgeschlagen", "error")
+            show_error(self, self.theme, "Nicht wiederhergestellt",
+                       nachricht, hinweis)
+
+        run_async(self, work, on_success=ok, on_error=fail,
+                  on_finally=lambda: self.btn_original_zurueck.configure(
+                      state="normal"))
 
     # ------------------------------------------------------------------
     def _aus_config(self) -> None:

@@ -1292,14 +1292,11 @@ def _alle_pruefungen() -> None:
           "art == WAHL_ARCHIV" in quelle_imp)
     check("'ZIP' steht in der ersten Wahl", "ZIP" in _ts.WAHL_ARCHIV)
 
-    # Tab 3 nimmt nur gebaute Pakete. Ein Aufnahmen-ZIP dort muss zu einem
-    # Hinweis führen, nicht zu einer Formatmeldung.
-    from dreamevoice.ui import tab_install as _ti  # noqa: E402
-    quelle_pick = inspect.getsource(_ti.InstallTab._on_pick_pack)
-    check("die ausführliche Seite fängt ein ZIP ab und verweist weiter",
-          '".zip"' in quelle_pick
-          and "Fertige Stimmen" in quelle_pick
-          and "Eigene Stimmen" in quelle_pick)
+    # Bis 1.3.0 gab es hier die Seite "Bauen und Aufspielen", die nur
+    # fertige Pakete nahm und ein Aufnahmen-ZIP abfangen musste. Seit
+    # 1.4.0 führt nur noch ein Weg hinein, und der nimmt beides.
+    check("ein Weg für Aufnahmen und fertige Pakete",
+          "tar.gz" in _ts.WAHL_ARCHIV and "ZIP" in _ts.WAHL_ARCHIV)
 
     _shutil.rmtree(zip_dir, ignore_errors=True)
 
@@ -1579,7 +1576,7 @@ def _alle_pruefungen() -> None:
             _shell = _fenster.shell
             check("alle Einträge der Seitenleiste sind da",
                   _shell.keys() == ["start", "stimme", "eigene",
-                                    "aufspielen", "verbindung"],
+                                    "verbindung"],
                   str(_shell.keys()))
             check("Start ist die erste Seite", _shell.current == "start")
             check("ohne Anmeldung steht das Anmeldeformular",
@@ -1587,7 +1584,7 @@ def _alle_pruefungen() -> None:
                   _fenster.page_start._zustand)
             check("was ohne Anmeldung sinnlos ist, ist gesperrt",
                   all(not _shell._eintraege[k].enabled
-                      for k in ("stimme", "eigene", "aufspielen")))
+                      for k in ("stimme", "eigene")))
             check("Verbindung bleibt erreichbar",
                   _shell._eintraege["verbindung"].enabled)
             check("und trägt einen Warnpunkt",
@@ -1607,7 +1604,7 @@ def _alle_pruefungen() -> None:
 
             check("die bisherigen Ansichten sind eingezogen",
                   all(getattr(_fenster, n, None) is not None for n in
-                      ("tab_connect", "tab_install", "tab_store")))
+                      ("tab_connect", "tab_store")))
 
             # Die neue Seite muss die mitgelieferten Dialekte auch finden -
             # eine leere Auswahl wäre der peinlichste aller Fehler.
@@ -2415,7 +2412,7 @@ def _alle_pruefungen() -> None:
 
     # Kein Eingabefeld für die Kennung mehr - weder auf der Seite noch
     # im alten Reiter.
-    for _datei in ("page_voice.py", "tab_install.py"):
+    for _datei in ("page_voice.py", "tab_store.py"):
         _q = (Path(__file__).resolve().parent / "dreamevoice" / "ui"
               / _datei).read_text(encoding="utf-8")
         check(f"{_datei} hat kein Kennungsfeld mehr", "var_lang" not in _q)
@@ -2832,7 +2829,7 @@ def _alle_pruefungen() -> None:
     # g) Der Unterschied zwischen belegt und wahrscheinlich muss bis in
     #    die Oberfläche durchschlagen. Der ehrlichste Text im Installer
     #    nützt nichts, wenn das Fenster daneben "läuft jetzt" sagt.
-    for _datei in ("page_voice.py", "tab_install.py"):
+    for _datei in ("page_voice.py", "page_start.py"):
         _q = (Path(__file__).resolve().parent / "dreamevoice" / "ui"
               / _datei).read_text(encoding="utf-8")
         check(f"{_datei} unterscheidet belegt und wahrscheinlich",
@@ -2930,10 +2927,10 @@ def _alle_pruefungen() -> None:
           f"success={_e.success} bestätigt={_e.bestaetigt}")
     check("und behauptet keinen Download von hier",
           _e.downloaded is False)
-    _ti = (Path(__file__).resolve().parent / "dreamevoice" / "ui"
-           / "tab_install.py").read_text(encoding="utf-8")
+    _ps = (Path(__file__).resolve().parent / "dreamevoice" / "ui"
+           / "page_start.py").read_text(encoding="utf-8")
     check("auch der Notausgang wertet bestätigt aus",
-          "outcome.success and outcome.bestaetigt" in _ti)
+          "ergebnis.success and ergebnis.bestaetigt" in _ps)
 
     # q) Ein Paketname mit Leerzeichen muss sich abholen lassen. Ohne
     #    Dekodierung des Pfades schlug der Download fehl - und wurde dann
@@ -3135,8 +3132,8 @@ def _alle_pruefungen() -> None:
             _spaeter = [k for k, e in _roh.items() if e.seite is None]
             check("nur die beiden Hauptseiten entstehen sofort",
                   sorted(_sofort) == ["start", "stimme"], f"{sorted(_sofort)}")
-            check("die drei unter 'Erweitert' warten",
-                  sorted(_spaeter) == ["aufspielen", "eigene", "verbindung"],
+            check("die beiden unter 'Erweitert' warten",
+                  sorted(_spaeter) == ["eigene", "verbindung"],
                   f"{sorted(_spaeter)}")
 
             # Der Zugriff über die Eigenschaft baut sie - so bleibt jeder
@@ -3146,8 +3143,7 @@ def _alle_pruefungen() -> None:
                   _roh["eigene"].seite is _f.tab_store)
 
             # Jede Seite muss sich auch wirklich zeigen lassen.
-            for _key in ("eigene", "aufspielen", "verbindung",
-                         "stimme", "start"):
+            for _key in ("eigene", "verbindung", "stimme", "start"):
                 _f.shell.show(_key)
                 _f.update_idletasks()
                 check(f"Seite '{_key}' lässt sich öffnen",
@@ -3581,11 +3577,11 @@ def _alle_pruefungen() -> None:
     check("es gibt Navigationsziele zu prüfen", bool(_ziele), f"{_ziele}")
 
     _start_q = _quellen_ui.get("page_start.py", "")
-    _stelle = _start_q.find('text="Originalstimme zurück"')
-    check("der Knopf 'Originalstimme zurück' steht in der Startseite",
+    _stelle = _start_q.find('text="Originalstimme wiederherstellen"')
+    check("der Knopf 'Originalstimme wiederherstellen' steht in der Startseite",
           _stelle >= 0)
-    check("er ruft _zum_notausgang statt nur die Seite zu wechseln",
-          "_zum_notausgang" in _start_q[_stelle:_stelle + 400],
+    check("und erledigt den Rückweg dort, ohne Seitenwechsel",
+          "_on_original_zurueck" in _start_q[_stelle:_stelle + 400],
           _start_q[_stelle:_stelle + 200])
 
     if not _tk_da:
@@ -3609,22 +3605,17 @@ def _alle_pruefungen() -> None:
                 check(f"der Weg nach '{_ziel}' führt hin",
                       _f2.shell.current == _ziel, _f2.shell.current)
 
-            # Ankommen genügt nicht. "Originalstimme zurück" landete
-            # oben auf einer langen Seite - und der auffälligste Knopf
-            # dort heißt "Sprachpaket auf Roboter installieren". Wer
-            # seine Stimme loswerden will, darf da nicht landen.
+            # Der Rückweg passiert seit 1.4.0 auf der Startseite selbst.
+            # Bis dahin landete man auf einer langen Expertenseite, deren
+            # auffälligster Knopf "Sprachpaket auf Roboter installieren"
+            # hieß - wer seine Stimme loswerden wollte, war dort falsch.
             _start = _f2.shell.seite("start")
-            _auf = _f2.tab_install
-            check("die Startseite kennt den Weg zum Notausgang",
-                  callable(getattr(_start, "_zum_notausgang", None)))
-            check("die Aufspielseite kann zum Notausgang rollen",
-                  callable(getattr(_auf, "zeige_notausgang", None)))
-            check("und weiß, wo ihr Notausgang steht",
-                  getattr(_auf, "karte_notausgang", None) is not None)
-            _start._zum_notausgang()
-            _f2.update()
-            check("der Notausgangsknopf wechselt auf die richtige Seite",
-                  _f2.shell.current == "aufspielen", _f2.shell.current)
+            check("die Startseite holt die Originalstimme selbst zurück",
+                  callable(getattr(_start, "_on_original_zurueck", None)))
+            check("und hat dafür einen eigenen Knopf",
+                  getattr(_start, "btn_original_zurueck", None) is not None)
+            check("ohne noch irgendwohin zu wechseln",
+                  not hasattr(_start, "_zum_notausgang"))
         finally:
             if _f2 is not None:
                 _f2.destroy()
@@ -5341,15 +5332,26 @@ def _alle_pruefungen() -> None:
         encoding="utf-8")
     _an50_text = (_w50 / "dreamevoice" / "ui" / "ansagen.py").read_text(
         encoding="utf-8")
-    check("'Aufnahmen einlesen' steht genau einmal",
-          _ts50.count('text="Aufnahmen einlesen ..."') == 1
-          and "Aufnahmen einlesen" not in _an50_text)
+    check("der Knopf zum Einlesen steht genau einmal",
+          _ts50.count('text="Aufnahmen oder Paket einlesen ..."') == 1
+          and "einlesen ..." not in _an50_text)
     check("das Fenster lädt kein Originalpaket mehr",
           "download_pack" not in _an50_text)
-    _ti50 = (_w50 / "dreamevoice" / "ui" / "tab_install.py").read_text(
+    # Die Seite "Bauen und Aufspielen" ist mit 1.4.0 ganz entfallen:
+    # Aufspielen, Notausgang und Abfragen gab es doppelt, übrig blieben
+    # Netzwerk und Grundlage - beide stehen jetzt dort, wo man sie sucht.
+    check("die Seite 'Bauen und Aufspielen' ist weg",
+          not (_w50 / "dreamevoice" / "ui" / "tab_install.py").exists())
+    _tc50 = (_w50 / "dreamevoice" / "ui" / "tab_connect.py").read_text(
         encoding="utf-8")
-    check("die Wahl der Grundlage ist auf der Expertenseite gelandet",
-          "_on_grundlage_laden" in _ti50 and "base_language" in _ti50)
+    check("die Netzwerkangaben stehen unter 'Verbindung'",
+          "_on_netz_speichern" in _tc50 and "public_url" in _tc50)
+    check("die Wahl der Grundlage steht bei den eigenen Stimmen",
+          "_on_grundlage_laden" in _ts50 and "base_language" in _ts50)
+    _pv50 = (_w50 / "dreamevoice" / "ui" / "page_voice.py").read_text(
+        encoding="utf-8")
+    check("und die eigene URL wirkt beim Aufspielen",
+          "public_url=eigene_url" in _pv50)
 
     # Und jetzt wirklich: Fenster auf, Liste da, Zustand sauber.
     if not _tk_da:
